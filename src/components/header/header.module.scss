@@ -1,4 +1,51 @@
+@use "sass:color";
+
 .header {
   background-color: $forest-mid;
-  height: 60px;
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+
+  &__left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  &__logo {
+    width: 94px;
+    border-radius: 10px;
+    object-fit: cover;
+  }
+
+  &__title {
+    font-family: $font-logo;
+    color: $beige-light;
+    font-size: 28px;
+  }
+
+  &__right {
+    display: flex;
+    align-items: center;
+  }
+
+  &__loginBtn {
+    background-color: $forest-dark;
+    color: $beige-light;
+    padding: 10px 24px;
+    border-radius: 10px;
+    font-family: $font-main;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+
+    &:hover {
+      background-color: color.adjust($forest-dark, $lightness: 5%);
+      cursor: pointer;
+    }
+  }
 }
