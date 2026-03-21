@@ -1,3 +1,56 @@
+@use "sass:color";
+
 .mainPage {
+  flex: 1;
+  padding: 20px 40px;
+
+  &__title {
+    font-weight: 500;
+    font-size: 32px;
+    margin-bottom: 25px;
+    letter-spacing: 1px;
+    border-bottom: 2px solid $sage-gray;
+    padding-bottom: 10px;
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 30px;
+    align-items: start;
+  }
+}
+
+.selectionModal {
+  position: fixed;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
   background-color: $beige-light;
+  padding: 15px 40px;
+  border-radius: 50px;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+
+  p {
+    font-weight: 500;
+    font-size: 24px;
+    margin: 0;
+  }
+
+  .cancelBtn {
+    background-color: $sage-gray;
+    padding: 6px 20px;
+    border-radius: 10px;
+    font-family: $font-main;
+    font-weight: 500;
+    font-size: 18px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    cursor: pointer;
+
+    &:hover { background-color: color.adjust($sage-gray, $lightness: 5%); }
+  }
 }
