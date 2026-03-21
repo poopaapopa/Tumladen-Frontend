@@ -9,3 +9,19 @@
   flex: 1;
   background-color: $beige-light;
 }
+
+.globalOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 100;
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+}
+
+.modeSelecting {
+  :global(.main-page-container) {
+    position: relative;
+    z-index: 110;
+  }
+}

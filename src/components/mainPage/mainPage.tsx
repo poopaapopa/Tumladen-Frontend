@@ -1,8 +1,21 @@
 import styles from './MainPage.module.scss';
-import type { Game } from "../../types/game.ts";
 import GameCard from "../gameCard/gameCard.tsx";
 
-function MainPage() {
+interface MainPageProps {
+  isSelecting: boolean;
+  onCancel: () => void;
+}
+
+interface Game {
+  id: number,
+  title: string,
+  description: string,
+  imageUrl?: string,
+  minPlayers: number,
+  maxPlayers: number,
+}
+
+function MainPage({ isSelecting, onCancel }: MainPageProps) {
   const games: Game[] = [
     { id: 1, title: 'Легенда', description: 'Классическая битва за территории с эльфийской магией.', minPlayers: 2, maxPlayers: 5 },
     { id: 2, title: 'Долина', description: 'Усложненные правила строительства в горах.', minPlayers: 3, maxPlayers: 6 },
@@ -11,11 +24,18 @@ function MainPage() {
 
   return (
     <main className={styles.mainPage}>
+      {isSelecting && (
+        <div className={styles.selectionModal}>
+          <p>Выберите игру для создания комнаты</p>
+          <button onClick={onCancel} className={styles.cancelBtn}>Отмена</button>
+        </div>
+      )}
+
       <h2 className={styles.mainPage__title}>Игры</h2>
 
       <div className={styles.mainPage__grid}>
         {games.map((game) => (
-          <GameCard {...game} key={ game.id }/>
+          <GameCard {...game} key={ game.id } isHighlight={isSelecting}/>
         ))}
       </div>
     </main>

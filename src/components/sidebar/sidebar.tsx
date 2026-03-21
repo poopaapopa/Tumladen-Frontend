@@ -2,7 +2,11 @@ import styles from './sidebar.module.scss';
 import castleImage from '../../assets/castle.png';
 import { Users } from "lucide-react";
 
-const Sidebar = () => {
+interface SidebarProps {
+  onCreateClick: () => void;
+}
+
+const Sidebar = ({ onCreateClick }: SidebarProps) => {
 
   return (
     <div className={styles.sidebar}>
@@ -27,7 +31,7 @@ const Sidebar = () => {
 
       </div>
 
-      <button className={styles.create_button}>Создать</button>
+      <button className={styles.create_button} onClick={onCreateClick}>Создать</button>
     </div>
   )
 }

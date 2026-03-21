@@ -1,11 +1,23 @@
 import styles from './GameCard.module.scss';
 import { Users } from 'lucide-react';
-import type { Game } from "../../types/game.ts";
+import clsx from 'clsx';
 import image from '../../assets/castle.png';
 
-function gameCard({ id, title, description, imageUrl, minPlayers, maxPlayers }: Game) {
+interface GameCardProps {
+  title: string;
+  description: string;
+  imageUrl?: string;
+  maxPlayers: number;
+  minPlayers: number;
+  isHighlight?: boolean;
+}
+
+function gameCard({ title, description, imageUrl, minPlayers, maxPlayers, isHighlight }: GameCardProps) {
   return (
-    <div className={styles.gameCard}>
+    <div className={clsx(
+      styles.gameCard,
+      isHighlight && styles.gameCard_highlighted
+    )}>
       <svg className={styles.gameCard__borderSvg}>
         <rect
           className={styles.gameCard__borderRect}
@@ -25,7 +37,7 @@ function gameCard({ id, title, description, imageUrl, minPlayers, maxPlayers }: 
         <p className={styles.gameCard__description}>{description}</p>
 
         <div className={styles.gameCard__footer}>
-          <button className={styles.gameCard__playBtn} onClick={() => onJoin(id)}>
+          <button className={styles.gameCard__playBtn}>
             Играть
           </button>
 
@@ -38,9 +50,5 @@ function gameCard({ id, title, description, imageUrl, minPlayers, maxPlayers }: 
     </div>
   );
 }
-
-const onJoin = (gameId: number) => {
-  console.log("Присоединение к игре с ID:", gameId);
-};
 
 export default gameCard
