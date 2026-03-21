@@ -1,0 +1,27 @@
+.roomPage {
+  padding: 20px;
+  height: calc(100vh - 60px);
+
+
+  h1 {
+    color: #333;
+    margin-bottom: 20px;
+  }
+
+  .info_card {
+    background: #f4f4f4;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+
+    p {
+      margin: 8px 0;
+      font-family: sans-serif;
+    }
+  }
+
+  .status {
+    color: green;
+    font-weight: bold;
+  }
+}

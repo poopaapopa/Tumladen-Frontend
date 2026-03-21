@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; 
 import styles from './sidebar.module.scss';
 import castleImage from '../../img/castle.png';
 
@@ -6,12 +7,22 @@ const Sidebar = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [roomName, setRoomName] = useState('');
   const [selectedGame, setSelectedGame] = useState('carcassonne');
+  const [isCreating, setIsCreating] = useState(false);
+
+  const navigate = useNavigate();
 
   const handleCreateRoom = () => {
-    console.log("Комната создана:", roomName);
-    //логика отправки на сервер
-    setRoomName(''); 
-    setIsModalOpen(false);
+    if (!roomName.trim()) return;
+
+    setIsCreating(true);
+
+    setTimeout(() => {
+        const fakeId = "a3576b17-3779-4d84-8055-225ddc1de475";
+        setIsCreating(false);
+        setIsModalOpen(false);
+        setRoomName('');
+        navigate(`/room/${fakeId}`);
+    }, 1000);
   };
 
   return (
@@ -62,7 +73,9 @@ const Sidebar = () => {
             </div>
             <div className={styles.modal_buttons}>
               <button className={styles.btn_cancel} onClick={() => setIsModalOpen(false)}>Отмена</button>
-              <button className={styles.btn_confirm} onClick={handleCreateRoom}>Создать</button>
+              <button className={styles.btn_confirm} onClick={handleCreateRoom} disabled={isCreating || !roomName.trim()}>
+                {isCreating ? 'Создание...' : 'Создать'}
+              </button>
             </div>
           </div>
         </div>
