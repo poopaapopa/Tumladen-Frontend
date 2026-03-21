@@ -4,7 +4,7 @@
   height: calc(100vh - 60px);
   border-top-right-radius: 20px;
   border-bottom-right-radius: 20px;
-  padding: 15px;
+  padding: 20px 30px;
   position: sticky;
   display: flex;
   flex-direction: column;
@@ -14,8 +14,8 @@
 .sidebar_name {
   font-family: $font-main;
   color: #1e1e1e;
-  font-size: 34px;
-  font-weight: 600;
+  font-size: 32px;
+  font-weight: 500;
   margin-bottom: 15px;
 }
 
@@ -96,6 +96,7 @@
 
 .card_waiting{
   font-size: 14px;
+  font-weight: 500;
   color: #1e1e1e;
 }
 
@@ -103,11 +104,7 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  font-weight: 600;
-  font-size: 14px;
-}
-
-.user_icon {
+  font-weight: 400;
   font-size: 18px;
 }
 
