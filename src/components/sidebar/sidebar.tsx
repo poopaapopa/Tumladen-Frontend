@@ -10,20 +10,20 @@ const Sidebar = ({ onCreateClick }: SidebarProps) => {
 
   return (
     <div className={styles.sidebar}>
-      <div className={styles.sidebar_name}>Комнаты</div>
-      <div className={styles.sidebar_cards}>
+      <div className={styles.sidebar__title}>Комнаты</div>
+      <div className={styles.sidebar__list}>
 
-        <div className={styles.sidebar_card}>
-          <img src={castleImage} alt="##" className={styles.card_img} />
-          <div className={styles.card_info}>
-            <div className={styles.card_name}>Название карточки</div>
-            <div className={styles.card_settings}>Описание настроек игры в комнате</div>
-            <div className={styles.card_footer}>
-              <div className={styles.card_waiting}>Ожидание игроков</div>
-              <div className={styles.card_players_container}>
-                <span className={styles.card_players_nums}>4/5</span>
+        <div className={styles['room-card']}>
+          <img src={castleImage} alt="##" className={styles['room-card__image']} />
+          <div className={styles['room-card__body']}>
+            <div className={styles['room-card__name']}>Название карточки</div>
+            <div className={styles['room-card__settings']}>Описание настроек игры в комнате</div>
+            <div className={styles['room-card__footer']}>
+              <div className={styles['room-card__status']}>Ожидание игроков</div>
+              <div className={styles['room-card__capacity']}>
+                <span className={styles['room-card__count']}>4/5</span>
                   {}
-                <Users size={18} strokeWidth={2.5} />
+                <Users size={18} strokeWidth={2.5} className={styles['room-card__icon']} />
               </div>
             </div>
           </div>
@@ -31,7 +31,7 @@ const Sidebar = ({ onCreateClick }: SidebarProps) => {
 
       </div>
 
-      <button className={styles.create_button} onClick={onCreateClick}>Создать</button>
+      <button className={styles['sidebar__create-button']} onClick={onCreateClick}>Создать</button>
     </div>
   )
 }

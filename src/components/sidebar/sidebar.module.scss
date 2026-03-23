@@ -9,18 +9,17 @@
   display: flex;
   flex-direction: column;
   box-sizing: border-box;
-}
 
-.sidebar_name {
-  font-family: $font-main;
-  color: #1e1e1e;
-  font-size: 32px;
-  font-weight: 500;
-  margin-bottom: 15px;
-}
+  &__title  {
+    font-family: $font-main;
+    color: #1e1e1e;
+    font-size: 32px;
+    font-weight: 500;
+    margin-bottom: 15px;
+  }
 
-.sidebar_cards{
-  display: flex;
+  &__list {
+    display: flex;
   flex-direction: column;
   gap: 15px; 
   flex-grow: 1; 
@@ -47,9 +46,29 @@
       cursor: pointer;
     }
   }
+  }
+
+  &__create-button{
+    margin-top: 20px;
+    background-color: $forest-mid;
+    color: $beige-light;
+    border: none;
+    border-radius: 12px;
+    padding: 18px;
+    font-size: 32px;
+    font-family: $font-main;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      opacity: 0.9;
+      background-color: $forest-dark;
+    }
+  }
 }
 
-.sidebar_card{
+
+.room-card{
   background-color: $beige-light;
   border-radius: 15px;
   padding: 15px;
@@ -57,70 +76,61 @@
   align-items: center;
   gap: 15px;
   box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-}
+  
+  &__image {
+    width: 80px; 
+    height: 80px;
+    border-radius: 50%; 
+    object-fit: cover;
+  }
 
-.card_img {
-  width: 80px; 
-  height: 80px;
-  border-radius: 50%; 
-  object-fit: cover;
-}
+  &__body{
+    flex-grow: 1; 
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
 
-.card_info{
-  flex-grow: 1; 
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+  &__name {
+    font-weight: 600;
+    font-size: 18px;
+    color: #1e1e1e;
+  }
 
-.card_name {
-  font-weight: 600;
-  font-size: 18px;
-  color: #1e1e1e;
-}
+  &__settings {
+    font-size: 14px;
+    color: #555;
+    line-height: 1.2;
+    margin-top: 5px;
+  }
 
-.card_settings {
-  font-size: 14px;
-  color: #555;
-  line-height: 1.2;
-  margin-top: 5px;
-}
+  &__footer{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+  }
 
-.card_footer{
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 10px;
-}
+  &__status{
+    font-size: 14px;
+    font-weight: 500;
+    color: #1e1e1e;
+  }
 
-.card_waiting{
-  font-size: 14px;
-  font-weight: 500;
-  color: #1e1e1e;
-}
-
-.card_players_container{
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-weight: 400;
-  font-size: 18px;
-}
-
-.create_button{
-  margin-top: 20px;
-  background-color: $forest-mid;
-  color: $beige-light;
-  border: none;
-  border-radius: 12px;
-  padding: 18px;
-  font-size: 32px;
-  font-family: $font-main;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    opacity: 0.9;
-    background-color: $forest-dark;
+  &__capacity{
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 400;
+    font-size: 18px;
   }
 }
+
+
+
+
+
+
+
+
+
