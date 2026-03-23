@@ -1,6 +1,6 @@
 @keyframes pulseGlow {
   0% { box-shadow: 0 0 5px $forest-mid; }
-  50% { box-shadow: 0 0 25px $forest-mid, 0 0 10px white; }
+  50% { box-shadow: 0 0 25px $forest-mid, 0 0 10px $forest-mid; }
   100% { box-shadow: 0 0 5px $forest-mid; }
 }
 
@@ -20,7 +20,6 @@
     z-index: 120;
 
     &:hover {
-      border-color: $beige-light;
       transform: scale(1.05);
     }
   }
@@ -38,14 +37,26 @@
 
   &__borderRect {
     stroke: $forest-mid;
-    stroke-width: 4;
-    stroke-dasharray: 2000;
-    stroke-dashoffset: 2000;
-    transition: stroke-dashoffset 0.6s ease;
+    stroke-width: 10;
+
+    stroke-dasharray: 0 100;
+    stroke-dashoffset: 0;
+
+    transition: stroke-dasharray 0.6s ease, stroke-dashoffset 0.6s ease, stroke 0.3s;
   }
 
-  &:hover &__borderRect {
-    stroke-dashoffset: 0;
+  &:hover {
+    .gameCard__borderRect {
+      &_forward {
+        stroke-dasharray: 50.5 100;
+        stroke-dashoffset: 0;
+      }
+
+      &_backward {
+        stroke-dasharray: 50.5 100;
+        stroke-dashoffset: 100;
+      }
+    }
   }
 
   &__imageWrapper {
