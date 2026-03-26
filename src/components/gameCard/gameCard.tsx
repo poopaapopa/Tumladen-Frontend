@@ -33,14 +33,16 @@ function GameCard({ title, description, imageUrl, minPlayers, maxPlayers, isHigh
       styles.gameCard,
       isHighlight && styles.gameCard_highlighted
     )}>
-      <svg className={styles.gameCard__borderSvg}>
-        <rect
-          className={styles.gameCard__borderRect}
-          rx="10"
-          width="100%"
-          height="100%"
-        />
-      </svg>
+    <svg className={styles.gameCard__borderSvg}>
+      <rect
+        className={clsx(styles.gameCard__borderRect, styles.gameCard__borderRect_forward)}
+        rx="10" width="100%" height="100%" pathLength="100"
+      />
+      <rect
+        className={clsx(styles.gameCard__borderRect, styles.gameCard__borderRect_backward)}
+        rx="10" width="100%" height="100%" pathLength="100"
+      />
+    </svg>
 
       <div className={styles.gameCard__imageWrapper}>
         <img src={imageUrl ? imageUrl : image} alt={title} className={styles.gameCard__image} />

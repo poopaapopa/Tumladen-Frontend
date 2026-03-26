@@ -14,7 +14,7 @@ const Sidebar = ({ onCreateClick }: SidebarProps) => {
         <RoomCard/>
       </div>
 
-      <button className={styles['sidebar__create-button']} onClick={onCreateClick}>Создать</button>
+      <button className={styles.sidebar__createButton} onClick={onCreateClick}>Создать</button>
     </div>
   )
 }
