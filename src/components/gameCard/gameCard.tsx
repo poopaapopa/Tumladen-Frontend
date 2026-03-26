@@ -2,6 +2,7 @@ import styles from './GameCard.module.scss';
 import { Users } from 'lucide-react';
 import clsx from 'clsx';
 import image from '../../assets/castle.png';
+import { useNavigate } from 'react-router-dom';
 
 interface GameCardProps {
   title: string;
@@ -12,7 +13,21 @@ interface GameCardProps {
   isHighlight?: boolean;
 }
 
-function gameCard({ title, description, imageUrl, minPlayers, maxPlayers, isHighlight }: GameCardProps) {
+
+function GameCard({ title, description, imageUrl, minPlayers, maxPlayers, isHighlight }: GameCardProps) {
+
+  const navigate = useNavigate();
+
+  const handlePlayClick = async () => {
+    try {
+      // const session = await roomApi.createGuestSession("Player");
+      // const roomData = await roomApi.createRoom(`${title} Room`, session.token);
+      navigate('/room/123');
+    } catch (e) {
+      console.error("Ошибка при создании комнаты", e);
+      navigate(`/room/test-room-id`);
+    }
+  };
   return (
     <div className={clsx(
       styles.gameCard,
@@ -37,7 +52,7 @@ function gameCard({ title, description, imageUrl, minPlayers, maxPlayers, isHigh
         <p className={styles.gameCard__description}>{description}</p>
 
         <div className={styles.gameCard__footer}>
-          <button className={styles.gameCard__playBtn}>
+          <button className={styles.gameCard__playBtn} onClick={handlePlayClick}>
             Играть
           </button>
 
@@ -51,4 +66,4 @@ function gameCard({ title, description, imageUrl, minPlayers, maxPlayers, isHigh
   );
 }
 
-export default gameCard
+export default GameCard

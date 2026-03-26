@@ -1,7 +1,7 @@
 .sidebar {
   background-color: $sage-gray;
   width: 450px;
-  height: calc(100vh - 60px);
+  height: calc(100vh - 70px);
   border-top-right-radius: 20px;
   border-bottom-right-radius: 20px;
   padding: 20px 30px;
@@ -64,65 +64,6 @@
       opacity: 0.9;
       background-color: $forest-dark;
     }
-  }
-}
-
-
-.room-card{
-  background-color: $beige-light;
-  border-radius: 15px;
-  padding: 15px;
-  display: flex; 
-  align-items: center;
-  gap: 15px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-  
-  &__image {
-    width: 80px; 
-    height: 80px;
-    border-radius: 50%; 
-    object-fit: cover;
-  }
-
-  &__body{
-    flex-grow: 1; 
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  &__name {
-    font-weight: 600;
-    font-size: 18px;
-    color: #1e1e1e;
-  }
-
-  &__settings {
-    font-size: 14px;
-    color: #555;
-    line-height: 1.2;
-    margin-top: 5px;
-  }
-
-  &__footer{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 10px;
-  }
-
-  &__status{
-    font-size: 14px;
-    font-weight: 500;
-    color: #1e1e1e;
-  }
-
-  &__capacity{
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-weight: 400;
-    font-size: 18px;
   }
 }
 
