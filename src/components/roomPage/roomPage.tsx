@@ -1,28 +1,71 @@
-import styles from './roomPage.module.scss';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Users, Clock, Star, Ban } from 'lucide-react';
+import styles from './roomPage.module.scss';
 import castleImg from '../../assets/zamok-karkasson.jpg';
+import { roomApi } from '../../api/api';
+
+// 1. Описываем типы данных из API
+interface Player {
+  id: string;
+  displayName: string;
+  isOwner: boolean;
+}
+
+interface RoomData {
+  id: string;
+  name: string;
+  gameTitle?: string;
+  maxPlayers: number;
+  timer: number;
+  players: Player[];
+  status: string;
+}
 
 const RoomPage = () => {
-  // const { id } = useParams();
+  const { id } = useParams<{ id: string }>(); // Получаем ID из /room/:id
   const navigate = useNavigate();
+  
+  const [roomData, setRoomData] = useState<RoomData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const roomData = {
-    name: "Название комнаты",
-    gameTitle: "CARCASSONNE",
-    maxPlayers: 4,
-    timer: 120,
-    players: [
-      { id: '1', displayName: 'Ecthelion', isOwner: true },
-      { id: '2', displayName: 'Никнейм', isOwner: false },
-    ]
-  };
+  useEffect(() => {
+    if (!id) return;
+
+    const fetchRoom = async () => {
+      try {
+        setIsLoading(true);
+        console.log(id)
+        const data = await roomApi.getRoomById(id);
+        
+        setRoomData({
+          ...data,
+          gameTitle: data.gameTitle || "CARCASSONNE",
+          maxPlayers: data.maxPlayers || 4,
+          timer: data.timer || 120,
+          players: data.players || [] // Если бэк не шлет список, будет пустой массив
+        });
+      } catch (e) {
+        console.error("Ошибка при загрузке комнаты:", e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRoom();
+    
+    // const interval = setInterval(fetchRoom, 3000);
+    // return () => clearInterval(interval);
+  }, [id]);
+
+  if (isLoading) return <div className={styles['room-page']}>Загрузка...</div>;
+  if (!roomData) return <div className={styles['room-page']}>Комната не найдена</div>;
 
   return (
     <div className={styles['room-page']}>
       <aside className={styles['room-page__sidebar']}>
         <div className={styles['room-page__config-box']}>
-          Комната {roomData.players[0].displayName}
+          {roomData.name}
         </div>
         
         <div className={styles['room-page__config-row']}>
@@ -60,7 +103,7 @@ const RoomPage = () => {
               <div key={idx} className={styles['room-page__player-slot']}>
                 <span className={styles['room-page__player-num']}>{idx + 1}</span>
                 <span className={styles['room-page__player-name']}>
-                  {player?.displayName || ""}
+                  {player?.displayName || "Ожидание..."}
                 </span>
                 {player && (
                   player.isOwner ? <Star size={20} fill="currentColor" /> : <Ban size={20} />

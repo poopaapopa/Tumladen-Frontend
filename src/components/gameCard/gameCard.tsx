@@ -3,6 +3,7 @@ import { Users } from 'lucide-react';
 import clsx from 'clsx';
 import image from '../../assets/castle.png';
 import { useNavigate } from 'react-router-dom';
+import { roomApi } from '../../api/api';
 
 interface GameCardProps {
   title: string;
@@ -20,12 +21,28 @@ function GameCard({ title, description, imageUrl, minPlayers, maxPlayers, isHigh
 
   const handlePlayClick = async () => {
     try {
-      // const session = await roomApi.createGuestSession("Player");
-      // const roomData = await roomApi.createRoom(`${title} Room`, session.token);
-      navigate('/room/123');
+      let token = roomApi.getToken();
+
+      if (!token) {
+        const name = prompt("Введите ваше имя для входа:", "Игрок");
+        if (!name) return;
+
+        const session = await roomApi.createGuestSession(name);
+        token = session.token;
+        console.log("Сессия создана, токен получен");
+      }
+
+      // 2. Создаем комнату
+      const roomData = await roomApi.createRoom(`${title} Room`);
+      console.log("Комната создана:", roomData);
+
+      // 3. Переходим в созданную комнату
+      if (roomData.inviteCode) {
+        navigate(`/room/${roomData.inviteCode}`);
+      }
     } catch (e) {
-      console.error("Ошибка при создании комнаты", e);
-      navigate(`/room/test-room-id`);
+      console.error("Ошибка во время флоу создания комнаты:", e);
+      alert("Не удалось выполнить вход или создать комнату. Проверь консоль браузера.");
     }
   };
   return (
