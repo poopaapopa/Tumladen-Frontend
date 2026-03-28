@@ -10,9 +10,10 @@ interface GameCardProps {
   maxPlayers: number;
   minPlayers: number;
   isHighlight?: boolean;
+  onJoin: () => void;
 }
 
-function gameCard({ title, description, imageUrl, minPlayers, maxPlayers, isHighlight }: GameCardProps) {
+function gameCard({ title, description, imageUrl, minPlayers, maxPlayers, isHighlight, onJoin }: GameCardProps) {
   return (
     <div className={clsx(
       styles.gameCard,
@@ -39,7 +40,7 @@ function gameCard({ title, description, imageUrl, minPlayers, maxPlayers, isHigh
         <p className={styles.gameCard__description}>{description}</p>
 
         <div className={styles.gameCard__footer}>
-          <button className={styles.gameCard__playBtn}>
+          <button onClick={onJoin} className={styles.gameCard__playBtn}>
             Играть
           </button>
 

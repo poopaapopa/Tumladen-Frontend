@@ -1,8 +1,18 @@
 @use "sass:color";
 
+.pageWrapper {
+  display: flex;
+  flex: 1;
+  background-color: $beige-light;
+  overflow: hidden;
+  height: 100%;
+}
+
 .mainPage {
   flex: 1;
   padding: 20px 40px;
+  overflow-y: auto;
+  height: 100%;
 
   &__title {
     font-weight: 500;
@@ -52,5 +62,63 @@
     cursor: pointer;
 
     &:hover { background-color: color.adjust($sage-gray, $lightness: 5%); }
+  }
+}
+
+.sidebar {
+  background-color: $sage-gray;
+  width: 450px;
+  height: calc(100vh - 70px);
+  border-top-right-radius: 20px;
+  border-bottom-right-radius: 20px;
+  padding: 20px 30px;
+  position: sticky;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+
+  &__title  {
+    font-family: $font-main;
+    color: #1e1e1e;
+    font-size: 32px;
+    font-weight: 500;
+    margin-bottom: 15px;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    flex-grow: 1;
+    overflow-y: auto;
+    padding-right: 5px;
+    padding-bottom: 80px;
+
+    mask-image: linear-gradient(to bottom, black 80%, transparent 100%);
+  }
+
+  &__createButton{
+    margin-top: 20px;
+    background-color: $forest-mid;
+    color: $beige-light;
+    border: none;
+    border-radius: 12px;
+    padding: 18px;
+    font-size: 32px;
+    font-family: $font-main;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover {
+      opacity: 0.9;
+      background-color: $forest-dark;
+    }
+  }
+
+  &__info {
+    color: #1e1e1e;
+    text-align: center;
+    padding: 20px;
+    font-size: 16px;
   }
 }
