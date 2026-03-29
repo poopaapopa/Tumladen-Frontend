@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Users, Clock, Star, Crown, LogOut, Share2 } from 'lucide-react';
+import { Users, Clock, Star, Crown, LogOut, Share2, CheckCircle } from 'lucide-react';
 import styles from './roomPage.module.scss';
 import castleImg from '../../assets/zamok.png';
 import { roomService } from '../../api/room.ts'
 import type { RoomResponse } from '../../api/room.ts'
 import { useUserStore } from '../../store/useUserStore';
+import { useRoomSocket } from '../../api/ws.ts'; 
+import { motion, AnimatePresence } from 'framer-motion'; 
 
 const RoomPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -16,11 +18,38 @@ const RoomPage = () => {
   const [room, setRoom] = useState<RoomResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showCopyToast, setShowCopyToast] = useState(false);
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setShowCopyToast(true);
+    
+    setTimeout(() => {
+      setShowCopyToast(false);
+    }, 3000);
+  };
+
+  const checkAvailableSlots = (roomData: RoomResponse) => {
+    if (!currentUser) return false;
+
+    const isAlreadyInRoom = roomData.participants?.some(p => p.actorId === currentUser.id);
+
+    if (!isAlreadyInRoom && roomData.playersCount >= roomData.maxPlayers) {
+      navigate('/');
+      return true;
+    }
+
+    return false;
+  }
 
   const fetchRoomData = async () => {
     if (!id) return;
     try {
       const data = await roomService.getRoomById(id);
+
+      const isFull = checkAvailableSlots(data.room);
+      if (isFull) return;
+
       setRoom(data.room);
       setError(null);
     } catch (e) {
@@ -31,9 +60,19 @@ const RoomPage = () => {
     }
   };
 
+  const handleRoomUpdate = useCallback((data: any) => {  
+    const updatedRoom = data.payload || data.room || data;
+
+    const isFull = checkAvailableSlots(updatedRoom);
+    if (!isFull) {
+      setRoom(updatedRoom);
+    }
+  }, [currentUser, navigate]);
+  useRoomSocket(room?.id, handleRoomUpdate);
+
   useEffect(() => {
     fetchRoomData();
-  }, [id]);
+  }, [id, currentUser]);
 
   if (isLoading) return <div className={styles.loading}>Загрузка...</div>;
   if (error || !room) return <div className={styles.error}>{error || "Ошибка"}</div>;
@@ -119,7 +158,8 @@ const RoomPage = () => {
         </div>
 
         <div className={styles.roomPage__actions}>
-          <button className={styles.roomPage__btnInvite}>
+          <button className={styles.roomPage__btnInvite}
+            onClick={(handleCopyLink)}>
             <Share2 size={18} /> Пригласить
           </button>
           <button
@@ -130,6 +170,19 @@ const RoomPage = () => {
           </button>
         </div>
       </section>
+      <AnimatePresence>
+        {showCopyToast && (
+          <motion.div
+            className={styles.copyToast}
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 20, x: '-50%' }}
+          >
+            <CheckCircle size={20} className={styles.copyToast__icon} />
+            <span>Ссылка успешно скопирована</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

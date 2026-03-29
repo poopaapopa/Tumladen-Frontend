@@ -63,7 +63,6 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
   const fetchRooms = async () => {
     try {
       const data = await roomService.getPublicRooms();
-      console.log(data);
       setRooms(data.rooms);
     } catch (err) {
       console.error("Не удалось загрузить комнаты", err);
@@ -103,7 +102,7 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
               <RoomCard
                 key={room.id}
                 room={room}
-                onClick={() => handleJoinRoom(room.id)}
+                onClick={() => handleJoinRoom(room.inviteCode)}
               />
             ))
           ) : (
