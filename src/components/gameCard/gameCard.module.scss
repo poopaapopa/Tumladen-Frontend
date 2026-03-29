@@ -11,7 +11,7 @@
   display: flex;
   flex-direction: column;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+  box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.25);
   overflow: hidden;
 
   &_highlighted {
@@ -79,9 +79,7 @@
     height: 151px;
     background: linear-gradient(
       to bottom,
-      rgba($sage-gray, 0.6) 0%,
-      transparent 30%,
-      transparent 70%,
+      rgba($sage-gray, 0) 0%,
       $sage-gray 100%
     );
   }

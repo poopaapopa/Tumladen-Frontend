@@ -8,7 +8,7 @@ interface RoomCardProps {
     id: string;
     name: string;
     status: string;
-    code: string;
+    inviteCode: string;
   }
 }
 

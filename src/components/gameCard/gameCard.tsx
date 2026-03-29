@@ -12,26 +12,27 @@ interface GameCardProps {
   maxPlayers: number;
   minPlayers: number;
   isHighlight?: boolean;
+  onJoin: () => void;
 }
 
 
-function GameCard({ title, description, imageUrl, minPlayers, maxPlayers, isHighlight }: GameCardProps) {
+function GameCard({ title, description, imageUrl, minPlayers, maxPlayers, isHighlight, onJoin }: GameCardProps) {
 
   const navigate = useNavigate();
 
   const handlePlayClick = async () => {
     try {
-      let token = roomApi.getToken();
+      // let token = roomApi.getToken();
 
-      if (!token) {
-        const name = prompt("Введите ваше имя для входа:", "Игрок");
-        if (!name) return;
+      // if (!token) {
+      //   const name = prompt("Введите ваше имя для входа:", "Игрок");
+      //   if (!name) return;
 
-        const session = await roomApi.createGuestSession(name);
-        token = session.token;
-        console.log("Сессия создана, токен получен");
-      }
-
+      //   const session = await roomApi.createGuestSession(name);
+      //   token = session.token;
+      //   console.log("Сессия создана, токен получен");
+      // }
+      onJoin()
       // 2. Создаем комнату
       const roomData = await roomApi.createRoom(`${title} Room`);
       console.log("Комната создана:", roomData);
@@ -42,7 +43,6 @@ function GameCard({ title, description, imageUrl, minPlayers, maxPlayers, isHigh
       }
     } catch (e) {
       console.error("Ошибка во время флоу создания комнаты:", e);
-      alert("Не удалось выполнить вход или создать комнату. Проверь консоль браузера.");
     }
   };
   return (
