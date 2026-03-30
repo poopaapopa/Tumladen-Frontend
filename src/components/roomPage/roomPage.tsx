@@ -76,6 +76,7 @@ const RoomPage = () => {
 
   if (isLoading) return <div className={styles.loading}>Загрузка...</div>;
   if (error || !room) return <div className={styles.error}>{error || "Ошибка"}</div>;
+  if (!currentUser) return <div className={styles.loading}>Пожалуйста, представьтесь...</div>;
 
   const isOwner = currentUser?.id === room.ownerActorId;
 
