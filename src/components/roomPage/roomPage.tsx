@@ -21,9 +21,47 @@ const RoomPage = () => {
   const [showCopyToast, setShowCopyToast] = useState(false);
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setShowCopyToast(true);
+    const url = window.location.href;
+
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(url)
+        .then(() => {
+          triggerToast();
+        })
+        .catch(() => {
+          fallbackCopyTextToClipboard(url);
+        });
+    } else {
+      fallbackCopyTextToClipboard(url);
+    }
+  };
+
+  const fallbackCopyTextToClipboard = (text: string) => {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
     
+    textArea.style.position = "fixed";
+    textArea.style.left = "-9999px";
+    textArea.style.top = "0";
+    document.body.appendChild(textArea);
+    
+    textArea.focus();
+    textArea.select();
+
+    try {
+      const successful = document.execCommand('copy');
+      if (successful) {
+        triggerToast();
+      }
+    } catch (err) {
+      console.error('Не удалось скопировать ссылку даже старым методом', err);
+    }
+
+    document.body.removeChild(textArea);
+  };
+
+  const triggerToast = () => {
+    setShowCopyToast(true);
     setTimeout(() => {
       setShowCopyToast(false);
     }, 3000);
