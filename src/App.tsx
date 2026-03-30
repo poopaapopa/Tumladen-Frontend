@@ -5,7 +5,7 @@ import Modal from "./components/modal/modal.tsx";
 import GuestAuth from './components/guestAuth/guestAuth.tsx';
 import RoomPage from "./components/roomPage/roomPage.tsx";
 import { useState, useEffect } from "react";
-import { BrowserRouter as Router, Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useUserStore } from './store/useUserStore';
 
 function App() {

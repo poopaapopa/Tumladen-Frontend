@@ -1,4 +1,4 @@
-import styles from './GameCard.module.scss';
+import styles from './gameCard.module.scss';
 import { Users } from 'lucide-react';
 import clsx from 'clsx';
 import image from '../../assets/castle.png';
