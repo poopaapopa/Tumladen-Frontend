@@ -10,6 +10,7 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
 
   &__left {
+    cursor: pointer;
     display: flex;
     align-items: center;
     gap: 15px;

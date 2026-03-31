@@ -4,8 +4,9 @@ import MainPage from "./components/mainPage/mainPage.tsx";
 import Modal from "./components/modal/modal.tsx";
 import GuestAuth from './components/guestAuth/guestAuth.tsx';
 import RoomPage from "./components/roomPage/roomPage.tsx";
-import { useState } from "react";
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { useUserStore } from './store/useUserStore';
 
 function App() {
   const [isSelecting, setIsSelecting] = useState(false);
@@ -14,12 +15,33 @@ function App() {
   const openModal = () => setActiveModal(true);
   const closeModal = () => setActiveModal(false);
 
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useUserStore();
+
+  useEffect(() => {
+    const isRoomPage = location.pathname.startsWith('/room/');
+    
+    if (isRoomPage && !isAuthenticated) {
+      const timer = setTimeout(() => {
+        setActiveModal(true);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [location.pathname, isAuthenticated]);
+
+  const handleCancelAuth = () => {
+    closeModal();
+    if (location.pathname.startsWith('/room/') && !isAuthenticated) {
+      navigate('/');
+    }
+  };
+
   const handleGuestConfirm = () => {
     closeModal();
   };
 
   return (
-    <Router>
       <div className={styles.layoutWrapper}>
         <Header />
           <Routes>
@@ -33,16 +55,15 @@ function App() {
             <Route path="/room/:id" element={<RoomPage />} />
           </Routes>
 
-        <Modal isOpen={activeModal} onClose={closeModal}>
+        <Modal isOpen={activeModal} onClose={handleCancelAuth}>
           <GuestAuth
             onConfirm={handleGuestConfirm}
-            onCancel={closeModal}
+            onCancel={handleCancelAuth}
           />
         </Modal>
 
         {isSelecting && <div className={styles.globalOverlay} onClick={() => setIsSelecting(false)} />}
       </div>
-    </Router>
   )
 }
 

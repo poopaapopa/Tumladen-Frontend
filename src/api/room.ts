@@ -11,7 +11,7 @@ export interface RoomResponse {
   id: string;
   name: string;
   isPrivate: boolean;
-  inviteCode?: string;
+  inviteCode: string;
   ownerActorId: string;
   status: string;
   gameType: string;
