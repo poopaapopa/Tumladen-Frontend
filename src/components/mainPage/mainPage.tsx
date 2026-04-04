@@ -1,10 +1,12 @@
 import styles from './MainPage.module.scss';
 import GameCard from "../gameCard/gameCard.tsx";
 import RoomCard from "../roomCard/roomCard.tsx";
+import RoomCardSkeleton from '../roomCard/roomCardSkeleton'
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { type RoomResponse, roomService } from "../../api/room.ts";
 import { useUserStore } from "../../store/useUserStore.ts";
+import sadElfImg from '../../assets/sad-elf.png';
 
 interface MainPageProps {
   isSelecting: boolean;
@@ -96,7 +98,13 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
         <div className={styles.sidebar__title}>Комнаты</div>
         <div className={styles.sidebar__list}>
           {isLoadingRooms ? (
-            <div className={styles.sidebar__info}>Загрузка...</div>
+            <>
+              <RoomCardSkeleton />
+              <RoomCardSkeleton />
+              <RoomCardSkeleton />
+              <RoomCardSkeleton />
+              <RoomCardSkeleton />
+            </>
           ) : rooms.length > 0 ? (
             rooms.map(room => (
               <RoomCard
@@ -106,7 +114,10 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
               />
             ))
           ) : (
-            <div className={styles.sidebar__info}>Комнат пока нет</div>
+            <div className={styles.sidebar__statusContainer}>
+              <img src={sadElfImg} alt="Одинокий эльф" className={styles.sidebar__emptyImg} />
+              <div className={styles.sidebar__info}>В долине пока ни души...</div>
+            </div>
           )}
         </div>
 

@@ -10,13 +10,31 @@
 
   &__title {
     font-size: 28px;
-    color: #1e1e1e;
+    color: $forest-dark;
     margin-bottom: 25px;
-    font-weight: 500;
+    font-weight: 600;
   }
 
   &__inputGroup {
     margin-bottom: 25px;
+    position: relative;
+  }
+
+  &__label {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+
+    font-family: $font-main;
+    font-size: 18px;
+    color: $metal-gray;
+    pointer-events: none;
+    transition: all 0.2s ease;
+
+    background-color: $beige-light;
+    padding: 0 3px;
+    border-radius: 5px;
   }
 
   &__input {
@@ -29,11 +47,22 @@
     font-size: 20px;
     color: #1e1e1e;
     outline: none;
-    transition: box-shadow 0.2s ease;
+    transition: all 0.2s ease;
 
     &:focus {
       box-shadow: 0 0 0 3px rgba($forest-mid, 0.3);
+      border-color: $forest-dark;
     }
+  }
+
+  &__input:focus + &__label,
+  &__input:not(:placeholder-shown) + &__label {
+    top: 0;
+    font-size: 14px;
+    color: $forest-dark;
+    font-weight: 600;
+    transform: translateY(-50%) scale(0.9);
+    opacity: 1;
   }
 
   &__authInfo {
