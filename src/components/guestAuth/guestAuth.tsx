@@ -40,9 +40,10 @@ function GuestAuth({ onConfirm, onCancel }: GuestAuthProps) {
 
       <div className={styles.guestLogin__inputGroup}>
         <input
+          id="guestName"
           type="text"
           value={name}
-          placeholder="Ваше имя или титул..."
+          placeholder=" "
           className={styles.guestLogin__input}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => {
@@ -51,6 +52,10 @@ function GuestAuth({ onConfirm, onCancel }: GuestAuthProps) {
             }
           }}
         />
+
+        <label htmlFor="guestName" className={styles.guestLogin__label}>
+          Ваше имя или титул
+        </label>
       </div>
 
       <div className={styles.guestLogin__authInfo}>
