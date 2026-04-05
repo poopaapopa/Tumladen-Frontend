@@ -1,0 +1,86 @@
+@use "sass:color";
+
+.container {
+  position: relative;
+  flex: 1;
+}
+
+.configBox {
+  position: relative;
+  background: $beige-light;
+  border: 2px solid $forest-mid;
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 20px;
+  font-weight: 600;
+  color: $forest-dark;
+  transition: all 0.2s ease;
+
+  &_editable {
+    cursor: pointer;
+    &:hover {
+      border-color: $forest-dark;
+      box-shadow: 0 0 0 3px rgba($forest-mid, 0.2);
+    }
+  }
+}
+
+.arrow {
+  position: absolute;
+  top: 12px;
+  right: 20px;
+  color: $metal-gray;
+  transition: transform 0.3s ease, color 0.2s ease;
+  flex-shrink: 0;
+
+  &_rotated {
+    transform: rotate(180deg);
+  }
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: $beige-light;
+  border: 2px solid $forest-dark;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.option {
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 20px;
+  font-weight: 600;
+  color: $forest-dark;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background-color: $sage-gray;
+  }
+
+  &_active {
+    background-color: $forest-mid;
+    color: $beige-light;
+
+    &:hover {
+      background-color: color.adjust($forest-mid, $lightness: -5%);
+    }
+  }
+
+  &:not(:last-child) {
+    border-bottom: 1px solid rgba($forest-dark, 0.1);
+  }
+}

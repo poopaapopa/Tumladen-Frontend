@@ -6,7 +6,8 @@ import castleImg from '../../assets/zamok.png';
 import { roomService, type RoomResponse } from '../../api/room.ts'
 import { useUserStore } from '../../store/useUserStore';
 import { useRoomSocket } from '../../api/ws.ts'; 
-import { motion, AnimatePresence } from 'framer-motion'; 
+import { motion, AnimatePresence } from 'framer-motion';
+import { EditableSelector } from '../editableSelector/editableSelector.tsx';
 
 const copyToClipboard = async (text: string) => {
   if (navigator.clipboard && window.isSecureContext) {
@@ -47,6 +48,32 @@ const RoomPage = () => {
   const [showCopyToast, setShowCopyToast] = useState(false);
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const maxPlayersOptions = Array.from({ length: 5 }, (_, i) => ({
+    value: i + 2,
+    label: `${i + 2}`,
+  }));
+
+  const timerOptions = [
+    { value: 60, label: '60 с.' },
+    { value: 90, label: '90 с.' },
+    { value: 120, label: '120 с.' },
+    { value: 180, label: '180 с.' },
+  ];
+
+  const handleSaveSetting = async (setting: 'maxPlayers' | 'timer', newValue: string | number) => {
+    if (!room?.id || !isOwner) return;
+
+    try {
+      setRoom(prevRoom => {
+        if (!prevRoom) return null;
+        return { ...prevRoom, [setting]: newValue };
+      });
+    } catch (e) {
+      console.error(`Ошибка при обновлении ${setting}:`, e);
+      alert('Не удалось обновить настройку');
+    }
+  };
 
   const triggerToast = useCallback(() => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -116,14 +143,21 @@ const RoomPage = () => {
         </div>
 
         <div className={styles.roomPage__configGrid}>
-          <div className={styles.roomPage__configBox}>
-            <Users size={20} />
-            <span>{room.maxPlayers}</span>
-          </div>
-          <div className={styles.roomPage__configBox}>
-            <Clock size={20} />
-            <span>120с</span>
-          </div>
+          <EditableSelector
+            value={room.maxPlayers}
+            icon={Users}
+            options={maxPlayersOptions}
+            isOwner={isOwner}
+            onSelect={(val) => handleSaveSetting('maxPlayers', val)}
+          />
+          <EditableSelector
+            value={120}
+            icon={Clock}
+            options={timerOptions}
+            isOwner={isOwner}
+            suffix="с."
+            onSelect={(val) => handleSaveSetting('timer', val)}
+          />
         </div>
 
         {isOwner ? (
