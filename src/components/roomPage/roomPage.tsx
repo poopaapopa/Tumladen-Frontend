@@ -1,13 +1,39 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Users, Clock, Star, Crown, LogOut, Share2, CheckCircle } from 'lucide-react';
 import styles from './roomPage.module.scss';
 import castleImg from '../../assets/zamok.png';
-import { roomService } from '../../api/room.ts'
-import type { RoomResponse } from '../../api/room.ts'
+import { roomService, type RoomResponse } from '../../api/room.ts'
 import { useUserStore } from '../../store/useUserStore';
 import { useRoomSocket } from '../../api/ws.ts'; 
 import { motion, AnimatePresence } from 'framer-motion'; 
+
+const copyToClipboard = async (text: string) => {
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      return fallbackCopy(text);
+    }
+  }
+  return fallbackCopy(text);
+};
+
+const fallbackCopy = (text: string) => {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  Object.assign(textArea.style, { position: "fixed", left: "-9999px", top: "0" });
+  document.body.appendChild(textArea);
+  textArea.select();
+  try {
+    return document.execCommand('copy');
+  } catch {
+    return false;
+  } finally {
+    document.body.removeChild(textArea);
+  }
+};
 
 const RoomPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -20,73 +46,36 @@ const RoomPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [showCopyToast, setShowCopyToast] = useState(false);
 
-  const handleCopyLink = () => {
-    const url = window.location.href;
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(url)
-        .then(() => {
-          triggerToast();
-        })
-        .catch(() => {
-          fallbackCopyTextToClipboard(url);
-        });
-    } else {
-      fallbackCopyTextToClipboard(url);
-    }
-  };
-
-  const fallbackCopyTextToClipboard = (text: string) => {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    
-    textArea.style.position = "fixed";
-    textArea.style.left = "-9999px";
-    textArea.style.top = "0";
-    document.body.appendChild(textArea);
-    
-    textArea.focus();
-    textArea.select();
-
-    try {
-      const successful = document.execCommand('copy');
-      if (successful) {
-        triggerToast();
-      }
-    } catch (err) {
-      console.error('Не удалось скопировать ссылку даже старым методом', err);
-    }
-
-    document.body.removeChild(textArea);
-  };
-
-  const triggerToast = () => {
+  const triggerToast = useCallback(() => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
     setShowCopyToast(true);
-    setTimeout(() => {
-      setShowCopyToast(false);
-    }, 3000);
+    toastTimer.current = setTimeout(() => setShowCopyToast(false), 3000);
+  }, []);
+
+  const handleCopyLink = async () => {
+    const success = await copyToClipboard(window.location.href);
+    if (success) triggerToast();
   };
 
-  const checkAvailableSlots = (roomData: RoomResponse) => {
+  const checkAvailableSlots = useCallback((roomData: RoomResponse) => {
     if (!currentUser) return false;
 
     const isAlreadyInRoom = roomData.participants?.some(p => p.actorId === currentUser.id);
 
-    if (!isAlreadyInRoom && roomData.playersCount >= roomData.maxPlayers) {
-      navigate('/');
-      return true;
-    }
+    return !isAlreadyInRoom && roomData.playersCount >= roomData.maxPlayers;
+  }, [currentUser]);
 
-    return false;
-  }
-
-  const fetchRoomData = async () => {
+  const fetchRoomData = useCallback(async () => {
     if (!id) return;
     try {
       const data = await roomService.getRoomById(id);
 
-      const isFull = checkAvailableSlots(data.room);
-      if (isFull) return;
+      if (checkAvailableSlots(data.room)) {
+        navigate('/');
+        return;
+      }
 
       setRoom(data.room);
       setError(null);
@@ -96,25 +85,25 @@ const RoomPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [id, navigate, checkAvailableSlots]);
 
-  const handleRoomUpdate = useCallback((data: any) => {  
-    const updatedRoom = data.payload || data.room || data;
-
-    const isFull = checkAvailableSlots(updatedRoom);
-    if (!isFull) {
-      setRoom(updatedRoom);
+  const handleRoomUpdate = useCallback((updatedRoom: RoomResponse) => {
+    if (checkAvailableSlots(updatedRoom)) {
+      navigate('/');
+      return;
     }
-  }, [currentUser, navigate]);
+
+    setRoom(updatedRoom);
+  }, [checkAvailableSlots, navigate]);
+
   useRoomSocket(room?.id, handleRoomUpdate);
 
   useEffect(() => {
     fetchRoomData();
-  }, [id, currentUser]);
+  }, [fetchRoomData]);
 
   if (isLoading) return <div className={styles.loading}>Загрузка...</div>;
-  if (error || !room) return <div className={styles.error}>{error || "Ошибка"}</div>;
-  if (!currentUser) return <div className={styles.loading}>Пожалуйста, представьтесь...</div>;
+  if (error || !room) return <div className={styles.error}>{error || "Комната исчезла"}</div>;
 
   const isOwner = currentUser?.id === room.ownerActorId;
 
