@@ -12,6 +12,7 @@ import { useUserStore } from '../../store/useUserStore';
 import { useRoomSocket } from '../../api/ws.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EditableSelector } from '../editableSelector/editableSelector.tsx';
+import { Pencil, Check, X } from 'lucide-react';
 
 const copyToClipboard = async (text: string) => {
   if (navigator.clipboard && window.isSecureContext) {
@@ -51,6 +52,9 @@ const RoomPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [showCopyToast, setShowCopyToast] = useState(false);
 
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState(room?.name || '');
+
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const currentSettings = (room?.settings as Record<string, number | string | boolean>) || {};
 
@@ -69,6 +73,19 @@ const RoomPage = () => {
     { value: 120, label: '120 с.' },
     { value: 180, label: '180 с.' },
   ];
+
+  useEffect(() => {
+    if (room?.name) setTempName(room.name);
+  }, [room?.name]);
+
+  const handleUpdateName = () => {
+    const trimmed = tempName.trim();
+
+    if (trimmed && trimmed !== room?.name)
+      handleSaveSetting('name', trimmed);
+
+    setIsEditingName(false);
+  };
 
   const triggerToast = useCallback(() => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -125,15 +142,25 @@ const RoomPage = () => {
 
     const currentSettings = (room.settings as unknown as Record<string, number | string | boolean>) || {};
 
-    const isMaxPlayers = key === 'maxPlayers';
-    const currentValue = isMaxPlayers ? room.maxPlayers : currentSettings[key];
-    if (currentValue === newValue) return;
+    let hasChanged: boolean;
+
+    if (key === 'name')
+      hasChanged = room.name !== String(newValue);
+    else if (key === 'maxPlayers')
+      hasChanged = room.maxPlayers !== Number(newValue);
+    else
+      hasChanged = currentSettings[key] !== newValue;
+
+    if (!hasChanged) return;
 
     const payload: UpdateRoomSettingsPayload = {
       roomId: room.id,
       gameType: room.gameType,
-      maxPlayers: isMaxPlayers ? Number(newValue) : room.maxPlayers,
-      settings: isMaxPlayers ? currentSettings : { ...currentSettings, [key]: newValue }
+      name: key === 'name' ? String(newValue) : room.name,
+      maxPlayers: key === 'maxPlayers' ? Number(newValue) : room.maxPlayers,
+      settings: (key !== 'name' && key !== 'maxPlayers')
+        ? currentSettings
+        : { ...currentSettings, [key]: newValue }
     };
 
     sendMessage('update_room_settings', payload as unknown as Record<string, unknown>);
@@ -152,8 +179,36 @@ const RoomPage = () => {
     <div className={styles.roomPage}>
       <aside className={styles.roomPage__sidebar}>
         <div className={styles.roomPage__header}>
-           <h2 className={styles.roomPage__roomName}>{room.name}</h2>
-           <span className={styles.roomPage__status}>{room.status}</span>
+          <div className={styles.roomPage__nameContainer}>
+            {isEditingName ? (
+              <div className={styles.roomPage__nameEditWrapper}>
+                <input
+                  className={styles.roomPage__nameInput}
+                  value={tempName}
+                  onChange={(e) => setTempName(e.target.value)}
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleUpdateName();
+                    if (e.key === 'Escape') setIsEditingName(false);
+                  }}
+                />
+                <div className={styles.roomPage__nameActions}>
+                  <button onClick={handleUpdateName} className={styles.icon_save}><Check size={20} /></button>
+                  <button onClick={() => setIsEditingName(false)} className={styles.icon_cancel}><X size={20} /></button>
+                </div>
+              </div>
+            ) : (
+              <div className={styles.roomPage__nameView}>
+                <h2 className={styles.roomPage__roomName}>{room.name}</h2>
+                {isOwner && (
+                  <button onClick={() => setIsEditingName(true)} className={styles.edit_icon}>
+                    <Pencil size={20} />
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+          <span className={styles.roomPage__status}>{room.status}</span>
         </div>
 
         <div className={styles.roomPage__configGrid}>
@@ -222,9 +277,9 @@ const RoomPage = () => {
                 {participant && (
                   <div className={styles.roomPage__playerBadge}>
                     {isThisParticipantOwner ? (
-                      <Crown size={18} className={styles.icon_crown} />
+                      <Crown size={20} className={styles.icon_crown} />
                     ) : (
-                      <Star size={18} className={styles.icon_star} />
+                      <Star size={20} className={styles.icon_star} />
                     )}
                   </div>
                 )}

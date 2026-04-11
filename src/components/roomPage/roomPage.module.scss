@@ -24,6 +24,64 @@
     padding-bottom: 15px;
   }
 
+  &__nameContainer {
+    margin-bottom: 3px;
+
+    button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 6px;
+      display: flex;
+      align-items: center;
+      border-radius: 5px;
+      transition: background-color 0.2s;
+
+      &:hover {
+        background-color: color.adjust($sage-gray, $lightness: 10%);
+      }
+    }
+
+    .icon_save, .icon_cancel, .edit_icon {
+      color: color.adjust($metal-gray, $lightness: -10%);
+    }
+  }
+
+  &__nameView {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  &__nameEditWrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__nameInput {
+    font-family: $font-main;
+    font-size: 24px;
+    font-weight: 700;
+    background: $beige-light;
+    border: 2px solid $forest-mid;
+    border-radius: 10px;
+    padding: 7px 10px;
+    color: $forest-dark;
+    width: 100%;
+    outline: none;
+
+    &:focus {
+      box-shadow: 0 0 0 3px rgba($forest-mid, 0.2);
+      border-color: $forest-dark;
+    }
+  }
+
+  &__nameActions {
+    display: flex;
+    gap: 4px;
+  }
+
   &__roomName {
     font-size: 24px;
     color: $forest-dark;
@@ -173,7 +231,6 @@
     &_occupied {
       background-color: $beige-light;
       border: 2px solid $forest-dark;
-      border-style: solid;
     }
   }
 

@@ -37,6 +37,7 @@ export interface GetRoomByInviteCodeResponse {
 }
 
 export interface UpdateRoomSettingsPayload {
+  name: string;
   roomId: string;
   gameType: string;
   maxPlayers: number;
