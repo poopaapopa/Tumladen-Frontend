@@ -3,9 +3,13 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Users, Clock, Star, Crown, LogOut, Share2, CheckCircle } from 'lucide-react';
 import styles from './roomPage.module.scss';
 import castleImg from '../../assets/zamok.png';
-import { roomService, type RoomResponse } from '../../api/room.ts'
+import {
+  roomService,
+  type RoomResponse,
+  type UpdateRoomSettingsPayload
+} from '../../api/room.ts'
 import { useUserStore } from '../../store/useUserStore';
-import { useRoomSocket } from '../../api/ws.ts'; 
+import { useRoomSocket } from '../../api/ws.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EditableSelector } from '../editableSelector/editableSelector.tsx';
 
@@ -48,11 +52,16 @@ const RoomPage = () => {
   const [showCopyToast, setShowCopyToast] = useState(false);
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const currentSettings = (room?.settings as Record<string, number | string | boolean>) || {};
 
-  const maxPlayersOptions = Array.from({ length: 5 }, (_, i) => ({
-    value: i + 2,
-    label: `${i + 2}`,
-  }));
+  const maxPlayersOptions = Array.from({ length: 5 }, (_, i) => {
+    const val = i + 2;
+    return {
+      value: val,
+      label: `${val}`,
+      disabled: room ? val < room.playersCount : false
+    };
+  });
 
   const timerOptions = [
     { value: 60, label: '60 с.' },
@@ -60,20 +69,6 @@ const RoomPage = () => {
     { value: 120, label: '120 с.' },
     { value: 180, label: '180 с.' },
   ];
-
-  const handleSaveSetting = async (setting: 'maxPlayers' | 'timer', newValue: string | number) => {
-    if (!room?.id || !isOwner) return;
-
-    try {
-      setRoom(prevRoom => {
-        if (!prevRoom) return null;
-        return { ...prevRoom, [setting]: newValue };
-      });
-    } catch (e) {
-      console.error(`Ошибка при обновлении ${setting}:`, e);
-      alert('Не удалось обновить настройку');
-    }
-  };
 
   const triggerToast = useCallback(() => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -123,7 +118,26 @@ const RoomPage = () => {
     setRoom(updatedRoom);
   }, [checkAvailableSlots, navigate]);
 
-  useRoomSocket(room?.id, handleRoomUpdate);
+  const { sendMessage } = useRoomSocket(room?.id, handleRoomUpdate);
+
+  const handleSaveSetting = (key: string, newValue: number | string | boolean) => {
+    if (!room || !isOwner) return;
+
+    const currentSettings = (room.settings as unknown as Record<string, number | string | boolean>) || {};
+
+    const isMaxPlayers = key === 'maxPlayers';
+    const currentValue = isMaxPlayers ? room.maxPlayers : currentSettings[key];
+    if (currentValue === newValue) return;
+
+    const payload: UpdateRoomSettingsPayload = {
+      roomId: room.id,
+      gameType: room.gameType,
+      maxPlayers: isMaxPlayers ? Number(newValue) : room.maxPlayers,
+      settings: isMaxPlayers ? currentSettings : { ...currentSettings, [key]: newValue }
+    };
+
+    sendMessage('update_room_settings', payload as unknown as Record<string, unknown>);
+  };
 
   useEffect(() => {
     fetchRoomData();
@@ -151,12 +165,12 @@ const RoomPage = () => {
             onSelect={(val) => handleSaveSetting('maxPlayers', val)}
           />
           <EditableSelector
-            value={120}
+            value={currentSettings['turnTimeSeconds']}
             icon={Clock}
             options={timerOptions}
             isOwner={isOwner}
             suffix="с."
-            onSelect={(val) => handleSaveSetting('timer', val)}
+            onSelect={(val) => handleSaveSetting('turnTimeSeconds', val)}
           />
         </div>
 

@@ -7,10 +7,11 @@ import clsx from 'clsx';
 interface Option {
   value: number | string;
   label: string;
+  disabled?: boolean;
 }
 
 interface Props {
-  value: number | string;
+  value: number | string | boolean;
   icon: LucideIcon;
   options: Option[];
   onSelect: (val: string | number) => void;
@@ -32,8 +33,11 @@ export const EditableSelector = ({ value, icon: Icon, options, onSelect, isOwner
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handlePick = (val: number | string) => {
-    onSelect(val);
+  const handlePick = (opt: Option) => {
+    if (opt.disabled)
+      return;
+
+    onSelect(opt.value);
     setIsOpen(false);
   };
 
@@ -65,8 +69,12 @@ export const EditableSelector = ({ value, icon: Icon, options, onSelect, isOwner
             {options.map((opt) => (
               <div
                 key={opt.value}
-                className={clsx(styles.option, opt.value === value && styles.option_active)}
-                onClick={() => handlePick(opt.value)}
+                className={clsx(
+                  styles.option,
+                  opt.value === value && styles.option_active,
+                  opt.disabled && styles.option_disabled
+                )}
+                onClick={() => handlePick(opt)}
               >
                 <Icon size={20} />
                 {opt.label}

@@ -7,7 +7,12 @@ interface ParticipantResponse {
   joinedAt: string;
 }
 
+export interface Settings {
+  [key: string]: string | number;
+}
+
 export interface RoomResponse {
+  settings: Settings;
   id: string;
   name: string;
   isPrivate: boolean;
@@ -29,6 +34,13 @@ export interface ListPublicRoomsResponse {
 
 export interface GetRoomByInviteCodeResponse {
   room: RoomResponse;
+}
+
+export interface UpdateRoomSettingsPayload {
+  roomId: string;
+  gameType: string;
+  maxPlayers: number;
+  settings: Record<string, number | string | boolean>;
 }
 
 export const roomService = {
