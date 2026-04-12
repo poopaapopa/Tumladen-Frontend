@@ -25,7 +25,7 @@
   }
 
   &__nameContainer {
-    margin-bottom: 3px;
+    margin-bottom: 2px;
 
     button {
       background: none;
@@ -34,7 +34,7 @@
       padding: 6px;
       display: flex;
       align-items: center;
-      border-radius: 5px;
+      border-radius: 10px;
       transition: background-color 0.2s;
 
       &:hover {
@@ -42,14 +42,23 @@
       }
     }
 
-    .icon_save, .icon_cancel, .edit_icon {
+    .edit_icon {
       color: color.adjust($metal-gray, $lightness: -10%);
+    }
+
+    .icon_save {
+      color: $accept;
+    }
+
+    .icon_cancel {
+      color: $decline;
     }
   }
 
   &__nameView {
     display: flex;
     align-items: center;
+    padding: 4px 0;
     gap: 12px;
   }
 
@@ -83,7 +92,7 @@
   }
 
   &__roomName {
-    font-size: 24px;
+    font-size: 32px;
     color: $forest-dark;
     margin: 0;
   }
@@ -123,8 +132,8 @@
     color: $beige-light;
     border: none;
     border-radius: 12px;
-    padding: 20px;
-    font-size: 28px;
+    padding: 30px;
+    font-size: 32px;
     font-family: $font-main;
     font-weight: 800;
     cursor: pointer;
@@ -132,7 +141,6 @@
 
     &:hover:not(:disabled) {
       background-color: $forest-dark;
-      transform: translateY(-2px);
     }
 
     &:disabled {
@@ -207,8 +215,8 @@
 
   &__playersTitle {
     color: $forest-dark;
-    font-size: 22px;
-    margin-bottom: 20px;
+    font-size: 24px;
+    margin-bottom: 18px;
   }
 
   &__playerList {
@@ -227,6 +235,7 @@
     justify-content: space-between;
     transition: all 0.3s ease;
     min-height: 56px;
+    position: relative;
 
     &_occupied {
       background-color: $beige-light;
@@ -252,8 +261,52 @@
     color: $forest-dark;
   }
 
+  &__blayerBadge {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .icon_crown { color: #d4af37; filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.5)); }
-  .icon_star { color: $metal-gray; }
+  .icon_star, .kick_icon { color: $metal-gray; }
+
+  &__btnKick {
+    position: absolute;
+    top: 50%;
+    right: -2px;
+    transform: translate(-50%, -50%);
+
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: $decline;
+    padding: 6px;
+    border-radius: 10px;
+
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: color.adjust($sage-gray, $lightness: 10%);
+    }
+  }
+
+  &__playerSlot_kickable:hover {
+    box-shadow: 0 0 0 3px rgba($forest-mid, 0.2);
+    border-color: $forest-dark;
+
+    .icon_star {
+      opacity: 0;
+      visibility: hidden;
+    }
+
+    .roomPage__btnKick {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
 
   &__actions {
     margin-top: auto;
@@ -271,7 +324,7 @@
     border-radius: 10px;
     padding: 14px;
     font-size: 18px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     transition: 0.2s;
   }
@@ -314,9 +367,10 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
   z-index: 2000;
   border: 1px solid rgba($beige-light, 0.1);
-  pointer-events: none; 
+  pointer-events: none;
+
   &__icon {
-    color: #4ade80;
+    color: $accept;
   }
 
   span {

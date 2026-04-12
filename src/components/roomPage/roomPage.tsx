@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Users, Clock, Star, Crown, LogOut, Share2, CheckCircle } from 'lucide-react';
+import {Users, Clock, Star, Crown, LogOut, Share2, CheckCircle, UserRoundX} from 'lucide-react';
 import styles from './roomPage.module.scss';
 import castleImg from '../../assets/zamok.png';
 import {
@@ -13,6 +13,7 @@ import { useRoomSocket } from '../../api/ws.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EditableSelector } from '../editableSelector/editableSelector.tsx';
 import { Pencil, Check, X } from 'lucide-react';
+import clsx from "clsx";
 
 const copyToClipboard = async (text: string) => {
   if (navigator.clipboard && window.isSecureContext) {
@@ -132,8 +133,18 @@ const RoomPage = () => {
       return;
     }
 
+    const isStillInRoom = updatedRoom.participants?.some(
+      p => p.actorId === currentUser?.id
+    );
+
+    if (currentUser && !isStillInRoom) {
+      alert("Вы были изгнаны из комнаты владельцем.");
+      navigate('/');
+      return;
+    }
+
     setRoom(updatedRoom);
-  }, [checkAvailableSlots, navigate]);
+  }, [checkAvailableSlots, navigate, currentUser]);
 
   const { sendMessage } = useRoomSocket(room?.id, handleRoomUpdate);
 
@@ -166,6 +177,19 @@ const RoomPage = () => {
     sendMessage('update_room_settings', payload as unknown as Record<string, unknown>);
   };
 
+  const handleKickClick = (targetId: string, targetName: string) => {
+    if (!room) return;
+
+    const confirmed = window.confirm(`Вы действительно хотите изгнать игрока ${targetName}?`);
+
+    if (confirmed) {
+      sendMessage('kick_participant', {
+        roomId: room.id,
+        targetActorId: targetId
+      });
+    }
+  };
+
   useEffect(() => {
     fetchRoomData();
   }, [fetchRoomData]);
@@ -193,16 +217,16 @@ const RoomPage = () => {
                   }}
                 />
                 <div className={styles.roomPage__nameActions}>
-                  <button onClick={handleUpdateName} className={styles.icon_save}><Check size={20} /></button>
-                  <button onClick={() => setIsEditingName(false)} className={styles.icon_cancel}><X size={20} /></button>
+                  <button onClick={handleUpdateName} className={styles.iconsButton}><Check className={styles.icon_save} size={20} /></button>
+                  <button onClick={() => setIsEditingName(false)} className={styles.iconsButton}><X className={styles.icon_cancel} size={20} /></button>
                 </div>
               </div>
             ) : (
               <div className={styles.roomPage__nameView}>
                 <h2 className={styles.roomPage__roomName}>{room.name}</h2>
                 {isOwner && (
-                  <button onClick={() => setIsEditingName(true)} className={styles.edit_icon}>
-                    <Pencil size={20} />
+                  <button onClick={() => setIsEditingName(true)} className={styles.iconsButton}>
+                    <Pencil className={styles.edit_icon} size={20} />
                   </button>
                 )}
               </div>
@@ -253,19 +277,24 @@ const RoomPage = () => {
       </main>
 
       <section className={styles.roomPage__players}>
-        <h3 className={styles.roomPage__playersTitle}>
+        <h2 className={styles.roomPage__playersTitle}>
           Участники:
-        </h3>
+        </h2>
 
         <div className={styles.roomPage__playerList}>
           {Array.from({ length: room.maxPlayers }).map((_, idx) => {
             const participant = room.participants?.[idx];
             const isThisParticipantOwner = participant?.actorId === room.ownerActorId;
+            const showKickButton = isOwner && participant && participant.actorId !== currentUser?.id;
 
             return (
               <div
                 key={idx}
-                className={`${styles.roomPage__playerSlot} ${participant ? styles.roomPage__playerSlot_occupied : ''}`}
+                className={clsx(
+                  styles.roomPage__playerSlot,
+                  participant && styles.roomPage__playerSlot_occupied,
+                  showKickButton && styles.roomPage__playerSlot_kickable
+                )}
               >
                 <div className={styles.roomPage__playerInfo}>
                   <span className={styles.roomPage__slotNum}>{idx + 1}</span>
@@ -279,7 +308,18 @@ const RoomPage = () => {
                     {isThisParticipantOwner ? (
                       <Crown size={20} className={styles.icon_crown} />
                     ) : (
-                      <Star size={20} className={styles.icon_star} />
+                      <>
+                        <Star size={20} className={styles.icon_star} />
+                        {showKickButton && (
+                          <button
+                            className={styles.roomPage__btnKick}
+                            onClick={() => handleKickClick(participant.actorId, participant.displayName)}
+                            title="Выгнать игрока"
+                          >
+                            <UserRoundX size={20} />
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
@@ -291,13 +331,13 @@ const RoomPage = () => {
         <div className={styles.roomPage__actions}>
           <button className={styles.roomPage__btnInvite}
             onClick={(handleCopyLink)}>
-            <Share2 size={18} /> Пригласить
+            <Share2 size={20} /> Пригласить
           </button>
           <button
             className={styles.roomPage__btnExit}
             onClick={() => navigate('/')}
           >
-            <LogOut size={18} /> Покинуть
+            <LogOut size={20} /> Покинуть
           </button>
         </div>
       </section>
