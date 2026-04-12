@@ -8,13 +8,12 @@ interface PlayerSlotProps {
   participant?: ParticipantResponse;
   room: RoomResponse;
   isOwner: boolean;
-  currentUserId?: string;
   onKick: (targetId: string, targetName: string) => void;
 }
 
-export const PlayerSlot = ({ idx, participant, room, isOwner, currentUserId, onKick }: PlayerSlotProps) => {
+export const PlayerSlot = ({ idx, participant, room, isOwner, onKick }: PlayerSlotProps) => {
   const isThisParticipantOwner = participant?.actorId === room.ownerActorId;
-  const showKickButton = isOwner && participant && participant.actorId !== currentUserId;
+  const showKickButton = isOwner && !isThisParticipantOwner;
 
   return (
     <div

@@ -12,6 +12,8 @@ import { useRoomSocket } from '../../api/ws.ts';
 import { PlayerSlot } from "../playerSlot/playerSlot.tsx";
 import { RoomSidebar } from "../roomSidebar/roomSidebar.tsx";
 import { RoomPageSkeleton } from "./roomPageSkeleton.tsx";
+import Modal from "../modal/modal.tsx";
+import { ConfirmKick } from "../confirmKick/confirmKick.tsx";
 
 const copyToClipboard = async (text: string) => {
   if (navigator.clipboard && window.isSecureContext) {
@@ -50,6 +52,7 @@ const RoomPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCopyToast, setShowCopyToast] = useState(false);
+  const [kickTarget, setKickTarget] = useState<{id: string, name: string} | null>(null);
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -133,15 +136,16 @@ const RoomPage = () => {
   };
 
   const handleKick = (targetId: string, targetName: string) => {
-    if (!room) return;
+    setKickTarget({ id: targetId, name: targetName });
+  };
 
-    const confirmed = window.confirm(`Вы действительно хотите изгнать игрока ${targetName}?`);
-
-    if (confirmed) {
+  const confirmKick = () => {
+    if (kickTarget && room) {
       sendMessage('kick_participant', {
         roomId: room.id,
-        targetActorId: targetId
+        targetActorId: kickTarget.id
       });
+      setKickTarget(null);
     }
   };
 
@@ -184,7 +188,6 @@ const RoomPage = () => {
               participant={room.participants?.[idx]}
               room={room}
               isOwner={isOwner}
-              currentUserId={currentUser?.id}
               onKick={handleKick}
             />
           ))}
@@ -216,6 +219,15 @@ const RoomPage = () => {
           </motion.div>
         )}
       </AnimatePresence>
+      <Modal isOpen={kickTarget !== null} onClose={() => setKickTarget(null)}>
+        {kickTarget && (
+          <ConfirmKick
+            targetName={kickTarget.name}
+            onConfirm={confirmKick}
+            onCancel={() => setKickTarget(null)}
+          />
+        )}
+      </Modal>
     </div>
   );
 };

@@ -12,12 +12,17 @@
   min-height: 56px;
   position: relative;
 
+  &:hover {
+    box-shadow: 0 0 0 3px rgba($forest-mid, 0.2);
+    border-color: $forest-dark;
+  }
+
   &_occupied {
     background-color: $beige-light;
     border: 2px solid $forest-dark;
   }
 
-    &__playerInfo {
+  &__playerInfo {
     display: flex;
     align-items: center;
     gap: 15px;
@@ -44,6 +49,7 @@
 
   .icon_crown { color: #d4af37; filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.5)); }
   .icon_star, .kick_icon { color: $metal-gray; }
+  .icon_star { transition: opacity 0.3s ease }
 
   &__btnKick {
     position: absolute;
@@ -60,23 +66,20 @@
 
     opacity: 0;
     visibility: hidden;
-    transition: all 0.2s ease;
+    transition: opacity 0.3s ease;
 
     &:hover {
       background-color: color.adjust($sage-gray, $lightness: 10%);
     }
   }
 
-  &__playerSlot_kickable:hover {
-    box-shadow: 0 0 0 3px rgba($forest-mid, 0.2);
-    border-color: $forest-dark;
-
+  &_kickable:hover {
     .icon_star {
       opacity: 0;
       visibility: hidden;
     }
 
-    .roomPage__btnKick {
+    .playerSlot__btnKick {
       opacity: 1;
       visibility: visible;
     }
