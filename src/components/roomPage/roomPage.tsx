@@ -10,7 +10,8 @@ import { useUserStore } from '../../store/useUserStore';
 import { useRoomSocket } from '../../api/ws.ts';
 
 import { PlayerSlot } from "../playerSlot/playerSlot.tsx";
-import {RoomSidebar} from "../roomSidebar/roomSidebar.tsx";
+import { RoomSidebar } from "../roomSidebar/roomSidebar.tsx";
+import { RoomPageSkeleton } from "./roomPageSkeleton.tsx";
 
 const copyToClipboard = async (text: string) => {
   if (navigator.clipboard && window.isSecureContext) {
@@ -148,7 +149,7 @@ const RoomPage = () => {
     fetchRoomData();
   }, [fetchRoomData]);
 
-  if (isLoading) return <div className={styles.loading}>Загрузка...</div>;
+  if (isLoading) return <RoomPageSkeleton />;
   if (error || !room) return <div className={styles.error}>{error || "Комната исчезла"}</div>;
 
   const isOwner = currentUser?.id === room.ownerActorId;
