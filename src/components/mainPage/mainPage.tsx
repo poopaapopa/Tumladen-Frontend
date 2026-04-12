@@ -53,7 +53,7 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
     }
 
     try {
-       const newRoom = await roomService.createRoom(`Комната ${actor?.displayName}`);
+       const newRoom = await roomService.createRoom(`Комната «${actor?.displayName}»`);
        console.log(newRoom);
        setIsSelecting(false);
        navigate(`/room/${newRoom.inviteCode}`);

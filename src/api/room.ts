@@ -1,7 +1,7 @@
 import { API_BASE_URL } from './config.ts';
 import { useUserStore } from '../store/useUserStore';
 
-interface ParticipantResponse {
+export interface ParticipantResponse {
   actorId: string;
   displayName: string;
   joinedAt: string;

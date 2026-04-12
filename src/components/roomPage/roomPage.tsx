@@ -1,19 +1,16 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {Users, Clock, Star, Crown, LogOut, Share2, CheckCircle, UserRoundX} from 'lucide-react';
+import { LogOut, Share2, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
 import styles from './roomPage.module.scss';
 import castleImg from '../../assets/zamok.png';
-import {
-  roomService,
-  type RoomResponse,
-  type UpdateRoomSettingsPayload
-} from '../../api/room.ts'
+import { roomService, type RoomResponse, type UpdateRoomSettingsPayload } from '../../api/room.ts'
 import { useUserStore } from '../../store/useUserStore';
 import { useRoomSocket } from '../../api/ws.ts';
-import { motion, AnimatePresence } from 'framer-motion';
-import { EditableSelector } from '../editableSelector/editableSelector.tsx';
-import { Pencil, Check, X } from 'lucide-react';
-import clsx from "clsx";
+
+import { PlayerSlot } from "../playerSlot/playerSlot.tsx";
+import {RoomSidebar} from "../roomSidebar/roomSidebar.tsx";
 
 const copyToClipboard = async (text: string) => {
   if (navigator.clipboard && window.isSecureContext) {
@@ -53,40 +50,7 @@ const RoomPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [showCopyToast, setShowCopyToast] = useState(false);
 
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [tempName, setTempName] = useState(room?.name || '');
-
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const currentSettings = (room?.settings as Record<string, number | string | boolean>) || {};
-
-  const maxPlayersOptions = Array.from({ length: 5 }, (_, i) => {
-    const val = i + 2;
-    return {
-      value: val,
-      label: `${val}`,
-      disabled: room ? val < room.playersCount : false
-    };
-  });
-
-  const timerOptions = [
-    { value: 60, label: '60 с.' },
-    { value: 90, label: '90 с.' },
-    { value: 120, label: '120 с.' },
-    { value: 180, label: '180 с.' },
-  ];
-
-  useEffect(() => {
-    if (room?.name) setTempName(room.name);
-  }, [room?.name]);
-
-  const handleUpdateName = () => {
-    const trimmed = tempName.trim();
-
-    if (trimmed && trimmed !== room?.name)
-      handleSaveSetting('name', trimmed);
-
-    setIsEditingName(false);
-  };
 
   const triggerToast = useCallback(() => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
@@ -133,18 +97,8 @@ const RoomPage = () => {
       return;
     }
 
-    const isStillInRoom = updatedRoom.participants?.some(
-      p => p.actorId === currentUser?.id
-    );
-
-    if (currentUser && !isStillInRoom) {
-      alert("Вы были изгнаны из комнаты владельцем.");
-      navigate('/');
-      return;
-    }
-
     setRoom(updatedRoom);
-  }, [checkAvailableSlots, navigate, currentUser]);
+  }, [checkAvailableSlots, navigate]);
 
   const { sendMessage } = useRoomSocket(room?.id, handleRoomUpdate);
 
@@ -170,14 +124,14 @@ const RoomPage = () => {
       name: key === 'name' ? String(newValue) : room.name,
       maxPlayers: key === 'maxPlayers' ? Number(newValue) : room.maxPlayers,
       settings: (key !== 'name' && key !== 'maxPlayers')
-        ? currentSettings
-        : { ...currentSettings, [key]: newValue }
+        ? { ...currentSettings, [key]: newValue }
+        : currentSettings
     };
 
     sendMessage('update_room_settings', payload as unknown as Record<string, unknown>);
   };
 
-  const handleKickClick = (targetId: string, targetName: string) => {
+  const handleKick = (targetId: string, targetName: string) => {
     if (!room) return;
 
     const confirmed = window.confirm(`Вы действительно хотите изгнать игрока ${targetName}?`);
@@ -201,71 +155,11 @@ const RoomPage = () => {
 
   return (
     <div className={styles.roomPage}>
-      <aside className={styles.roomPage__sidebar}>
-        <div className={styles.roomPage__header}>
-          <div className={styles.roomPage__nameContainer}>
-            {isEditingName ? (
-              <div className={styles.roomPage__nameEditWrapper}>
-                <input
-                  className={styles.roomPage__nameInput}
-                  value={tempName}
-                  onChange={(e) => setTempName(e.target.value)}
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleUpdateName();
-                    if (e.key === 'Escape') setIsEditingName(false);
-                  }}
-                />
-                <div className={styles.roomPage__nameActions}>
-                  <button onClick={handleUpdateName} className={styles.iconsButton}><Check className={styles.icon_save} size={20} /></button>
-                  <button onClick={() => setIsEditingName(false)} className={styles.iconsButton}><X className={styles.icon_cancel} size={20} /></button>
-                </div>
-              </div>
-            ) : (
-              <div className={styles.roomPage__nameView}>
-                <h2 className={styles.roomPage__roomName}>{room.name}</h2>
-                {isOwner && (
-                  <button onClick={() => setIsEditingName(true)} className={styles.iconsButton}>
-                    <Pencil className={styles.edit_icon} size={20} />
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-          <span className={styles.roomPage__status}>{room.status}</span>
-        </div>
-
-        <div className={styles.roomPage__configGrid}>
-          <EditableSelector
-            value={room.maxPlayers}
-            icon={Users}
-            options={maxPlayersOptions}
-            isOwner={isOwner}
-            onSelect={(val) => handleSaveSetting('maxPlayers', val)}
-          />
-          <EditableSelector
-            value={currentSettings['turnTimeSeconds']}
-            icon={Clock}
-            options={timerOptions}
-            isOwner={isOwner}
-            suffix="с."
-            onSelect={(val) => handleSaveSetting('turnTimeSeconds', val)}
-          />
-        </div>
-
-        {isOwner ? (
-          <button
-            className={styles.roomPage__btnStart}
-            disabled={!room.canStart}
-          >
-            Начать игру
-          </button>
-        ) : (
-          <div className={styles.roomPage__waitMessage}>
-            Ожидаем решения организатора...
-          </div>
-        )}
-      </aside>
+      <RoomSidebar
+        room={room}
+        isOwner={isOwner}
+        onSaveSetting={handleSaveSetting}
+      />
 
       <main className={styles.roomPage__main}>
         <div className={styles.roomPage__visual}>
@@ -282,50 +176,17 @@ const RoomPage = () => {
         </h2>
 
         <div className={styles.roomPage__playerList}>
-          {Array.from({ length: room.maxPlayers }).map((_, idx) => {
-            const participant = room.participants?.[idx];
-            const isThisParticipantOwner = participant?.actorId === room.ownerActorId;
-            const showKickButton = isOwner && participant && participant.actorId !== currentUser?.id;
-
-            return (
-              <div
-                key={idx}
-                className={clsx(
-                  styles.roomPage__playerSlot,
-                  participant && styles.roomPage__playerSlot_occupied,
-                  showKickButton && styles.roomPage__playerSlot_kickable
-                )}
-              >
-                <div className={styles.roomPage__playerInfo}>
-                  <span className={styles.roomPage__slotNum}>{idx + 1}</span>
-                  <span className={styles.roomPage__playerName}>
-                    {participant?.displayName || "Ожидание..."}
-                  </span>
-                </div>
-
-                {participant && (
-                  <div className={styles.roomPage__playerBadge}>
-                    {isThisParticipantOwner ? (
-                      <Crown size={20} className={styles.icon_crown} />
-                    ) : (
-                      <>
-                        <Star size={20} className={styles.icon_star} />
-                        {showKickButton && (
-                          <button
-                            className={styles.roomPage__btnKick}
-                            onClick={() => handleKickClick(participant.actorId, participant.displayName)}
-                            title="Выгнать игрока"
-                          >
-                            <UserRoundX size={20} />
-                          </button>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {Array.from({ length: room.maxPlayers }).map((_, idx) => (
+            <PlayerSlot
+              key={idx}
+              idx={idx}
+              participant={room.participants?.[idx]}
+              room={room}
+              isOwner={isOwner}
+              currentUserId={currentUser?.id}
+              onKick={handleKick}
+            />
+          ))}
         </div>
 
         <div className={styles.roomPage__actions}>
@@ -349,7 +210,7 @@ const RoomPage = () => {
             animate={{ opacity: 1, y: 0, x: '-50%' }}
             exit={{ opacity: 0, y: 20, x: '-50%' }}
           >
-            <CheckCircle size={20} className={styles.copyToast__icon} />
+            <Check size={20} className={styles.copyToast__icon} />
             <span>Ссылка успешно скопирована</span>
           </motion.div>
         )}
