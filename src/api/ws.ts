@@ -4,11 +4,11 @@ import { WS_BASE_URL } from '../api/config';
 import type { RoomResponse } from '../api/room';
 
 interface WebSocketMessage {
-  type: 'room_state';
+  type: 'room_state' | 'match_state' | 'error';
   payload: RoomResponse;
 }
 
-export const useRoomSocket = (roomId: string | undefined, onMessage: (data: RoomResponse) => void) => {
+export const useRoomSocket = (roomId: string | undefined, onMessage: (type: string, payload: any) => void) => {
   const socket = useRef<WebSocket | null>(null);
   const token = useUserStore((state) => state.token);
 
@@ -32,10 +32,7 @@ export const useRoomSocket = (roomId: string | undefined, onMessage: (data: Room
     ws.onmessage = (event) => {
       try {
         const data: WebSocketMessage = JSON.parse(event.data);
-        
-        if (data.type === 'room_state') {
-          onMessage(data.payload);
-        }
+        onMessage(data.type, data.payload);
       } catch (err) {
         console.error('WS parsing error:', err);
       }

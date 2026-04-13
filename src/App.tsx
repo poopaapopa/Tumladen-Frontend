@@ -7,6 +7,7 @@ import RoomPage from "./components/roomPage/roomPage.tsx";
 import { useState, useEffect } from "react";
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useUserStore } from './store/useUserStore';
+import GameRoom from "./components/gameRoom/gameRoom.tsx";
 
 function App() {
   const [isSelecting, setIsSelecting] = useState(false);
@@ -53,6 +54,7 @@ function App() {
               />
             } />
             <Route path="/room/:id" element={<RoomPage />} />
+            <Route path="/room/game/:id" element={<GameRoom />} />
           </Routes>
 
         <Modal isOpen={activeModal} onClose={handleCancelAuth}>

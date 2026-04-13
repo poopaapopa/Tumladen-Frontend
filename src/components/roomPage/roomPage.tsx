@@ -98,15 +98,33 @@ const RoomPage = () => {
     }
   };
 
-  const handleRoomUpdate = useCallback((data: any) => {  
-    const updatedRoom = data.payload || data.room || data;
-
-    const isFull = checkAvailableSlots(updatedRoom);
-    if (!isFull) {
-      setRoom(updatedRoom);
+  const handleRoomUpdate = useCallback((type: string, payload: any) => {  
+    if (type === 'room_state') {
+      // Извлекаем объект комнаты (учитывая возможную вложенность)
+      const updatedRoom = payload.room || payload;
+      
+      const isFull = checkAvailableSlots(updatedRoom);
+      if (!isFull) {
+        setRoom(updatedRoom);
+      }
     }
   }, [currentUser, navigate]);
-  useRoomSocket(room?.id, handleRoomUpdate);
+
+  const { sendMessage } = useRoomSocket(room?.id, handleRoomUpdate);
+
+  const handleStartGame = () => {
+    if (room?.id) {
+      sendMessage('start_room', {
+        roomId: room.id
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (room?.status === 'playing') {
+      navigate(`/room/game/${id}`);
+    }
+  }, [room?.status, navigate, id]);
 
   useEffect(() => {
     fetchRoomData();
@@ -141,6 +159,7 @@ const RoomPage = () => {
           <button
             className={styles.roomPage__btnStart}
             disabled={!room.canStart}
+            onClick={handleStartGame}
           >
             Начать игру
           </button>
