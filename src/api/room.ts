@@ -1,13 +1,18 @@
 import { API_BASE_URL } from './config.ts';
 import { useUserStore } from '../store/useUserStore';
 
-interface ParticipantResponse {
+export interface ParticipantResponse {
   actorId: string;
   displayName: string;
   joinedAt: string;
 }
 
+export interface Settings {
+  [key: string]: string | number;
+}
+
 export interface RoomResponse {
+  settings: Settings;
   id: string;
   name: string;
   isPrivate: boolean;
@@ -29,6 +34,14 @@ export interface ListPublicRoomsResponse {
 
 export interface GetRoomByInviteCodeResponse {
   room: RoomResponse;
+}
+
+export interface UpdateRoomSettingsPayload {
+  name: string;
+  roomId: string;
+  gameType: string;
+  maxPlayers: number;
+  settings: Record<string, number | string | boolean>;
 }
 
 export const roomService = {

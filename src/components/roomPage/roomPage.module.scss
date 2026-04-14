@@ -6,92 +6,6 @@
   background-color: $beige-light;
   font-family: $font-main;
 
-  &__sidebar {
-    flex: 1;
-    background-color: $sage-gray;
-    border-top-right-radius: 20px;
-    border-bottom-right-radius: 20px;
-    padding: 30px;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
-    z-index: 5;
-  }
-
-  &__header {
-    margin-bottom: 25px;
-    border-bottom: 1px solid rgba($forest-dark, 0.1);
-    padding-bottom: 15px;
-  }
-
-  &__roomName {
-    font-size: 24px;
-    color: $forest-dark;
-    margin: 0;
-  }
-
-  &__status {
-    font-size: 14px;
-    color: $forest-mid;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 700;
-  }
-
-  &__configGrid {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-bottom: 20px;
-  }
-
-  &__configBox {
-    background: $beige-light;
-    border: 2px solid $forest-dark;
-    border-radius: 12px;
-    padding: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    font-size: 20px;
-    font-weight: 600;
-    color: $forest-dark;
-  }
-
-  &__btnStart {
-    margin-top: auto;
-    background-color: $forest-mid;
-    color: $beige-light;
-    border: none;
-    border-radius: 12px;
-    padding: 20px;
-    font-size: 28px;
-    font-family: $font-main;
-    font-weight: 800;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover:not(:disabled) {
-      background-color: $forest-dark;
-      transform: translateY(-2px);
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-      filter: grayscale(1);
-    }
-  }
-
-  &__waitMessage {
-    margin-top: auto;
-    text-align: center;
-    color: $forest-mid;
-    font-style: italic;
-    font-size: 16px;
-  }
-
   &__main {
     flex: 1.5;
     display: flex;
@@ -135,7 +49,6 @@
     margin-top: 5px;
   }
 
-  // ПРАВАЯ ПАНЕЛЬ
   &__players {
     flex: 1;
     background-color: $sage-gray;
@@ -150,8 +63,8 @@
 
   &__playersTitle {
     color: $forest-dark;
-    font-size: 22px;
-    margin-bottom: 20px;
+    font-size: 24px;
+    margin-bottom: 18px;
   }
 
   &__playerList {
@@ -159,45 +72,6 @@
     flex-direction: column;
     gap: 12px;
   }
-
-  &__playerSlot {
-    background-color: rgba($beige-light, 0.5);
-    border: 2px dashed $metal-gray;
-    border-radius: 50px;
-    padding: 10px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    transition: all 0.3s ease;
-    min-height: 56px;
-
-    &_occupied {
-      background-color: $beige-light;
-      border: 2px solid $forest-dark;
-      border-style: solid;
-    }
-  }
-
-  &__playerInfo {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-  }
-
-  &__slotNum {
-    font-weight: 800;
-    color: $forest-mid;
-    width: 20px;
-  }
-
-  &__playerName {
-    font-size: 18px;
-    font-weight: 600;
-    color: $forest-dark;
-  }
-
-  .icon_crown { color: #d4af37; filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.5)); }
-  .icon_star { color: $metal-gray; }
 
   &__actions {
     margin-top: auto;
@@ -215,7 +89,7 @@
     border-radius: 10px;
     padding: 14px;
     font-size: 18px;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     transition: 0.2s;
   }
@@ -258,14 +132,67 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
   z-index: 2000;
   border: 1px solid rgba($beige-light, 0.1);
-  pointer-events: none; 
+  pointer-events: none;
+
   &__icon {
-    color: #4ade80;
+    color: $accept;
   }
 
   span {
     font-size: 16px;
     font-weight: 500;
     letter-spacing: 0.5px;
+  }
+}
+
+.kickedModal {
+  background-color: $beige-light;
+  border: 6px solid $forest-mid;
+  border-radius: 20px;
+  padding: 30px 40px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+
+  &__image {
+    width: 260px;
+    height: auto;
+    opacity: 0.5;
+    filter: grayscale(100%);
+    margin-bottom: 15px;
+  }
+
+  &__title {
+    font-size: 28px;
+    font-weight: 600;
+    color: $forest-dark;
+    margin-bottom: 15px;
+  }
+
+  &__text {
+    font-size: 16px;
+    color: $forest-dark;
+    line-height: 1.5;
+    margin-bottom: 20px;
+  }
+
+  &__layout {
+    display: flex;
+    justify-content: right;
+  }
+
+  &__btn {
+    all: unset;
+    cursor: pointer;
+    padding: 14px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 20px;
+    transition: background-color 0.3s;
+    background-color: $forest-mid;
+    color: $beige-light;
+
+    &:hover {
+      background-color: color.adjust($forest-mid, $lightness: -5%);
+    }
   }
 }
