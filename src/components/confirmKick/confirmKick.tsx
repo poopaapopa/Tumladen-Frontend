@@ -1,4 +1,4 @@
-import styles from './ConfirmKick.module.scss';
+import styles from './confirmKick.module.scss';
 import elfExileImg from "../../assets/elf-exile.png";
 
 interface Props {
