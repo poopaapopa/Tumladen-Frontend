@@ -15,7 +15,7 @@ export const ConfirmKick = ({ targetName, onConfirm, onCancel }: Props) => {
       <img src={elfExileImg} alt="Эльф изгнанник" className={styles.confirmKick__exiledElfImg} />
 
       <p className={styles.confirmKick__text}>
-        Вы действительно желаете выгнать игрока <strong>{targetName}</strong>?
+        Вы действительно желаете выгнать игрока <strong>{targetName}</strong>?<br />
         Он сможет вернуться в комнату в любой момент, но ваше действие явно отразится на его желании играть с вами
       </p>
 

@@ -109,7 +109,7 @@ export const RoomSidebar = ({ room, isOwner, onSaveSetting }: RoomSidebarProps) 
         </button>
       ) : (
         <div className={styles.roomSidebar__waitMessage}>
-          Ожидаем решения организатора...
+          Организатор шепчется с ветром о стратегии грядущей партии
         </div>
       )}
     </aside>

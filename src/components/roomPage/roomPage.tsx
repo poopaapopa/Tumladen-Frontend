@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import styles from './roomPage.module.scss';
 import castleImg from '../../assets/zamok.png';
+import ElfClosingDoorImg from '../../assets/elf-closing-door.png';
 import { roomService, type RoomResponse, type UpdateRoomSettingsPayload } from '../../api/room.ts'
 import { useUserStore } from '../../store/useUserStore';
 import { useRoomSocket } from '../../api/ws.ts';
@@ -53,6 +54,7 @@ const RoomPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [showCopyToast, setShowCopyToast] = useState(false);
   const [kickTarget, setKickTarget] = useState<{id: string, name: string} | null>(null);
+  const [isKicked, setIsKicked] = useState(false);
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -104,7 +106,11 @@ const RoomPage = () => {
     setRoom(updatedRoom);
   }, [checkAvailableSlots, navigate]);
 
-  const { sendMessage } = useRoomSocket(room?.id, handleRoomUpdate);
+  const handleKicked = useCallback(() => {
+    setIsKicked(true);
+  }, []);
+
+  const { sendMessage } = useRoomSocket(room?.id, handleRoomUpdate, handleKicked);
 
   const handleSaveSetting = (key: string, newValue: number | string | boolean) => {
     if (!room || !isOwner) return;
@@ -227,6 +233,24 @@ const RoomPage = () => {
             onCancel={() => setKickTarget(null)}
           />
         )}
+      </Modal>
+      <Modal isOpen={isKicked} onClose={() => navigate('/')}>
+        <div className={styles.kickedModal}>
+          <h2 className={styles.kickedModal__title}>Вы вне игры</h2>
+          <img src={ElfClosingDoorImg} alt="Изгнанник" className={styles.kickedModal__image} />
+          <p className={styles.kickedModal__text}>
+            Организатор партии решил продолжить подготовку без вашего участия.
+            Вы можете вновь войти в эту комнату, но вряд ли вам будут рады.
+          </p>
+          <div className={styles.kickedModal__layout}>
+            <button
+              className={styles.kickedModal__btn}
+              onClick={() => navigate('/')}
+            >
+              Уйти на главную
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );

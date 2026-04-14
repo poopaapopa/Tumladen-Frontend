@@ -21,7 +21,6 @@ function GuestAuth({ onConfirm, onCancel }: GuestAuthProps) {
 
     try {
       const data = await authService.createGuestSession(trimmedName);
-      console.log(data);
 
       setAuth(data.actor, data.token);
       onConfirm();

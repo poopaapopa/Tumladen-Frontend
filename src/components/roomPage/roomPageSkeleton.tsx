@@ -30,7 +30,7 @@ export const RoomPageSkeleton = () => {
           <Skeleton
             width="80%"
             height="60px"
-            style={{ margin: '30px auto 0', display: 'block' }}
+            style={{ margin: '20px auto 0', display: 'block' }}
           />
         </div>
       </main>

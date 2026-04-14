@@ -4,11 +4,19 @@ import { WS_BASE_URL } from './config.ts';
 import type { RoomResponse } from './room.ts';
 
 interface WebSocketMessage {
-  type: 'room_state';
-  payload: RoomResponse;
+  type: 'room_state' | 'participant_kicked';
+  payload: RoomResponse | ParticipantKickedPayload;
 }
 
-export const useRoomSocket = (roomId: string | undefined, onMessage: (data: RoomResponse) => void) => {
+export interface ParticipantKickedPayload {
+  reason: string;
+}
+
+export const useRoomSocket = (
+  roomId: string | undefined,
+  onMessage: (data: RoomResponse) => void,
+  onKicked: () => void
+) => {
   const socket = useRef<WebSocket | null>(null);
   const token = useUserStore((state) => state.token);
 
@@ -36,7 +44,11 @@ export const useRoomSocket = (roomId: string | undefined, onMessage: (data: Room
         console.log(data);
         
         if (data.type === 'room_state') {
-          onMessageRef.current(data.payload);
+          onMessageRef.current(data.payload as RoomResponse);
+        }
+
+        if (data.type === 'participant_kicked') {
+          onKicked();
         }
       } catch (err) {
         console.error('WS parsing error:', err);
