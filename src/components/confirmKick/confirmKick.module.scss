@@ -1,0 +1,64 @@
+@use "sass:color";
+
+.confirmKick {
+  background-color: $beige-light;
+  border: 6px solid $forest-mid;
+  border-radius: 20px;
+  padding: 30px 40px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+
+  &__title {
+    font-size: 28px;
+    font-weight: 600;
+    color: $forest-dark;
+    margin-bottom: 15px;
+  }
+
+  &__exiledElfImg {
+    width: 260px;
+    height: auto;
+    opacity: 0.5;
+    filter: grayscale(100%);
+    margin-bottom: 15px;
+  }
+
+  &__text {
+    font-size: 16px;
+    color: $forest-dark;
+    line-height: 1.5;
+    margin-bottom: 20px;
+
+    strong {
+      font-weight: 800;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: 15px;
+  }
+
+  &__btnConfirm, &__btnCancel {
+    all: unset;
+    cursor: pointer;
+    flex: 1;
+    padding: 14px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 20px;
+    transition: background-color 0.3s;
+  }
+
+  &__btnConfirm {
+    background-color: $forest-mid;
+    color: $beige-light;
+    &:hover { background-color: color.adjust($forest-mid, $lightness: -5%); }
+  }
+
+  &__btnCancel {
+    background-color: $sage-gray;
+    color: #1e1e1e;
+    &:hover { background-color: color.adjust($sage-gray, $lightness: -5%); }
+  }
+}

@@ -1,6 +1,6 @@
 import styles from './roomCard.module.scss';
 import castleImage from '../../assets/castle.png';
-import { Users } from "lucide-react";
+import { UsersRound } from "lucide-react";
 import type { RoomResponse } from "../../api/room.ts";
 
 interface RoomCardProps {
@@ -25,7 +25,7 @@ function RoomCard({ room, onClick }: RoomCardProps) {
             <span className={styles.roomCard__count}>
               {room.playersCount}/{room.maxPlayers}
             </span>
-            <Users size={18} strokeWidth={2.5} className={styles.roomCard__icon} />
+            <UsersRound size={18} strokeWidth={2.5} className={styles.roomCard__icon} />
           </div>
         </div>
       </div>

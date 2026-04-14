@@ -25,3 +25,8 @@ body {
     cursor: pointer;
   }
 }
+
+img {
+  user-select: none;
+  pointer-events: none;
+}
