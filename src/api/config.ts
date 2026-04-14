@@ -1,2 +1,2 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-export const WS_BASE_URL = import.meta.env.VITE_WS_BASE_URL;
+export const API_BASE_URL = "http://87.239.104.134:8080/api/v1";
+export const WS_BASE_URL = "ws://87.239.104.134:8080/ws";
