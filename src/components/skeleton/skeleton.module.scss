@@ -1,0 +1,32 @@
+@use "sass:color";
+
+.skeleton {
+  background-color: color.adjust($sage-gray, $lightness: -5%);
+  position: relative;
+  overflow: hidden;
+  border-radius: 4px;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba($beige-light, 0.2),
+      transparent
+    );
+    animation: shimmer 1.5s infinite;
+  }
+}
+
+.circle { border-radius: 50%; }
+.rect { border-radius: 8px; }
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}

@@ -1,13 +1,47 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Users, Clock, Star, Crown, LogOut, Share2, CheckCircle } from 'lucide-react';
+import { LogOut, Share2, Check } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+
 import styles from './roomPage.module.scss';
 import castleImg from '../../assets/zamok.png';
-import { roomService } from '../../api/room.ts'
-import type { RoomResponse } from '../../api/room.ts'
+import ElfClosingDoorImg from '../../assets/elf-closing-door.png';
+import { roomService, type RoomResponse, type UpdateRoomSettingsPayload } from '../../api/room.ts'
 import { useUserStore } from '../../store/useUserStore';
-import { useRoomSocket } from '../../api/ws.ts'; 
-import { motion, AnimatePresence } from 'framer-motion'; 
+import {useRoomSocket, type WebSocketMessage} from '../../api/ws.ts';
+
+import { PlayerSlot } from "../playerSlot/playerSlot.tsx";
+import { RoomSidebar } from "../roomSidebar/roomSidebar.tsx";
+import { RoomPageSkeleton } from "./roomPageSkeleton.tsx";
+import Modal from "../modal/modal.tsx";
+import { ConfirmKick } from "../confirmKick/confirmKick.tsx";
+
+const copyToClipboard = async (text: string) => {
+  if (navigator.clipboard && window.isSecureContext) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      return fallbackCopy(text);
+    }
+  }
+  return fallbackCopy(text);
+};
+
+const fallbackCopy = (text: string) => {
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  Object.assign(textArea.style, { position: "fixed", left: "-9999px", top: "0" });
+  document.body.appendChild(textArea);
+  textArea.select();
+  try {
+    return document.execCommand('copy');
+  } catch {
+    return false;
+  } finally {
+    document.body.removeChild(textArea);
+  }
+};
 
 const RoomPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -19,74 +53,39 @@ const RoomPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCopyToast, setShowCopyToast] = useState(false);
+  const [kickTarget, setKickTarget] = useState<{id: string, name: string} | null>(null);
+  const [isKicked, setIsKicked] = useState(false);
 
-  const handleCopyLink = () => {
-    const url = window.location.href;
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(url)
-        .then(() => {
-          triggerToast();
-        })
-        .catch(() => {
-          fallbackCopyTextToClipboard(url);
-        });
-    } else {
-      fallbackCopyTextToClipboard(url);
-    }
-  };
-
-  const fallbackCopyTextToClipboard = (text: string) => {
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    
-    textArea.style.position = "fixed";
-    textArea.style.left = "-9999px";
-    textArea.style.top = "0";
-    document.body.appendChild(textArea);
-    
-    textArea.focus();
-    textArea.select();
-
-    try {
-      const successful = document.execCommand('copy');
-      if (successful) {
-        triggerToast();
-      }
-    } catch (err) {
-      console.error('Не удалось скопировать ссылку даже старым методом', err);
-    }
-
-    document.body.removeChild(textArea);
-  };
-
-  const triggerToast = () => {
+  const triggerToast = useCallback(() => {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
     setShowCopyToast(true);
-    setTimeout(() => {
-      setShowCopyToast(false);
-    }, 3000);
+    toastTimer.current = setTimeout(() => setShowCopyToast(false), 3000);
+  }, []);
+
+  const handleCopyLink = async () => {
+    const success = await copyToClipboard(window.location.href);
+    if (success) triggerToast();
   };
 
-  const checkAvailableSlots = (roomData: RoomResponse) => {
+  const checkAvailableSlots = useCallback((roomData: RoomResponse) => {
     if (!currentUser) return false;
 
     const isAlreadyInRoom = roomData.participants?.some(p => p.actorId === currentUser.id);
 
-    if (!isAlreadyInRoom && roomData.playersCount >= roomData.maxPlayers) {
-      navigate('/');
-      return true;
-    }
+    return !isAlreadyInRoom && roomData.playersCount >= roomData.maxPlayers;
+  }, [currentUser]);
 
-    return false;
-  }
-
-  const fetchRoomData = async () => {
+  const fetchRoomData = useCallback(async () => {
     if (!id) return;
     try {
       const data = await roomService.getRoomById(id);
 
-      const isFull = checkAvailableSlots(data.room);
-      if (isFull) return;
+      if (checkAvailableSlots(data.room)) {
+        navigate('/');
+        return;
+      }
 
       setRoom(data.room);
       setError(null);
@@ -96,29 +95,71 @@ const RoomPage = () => {
     } finally {
       setIsLoading(false);
     }
+  }, [id, navigate, checkAvailableSlots]);
+
+  const handleRoomUpdate = useCallback((data: WebSocketMessage) => {
+    const updatedRoom = data.payload as RoomResponse;
+
+    if (checkAvailableSlots(updatedRoom)) {
+      navigate('/');
+      return;
+    }
+
+    setRoom(updatedRoom);
+  }, [checkAvailableSlots, navigate]);
+
+  const handleKicked = useCallback(() => {
+    setIsKicked(true);
+  }, []);
+
+  const { sendMessage } = useRoomSocket(room?.id, handleRoomUpdate, handleKicked);
+
+  const handleSaveSetting = (key: string, newValue: number | string | boolean) => {
+    if (!room || !isOwner) return;
+
+    const currentSettings = (room.settings as unknown as Record<string, number | string | boolean>) || {};
+
+    let hasChanged: boolean;
+
+    if (key === 'name')
+      hasChanged = room.name !== String(newValue);
+    else if (key === 'maxPlayers')
+      hasChanged = room.maxPlayers !== Number(newValue);
+    else
+      hasChanged = currentSettings[key] !== newValue;
+
+    if (!hasChanged) return;
+
+    const payload: UpdateRoomSettingsPayload = {
+      roomId: room.id,
+      gameType: room.gameType,
+      name: key === 'name' ? String(newValue) : room.name,
+      maxPlayers: key === 'maxPlayers' ? Number(newValue) : room.maxPlayers,
+      settings: (key !== 'name' && key !== 'maxPlayers')
+        ? { ...currentSettings, [key]: newValue }
+        : currentSettings
+    };
+
+    sendMessage('update_room_settings', payload as unknown as Record<string, unknown>);
   };
 
-  const handleRoomUpdate = useCallback((type: string, payload: any) => {  
-    if (type === 'room_state') {
-      // Извлекаем объект комнаты (учитывая возможную вложенность)
-      const updatedRoom = payload.room || payload;
-      
-      const isFull = checkAvailableSlots(updatedRoom);
-      if (!isFull) {
-        setRoom(updatedRoom);
-      }
-    }
-  }, [currentUser, navigate]);
+  const handleKick = (targetId: string, targetName: string) => {
+    setKickTarget({ id: targetId, name: targetName });
+  };
 
-  const { sendMessage } = useRoomSocket(room?.id, handleRoomUpdate);
-
-  const handleStartGame = () => {
-    if (room?.id) {
-      sendMessage('start_room', {
-        roomId: room.id
+  const confirmKick = () => {
+    if (kickTarget && room) {
+      sendMessage('kick_participant', {
+        roomId: room.id,
+        targetActorId: kickTarget.id
       });
+      setKickTarget(null);
     }
   };
+
+  useEffect(() => {
+    fetchRoomData();
+  }, [fetchRoomData]);
 
   useEffect(() => {
     if (room?.status === 'playing') {
@@ -126,49 +167,19 @@ const RoomPage = () => {
     }
   }, [room?.status, navigate, id]);
 
-  useEffect(() => {
-    fetchRoomData();
-  }, [id, currentUser]);
-
-  if (isLoading) return <div className={styles.loading}>Загрузка...</div>;
-  if (error || !room) return <div className={styles.error}>{error || "Ошибка"}</div>;
-  if (!currentUser) return <div className={styles.loading}>Пожалуйста, представьтесь...</div>;
+  if (isLoading) return <RoomPageSkeleton />;
+  if (error || !room) return <div className={styles.error}>{error || "Комната исчезла"}</div>;
 
   const isOwner = currentUser?.id === room.ownerActorId;
 
   return (
     <div className={styles.roomPage}>
-      <aside className={styles.roomPage__sidebar}>
-        <div className={styles.roomPage__header}>
-           <h2 className={styles.roomPage__roomName}>{room.name}</h2>
-           <span className={styles.roomPage__status}>{room.status}</span>
-        </div>
-
-        <div className={styles.roomPage__configGrid}>
-          <div className={styles.roomPage__configBox}>
-            <Users size={20} />
-            <span>{room.maxPlayers}</span>
-          </div>
-          <div className={styles.roomPage__configBox}>
-            <Clock size={20} />
-            <span>120с</span>
-          </div>
-        </div>
-
-        {isOwner ? (
-          <button
-            className={styles.roomPage__btnStart}
-            disabled={!room.canStart}
-            onClick={handleStartGame}
-          >
-            Начать игру
-          </button>
-        ) : (
-          <div className={styles.roomPage__waitMessage}>
-            Ожидаем решения организатора...
-          </div>
-        )}
-      </aside>
+      <RoomSidebar
+        room={room}
+        isOwner={isOwner}
+        onSaveSetting={handleSaveSetting}
+        sendMessage={sendMessage}
+      />
 
       <main className={styles.roomPage__main}>
         <div className={styles.roomPage__visual}>
@@ -180,51 +191,33 @@ const RoomPage = () => {
       </main>
 
       <section className={styles.roomPage__players}>
-        <h3 className={styles.roomPage__playersTitle}>
+        <h2 className={styles.roomPage__playersTitle}>
           Участники:
-        </h3>
+        </h2>
 
         <div className={styles.roomPage__playerList}>
-          {Array.from({ length: room.maxPlayers }).map((_, idx) => {
-            const participant = room.participants?.[idx];
-            const isThisParticipantOwner = participant?.actorId === room.ownerActorId;
-
-            return (
-              <div
-                key={idx}
-                className={`${styles.roomPage__playerSlot} ${participant ? styles.roomPage__playerSlot_occupied : ''}`}
-              >
-                <div className={styles.roomPage__playerInfo}>
-                  <span className={styles.roomPage__slotNum}>{idx + 1}</span>
-                  <span className={styles.roomPage__playerName}>
-                    {participant?.displayName || "Ожидание..."}
-                  </span>
-                </div>
-
-                {participant && (
-                  <div className={styles.roomPage__playerBadge}>
-                    {isThisParticipantOwner ? (
-                      <Crown size={18} className={styles.icon_crown} />
-                    ) : (
-                      <Star size={18} className={styles.icon_star} />
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+          {Array.from({ length: room.maxPlayers }).map((_, idx) => (
+            <PlayerSlot
+              key={idx}
+              idx={idx}
+              participant={room.participants?.[idx]}
+              room={room}
+              isOwner={isOwner}
+              onKick={handleKick}
+            />
+          ))}
         </div>
 
         <div className={styles.roomPage__actions}>
           <button className={styles.roomPage__btnInvite}
             onClick={(handleCopyLink)}>
-            <Share2 size={18} /> Пригласить
+            <Share2 size={20} /> Пригласить
           </button>
           <button
             className={styles.roomPage__btnExit}
             onClick={() => navigate('/')}
           >
-            <LogOut size={18} /> Покинуть
+            <LogOut size={20} /> Покинуть
           </button>
         </div>
       </section>
@@ -236,11 +229,38 @@ const RoomPage = () => {
             animate={{ opacity: 1, y: 0, x: '-50%' }}
             exit={{ opacity: 0, y: 20, x: '-50%' }}
           >
-            <CheckCircle size={20} className={styles.copyToast__icon} />
+            <Check size={20} className={styles.copyToast__icon} />
             <span>Ссылка успешно скопирована</span>
           </motion.div>
         )}
       </AnimatePresence>
+      <Modal isOpen={kickTarget !== null} onClose={() => setKickTarget(null)}>
+        {kickTarget && (
+          <ConfirmKick
+            targetName={kickTarget.name}
+            onConfirm={confirmKick}
+            onCancel={() => setKickTarget(null)}
+          />
+        )}
+      </Modal>
+      <Modal isOpen={isKicked} onClose={() => navigate('/')}>
+        <div className={styles.kickedModal}>
+          <h2 className={styles.kickedModal__title}>Вы вне игры</h2>
+          <img src={ElfClosingDoorImg} alt="Изгнанник" className={styles.kickedModal__image} />
+          <p className={styles.kickedModal__text}>
+            Организатор партии решил продолжить подготовку без вашего участия.
+            Вы можете вновь войти в эту комнату, но вряд ли вам будут рады.
+          </p>
+          <div className={styles.kickedModal__layout}>
+            <button
+              className={styles.kickedModal__btn}
+              onClick={() => navigate('/')}
+            >
+              Уйти на главную
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

@@ -1,34 +1,57 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './gameRoom.module.scss';
 import sidebarstyles from '../mainPage/MainPage.module.scss'
-import { useRoomSocket } from '../../api/ws';
+import { useRoomSocket, type WebSocketMessage } from '../../api/ws';
 import { useState, useCallback, useEffect } from 'react';
 import { roomService, type RoomResponse } from '../../api/room';
 import castleImage from '../../assets/castle.png';
 import { User, Star, Crown} from "lucide-react";
 import { useUserStore } from '../../store/useUserStore';
 import clsx from 'clsx';
-import { type MatchStatePayload, type WsPayload, type WsErrorPayload} from '../../api/room';
 import Modal from '../modal/modal';
 import gameExitImage from '../../assets/gameExit.png';
 
-type CombinedRoomState = RoomResponse & Partial<MatchStatePayload>;
+interface MatchPlayer {
+  actorId: string;
+  displayName: string;
+  score: number;
+  meeplesLeft: number;
+  seat: number;
+}
+
+export interface MatchStatePayload {
+  id: string;
+  roomId: string;
+  status: string;
+  gameType: string;
+  isYourTurn: boolean;
+  gameState: GameState;
+}
+
+interface GameState {
+  currentPlayerId: string;
+  players: MatchPlayer[];
+  turnNumber: number;
+  phase: string;
+  board: unknown[];
+}
 
 const GameRoom = () => {
-  const { id: inviteCode } = useParams<{ id: string }>(); 
-  const [roomUuid, setRoomUuid] = useState<string | null>(null); 
-  const [roomState, setRoomState] = useState<CombinedRoomState | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { id: inviteCode } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const currentUser = useUserStore((state) => state.actor);
+
+  const [room, setRoom] = useState<RoomResponse | null>(null);
+  const [match, setMatch] = useState<MatchStatePayload | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
 
   const fetchInitialData = useCallback(async () => {
     if (!inviteCode) return;
     try {
       const data = await roomService.getRoomById(inviteCode);
-      setRoomUuid(data.room.id); 
-      setRoomState(data.room);
+      setRoom(data.room);
+
     } catch (err) {
       console.error("Ошибка:", err);
       navigate('/');
@@ -41,68 +64,49 @@ const GameRoom = () => {
     fetchInitialData();
   }, [fetchInitialData]);
 
-  const handleMessage = useCallback((type: string, payload: WsPayload) => {
-    if (type === 'error') {
-      const error = payload as WsErrorPayload;
-      console.error("WS Error:", error.message);
-      return;
+  const handleMessage = useCallback((data: WebSocketMessage) => {
+    if (data.type === 'match_state') {
+      setMatch(data.payload as MatchStatePayload);
     }
-
-    setRoomState((prev) => {
-      if (!prev) return payload as CombinedRoomState;
-      return {
-        ...prev,
-        ...payload,
-      } as CombinedRoomState;
-    });
-
-    // if (payload.status === 'finished' || payload.status === 'waiting' && type === 'room_state') {
-    //    navigate(`/room/${inviteCode}`); 
-    // }
   }, []);
 
-  const { sendMessage } = useRoomSocket(roomUuid || undefined, handleMessage);
+  const { sendMessage } = useRoomSocket(room?.id, handleMessage);
 
   const handleAdvanceTurn = () => {
-    if (roomState?.id) {
+    if (room?.id) {
       sendMessage('match_action', {
-        roomId: roomUuid,
+        roomId: room.id,
         action: "advance_turn",
         payload: {}
       });
     }
   };
 
-
   const handleLeftGame = () => {
-    if (roomState?.id) {
+    if (room?.id) {
       sendMessage('finish_room_match', {
-        roomId: roomUuid
+        roomId: room.id
       });
       navigate('/');
     }
   };
 
+  if (isLoading) return <div className={sidebarstyles.pageWrapper}>Загрузка...</div>;
 
-  if (isLoading) {
-    return <div className={sidebarstyles.pageWrapper}>Загрузка...</div>;
-  }
-
-  const currentTurnId = roomState?.gameState?.currentPlayerId || roomState?.currentTurnActorId;
-  
-  const isMyTurn = roomState?.isYourTurn ?? (currentUser?.id === currentTurnId);
-  const isOwner = currentUser?.id === roomState?.ownerActorId;
+  const currentTurnId = match?.gameState?.currentPlayerId;
+  const isMyTurn = currentUser?.id === currentTurnId;
+  const isOwner = currentUser?.id === room?.ownerActorId;
 
   return (
     <main className={sidebarstyles.pageWrapper}>
       <div className={sidebarstyles.sidebar}>
         <div className={sidebarstyles.sidebar__title}>Игроки</div>
         <div className={sidebarstyles.sidebar__list}>
-          {roomState?.participants?.map((participant) =>{
-            const isOwner = participant.actorId === roomState.ownerActorId;
+          {room?.participants?.map((participant) =>{
+            const isRoomOwner = participant.actorId === room.ownerActorId;
             const isTurn = participant.actorId === currentTurnId;
 
-            const matchPlayerData = roomState?.gameState?.players?.find(
+            const matchStats = match?.gameState?.players?.find(
               (p) => p.actorId === participant.actorId
             );
 
@@ -118,11 +122,11 @@ const GameRoom = () => {
                 <div className={styles.playerCard__body}>
                   <div className={styles.playerCard__nickname}>
                     {participant.displayName}
-                    {isOwner && <Crown size={16} style={{marginLeft: '8px', color: '#d4af37'}} />}
+                    {isRoomOwner && <Crown size={16} style={{marginLeft: '8px', color: '#d4af37'}} />}
                   </div>
 
                   <div className={styles.playerCard__figurines}>
-                    {Array.from({ length: matchPlayerData?.meeplesLeft ?? 0 }).map((_, i) => (
+                    {Array.from({ length: matchStats?.meeplesLeft ?? 0 }).map((_, i) => (
                       <User key={i} size={20} strokeWidth={2.5} className={styles.playerCard__figurinesIcon} />
                     ))}
                   </div>
@@ -131,7 +135,7 @@ const GameRoom = () => {
                     <div className={styles.playerCard__capacity}>
                       <span className={styles.playerCard__count}>
                         <Star size={20} strokeWidth={2.5} className={styles.playerCard__figurinesIcon} />
-                        {matchPlayerData?.score ?? 0} очков
+                        {matchStats?.score ?? 0} очков
                       </span>
                     </div>
                   </div>
