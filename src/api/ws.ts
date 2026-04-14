@@ -1,16 +1,26 @@
 import { useEffect, useRef } from 'react';
 import { useUserStore } from '../store/useUserStore';
 import { WS_BASE_URL } from './config.ts';
-// import type { RoomResponse } from './room.ts';
+import type { RoomResponse } from './room.ts';
+import type { MatchStatePayload } from "../components/gameRoom/gameRoom.tsx";
 
-interface WebSocketMessage {
-  type: 'room_state' | 'match_state' | 'error' | 'participant_kicked';
-  payload: any;
+export interface WebSocketMessage {
+  type: 'room_state' | 'participant_kicked' | 'match_state' | 'error';
+  payload: RoomResponse | ParticipantKickedPayload | MatchStatePayload;
 }
 
-export const useRoomSocket = (roomId: string | undefined, onMessage: (type: string, payload: any) => void, onKicked?: () => void) => {
+export interface ParticipantKickedPayload {
+  reason: string;
+}
+
+export const useRoomSocket = (
+  roomId: string | undefined,
+  onMessage: (data: WebSocketMessage) => void,
+  onKicked?: () => void
+) => {
   const socket = useRef<WebSocket | null>(null);
   const token = useUserStore((state) => state.token);
+  const isComponentMounted = useRef(true);
 
   const onMessageRef = useRef(onMessage);
   useEffect(() => {
@@ -25,29 +35,33 @@ export const useRoomSocket = (roomId: string | undefined, onMessage: (type: stri
     socket.current = ws;
 
     ws.onopen = () => {
-      if (ws.readyState === WebSocket.OPEN) {
+      if (isComponentMounted.current && ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({ type: "join_room", payload: { roomId } }));
       }
     }
 
     ws.onmessage = (event) => {
+      if (!isComponentMounted.current) return;
+
       try {
         const data: WebSocketMessage = JSON.parse(event.data);
+        console.log(data);
 
-        if (data.type === 'participant_kicked') {
-          onKicked?.();
-          return;
+        if (data.type === 'room_state' || data.type === 'match_state') {
+          onMessageRef.current(data);
         }
 
-        onMessage(data.type, data.payload);
-
+        if (data.type === 'participant_kicked' && onKicked) {
+          onKicked();
+        }
       } catch (err) {
         console.error('WS parsing error:', err);
       }
     };
 
     ws.onerror = (error) => {
-      console.error('WS Error:', error);
+      if (isComponentMounted.current)
+        console.error('WS Error:', error);
     };
 
     ws.onclose = () => {
@@ -55,6 +69,13 @@ export const useRoomSocket = (roomId: string | undefined, onMessage: (type: stri
     };
 
     return () => {
+      isComponentMounted.current = false;
+
+      ws.onopen = null;
+      ws.onmessage = null;
+      ws.onerror = null;
+      ws.onclose = null;
+
       if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
         ws.close();
       }

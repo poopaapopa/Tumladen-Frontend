@@ -1,59 +1,33 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { Users, Clock, Pencil, Check, X } from 'lucide-react';
 import { type RoomResponse } from '../../api/room.ts';
 import { EditableSelector } from '../editableSelector/editableSelector.tsx';
 import styles from './roomSidebar.module.scss';
-import { useRoomSocket } from '../../api/ws.ts';
-import { useUserStore } from '../../store/useUserStore.ts';
-import { useNavigate } from 'react-router-dom';
 
 interface RoomSidebarProps {
   room: RoomResponse;
   isOwner: boolean;
   onSaveSetting: (key: string, newValue: number | string | boolean) => void;
+  sendMessage: (type: string, payload: Record<string, unknown>) => void;
 }
 
-export const RoomSidebar = ({ room, isOwner, onSaveSetting }: RoomSidebarProps) => {
+export const RoomSidebar = ({ room, isOwner, onSaveSetting, sendMessage }: RoomSidebarProps) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState("");
-  const currentUser = useUserStore((state) => state.actor);
-  const navigate = useNavigate();
+  const [isStarting, setIsStarting] = useState(false);
 
   const currentSettings = (room?.settings as Record<string, number | string | boolean>) || {};
+
+  const handleStartGame = () => {
+    if (isOwner && room.canStart) {
+      setIsStarting(true);
+      sendMessage('start_room', { roomId: room.id });
+    }
+  };
 
   const handleStartEdit = () => {
     setTempName(room.name);
     setIsEditingName(true);
-  };
-
-  const checkAvailableSlots = useCallback((roomData: RoomResponse) => {
-    if (!currentUser) return false;
-
-    const isAlreadyInRoom = roomData.participants?.some(p => p.actorId === currentUser.id);
-
-    return !isAlreadyInRoom && roomData.playersCount >= roomData.maxPlayers;
-  }, [currentUser]);
-
-  const handleRoomUpdate = useCallback((type: string, payload: any) => {  
-      if (type === 'room_state') {
-        // Извлекаем объект комнаты (учитывая возможную вложенность)
-        const updatedRoom = payload.room || payload;
-        
-        const isFull = checkAvailableSlots(updatedRoom);
-        if (!isFull) {
-          setRoom(updatedRoom);
-        }
-      }
-    }, [currentUser, navigate, checkAvailableSlots]);
-
-  const { sendMessage } = useRoomSocket(room?.id, handleRoomUpdate);
-  
-  const handleStartGame = () => {
-    if (room?.id) {
-      sendMessage('start_room', {
-        roomId: room.id
-      });
-    }
   };
 
   const handleUpdateName = () => {
@@ -139,8 +113,12 @@ export const RoomSidebar = ({ room, isOwner, onSaveSetting }: RoomSidebarProps) 
       </div>
 
       {isOwner ? (
-        <button className={styles.roomSidebar__btnStart} disabled={!room.canStart} onClick={handleStartGame}>
-          Начать игру
+        <button
+          className={styles.roomSidebar__btnStart}
+          disabled={!room.canStart || isStarting}
+          onClick={handleStartGame}
+        >
+          {isStarting ? 'Запуск...' : 'Начать игру'}
         </button>
       ) : (
         <div className={styles.roomSidebar__waitMessage}>

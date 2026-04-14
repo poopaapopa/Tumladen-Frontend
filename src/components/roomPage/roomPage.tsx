@@ -8,7 +8,7 @@ import castleImg from '../../assets/zamok.png';
 import ElfClosingDoorImg from '../../assets/elf-closing-door.png';
 import { roomService, type RoomResponse, type UpdateRoomSettingsPayload } from '../../api/room.ts'
 import { useUserStore } from '../../store/useUserStore';
-import { useRoomSocket } from '../../api/ws.ts';
+import {useRoomSocket, type WebSocketMessage} from '../../api/ws.ts';
 
 import { PlayerSlot } from "../playerSlot/playerSlot.tsx";
 import { RoomSidebar } from "../roomSidebar/roomSidebar.tsx";
@@ -97,30 +97,20 @@ const RoomPage = () => {
     }
   }, [id, navigate, checkAvailableSlots]);
 
-  // const handleRoomUpdate = useCallback((updatedRoom: RoomResponse) => {
-  //   if (checkAvailableSlots(updatedRoom)) {
-  //     navigate('/');
-  //     return;
-  //   }
+  const handleRoomUpdate = useCallback((data: WebSocketMessage) => {
+    const updatedRoom = data.payload as RoomResponse;
 
-  //   setRoom(updatedRoom);
-  // }, [checkAvailableSlots, navigate]);
+    if (checkAvailableSlots(updatedRoom)) {
+      navigate('/');
+      return;
+    }
+
+    setRoom(updatedRoom);
+  }, [checkAvailableSlots, navigate]);
 
   const handleKicked = useCallback(() => {
     setIsKicked(true);
   }, []);
-
-  const handleRoomUpdate = useCallback((type: string, payload: any) => {  
-    if (type === 'room_state') {
-      // Извлекаем объект комнаты (учитывая возможную вложенность)
-      const updatedRoom = payload.room || payload;
-      
-      const isFull = checkAvailableSlots(updatedRoom);
-      if (!isFull) {
-        setRoom(updatedRoom);
-      }
-    }
-  }, [currentUser, navigate]);
 
   const { sendMessage } = useRoomSocket(room?.id, handleRoomUpdate, handleKicked);
 
@@ -153,22 +143,6 @@ const RoomPage = () => {
     sendMessage('update_room_settings', payload as unknown as Record<string, unknown>);
   };
 
-  // const { sendMessage } = useRoomSocket(room?.id, handleRoomUpdate);
-
-  // const handleStartGame = () => {
-  //   if (room?.id) {
-  //     sendMessage('start_room', {
-  //       roomId: room.id
-  //     });
-  //   }
-  // };
-
-  useEffect(() => {
-    if (room?.status === 'playing') {
-      navigate(`/room/game/${id}`);
-    }
-  }, [room?.status, navigate, id]);
-
   const handleKick = (targetId: string, targetName: string) => {
     setKickTarget({ id: targetId, name: targetName });
   };
@@ -187,6 +161,12 @@ const RoomPage = () => {
     fetchRoomData();
   }, [fetchRoomData]);
 
+  useEffect(() => {
+    if (room?.status === 'playing') {
+      navigate(`/room/game/${id}`);
+    }
+  }, [room?.status, navigate, id]);
+
   if (isLoading) return <RoomPageSkeleton />;
   if (error || !room) return <div className={styles.error}>{error || "Комната исчезла"}</div>;
 
@@ -198,6 +178,7 @@ const RoomPage = () => {
         room={room}
         isOwner={isOwner}
         onSaveSetting={handleSaveSetting}
+        sendMessage={sendMessage}
       />
 
       <main className={styles.roomPage__main}>
