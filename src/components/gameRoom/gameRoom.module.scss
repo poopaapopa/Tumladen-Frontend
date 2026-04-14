@@ -1,0 +1,185 @@
+@use "sass:color";
+
+.playerCard {
+  background-color: $beige-light;
+  border-radius: 15px;
+  padding: 15px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  margin-bottom: 10px;
+  font-family: $font-main;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+
+  &__image {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  &__body{
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__nickname {
+    font-weight: 600;
+    font-size: 18px;
+    color: #1e1e1e;
+  }
+
+  &__figurines  {
+    color: #6200ff;
+    margin-top: 5px;
+  }
+
+  &__figurinesIcon{
+    margin-right: 5px;
+    stroke-width: 2.5px;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    margin-top: 10px;
+  }
+
+  &__capacity{
+    font-weight: 600;
+    text-align: right;
+  }
+
+  &__count {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 400;
+    font-size: 18px;
+  }
+
+  &_active {
+    z-index: 2;
+  }
+
+  &_dimmed {
+    transform: scale(0.95);
+    opacity: 0.5;
+    filter: grayscale(0.5);
+  }
+}
+
+.advanceTurnButton {
+  font-family: $font-main;
+  margin-bottom: 20px;
+  background-color: $forest-mid;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 24px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 4px $forest-mid;
+
+  &:hover:not(:disabled) {
+    background-color: color.adjust($forest-mid, $lightness: -10%);
+    transform: translateY(-2px);
+  }
+
+  &:disabled {
+    background-color: $metal-gray;
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}
+
+.turnIndicator {
+  margin-top: 10px;
+  font-weight: 800;
+  color: $forest-mid;
+}
+
+.leftGameButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  background-color: $metal-gray;
+  color: $beige-light;
+  border: none;
+  border-radius: 12px;
+  padding: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: $font-main;
+
+  &:hover {
+    background-color: #7a7a7a;
+    transform: translateY(-2px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.confirmModal {
+  background-color: $beige-light;
+  border: 4px solid $forest-mid;
+  border-radius: 20px;
+  padding: 30px;
+  text-align: center;
+  font-family: $font-main;
+
+  &__title {
+    font-size: 24px;
+    color: $forest-dark;
+    margin-bottom: 20px;
+    font-weight: 700;
+  }
+
+  &__actions {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+  }
+
+  &__btnConfirm, &__btnCancel {
+    padding: 12px 24px;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: 0.2s;
+    font-size: 18px;
+  }
+
+  &__btnConfirm {
+    background-color: #e74c3c;
+    color: white;
+    &:hover { background-color: #c0392b; }
+  }
+
+  &__btnCancel {
+    background-color: $sage-gray;
+    color: $forest-dark;
+    &:hover { background-color: color.adjust($sage-gray, $lightness: -5%); }
+  }
+
+  &__image {
+    width: auto;
+    height: 200px;
+    margin-bottom: 20px;
+  }
+}

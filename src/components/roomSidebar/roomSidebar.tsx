@@ -8,13 +8,22 @@ interface RoomSidebarProps {
   room: RoomResponse;
   isOwner: boolean;
   onSaveSetting: (key: string, newValue: number | string | boolean) => void;
+  sendMessage: (type: string, payload: Record<string, unknown>) => void;
 }
 
-export const RoomSidebar = ({ room, isOwner, onSaveSetting }: RoomSidebarProps) => {
+export const RoomSidebar = ({ room, isOwner, onSaveSetting, sendMessage }: RoomSidebarProps) => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState("");
+  const [isStarting, setIsStarting] = useState(false);
 
   const currentSettings = (room?.settings as Record<string, number | string | boolean>) || {};
+
+  const handleStartGame = () => {
+    if (isOwner && room.canStart) {
+      setIsStarting(true);
+      sendMessage('start_room', { roomId: room.id });
+    }
+  };
 
   const handleStartEdit = () => {
     setTempName(room.name);
@@ -104,8 +113,12 @@ export const RoomSidebar = ({ room, isOwner, onSaveSetting }: RoomSidebarProps) 
       </div>
 
       {isOwner ? (
-        <button className={styles.roomSidebar__btnStart} disabled={!room.canStart}>
-          Начать игру
+        <button
+          className={styles.roomSidebar__btnStart}
+          disabled={!room.canStart || isStarting}
+          onClick={handleStartGame}
+        >
+          {isStarting ? 'Запуск...' : 'Начать игру'}
         </button>
       ) : (
         <div className={styles.roomSidebar__waitMessage}>

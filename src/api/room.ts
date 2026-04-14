@@ -26,6 +26,7 @@ export interface RoomResponse {
   participants?: ParticipantResponse[];
   createdAt: string;
   updatedAt: string;
+  currentTurnActorId?: string;
 }
 
 export interface ListPublicRoomsResponse {
