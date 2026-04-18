@@ -10,6 +10,9 @@ import { useUserStore } from '../../store/useUserStore';
 import clsx from 'clsx';
 import Modal from '../modal/modal';
 import gameExitImage from '../../assets/gameExit.png';
+import GameBoard from "../gameBoard/gameBoard.tsx";
+import { TILE_IMAGES } from "../../api/tiles.config.ts";
+import { getPlayerColorBySeat } from "../../utils/playerColor.ts";
 
 interface MatchPlayer {
   actorId: string;
@@ -33,7 +36,14 @@ interface GameState {
   players: MatchPlayer[];
   turnNumber: number;
   phase: string;
-  board: unknown[];
+  board: Tile[];
+}
+
+export interface Tile {
+  tileId: string;
+  x: number;
+  y: number;
+  rotation: number;
 }
 
 const GameRoom = () => {
@@ -72,16 +82,6 @@ const GameRoom = () => {
 
   const { sendMessage } = useRoomSocket(room?.id, handleMessage);
 
-  const handleAdvanceTurn = () => {
-    if (room?.id) {
-      sendMessage('match_action', {
-        roomId: room.id,
-        action: "advance_turn",
-        payload: {}
-      });
-    }
-  };
-
   const handleLeftGame = () => {
     if (room?.id) {
       sendMessage('finish_room_match', {
@@ -96,6 +96,9 @@ const GameRoom = () => {
   const currentTurnId = match?.gameState?.currentPlayerId;
   const isMyTurn = currentUser?.id === currentTurnId;
   const isOwner = currentUser?.id === room?.ownerActorId;
+  const currentTileId = "1";
+  const currentPlayer = match?.gameState?.players?.find(p => p.actorId === currentTurnId);
+  const currentColor = getPlayerColorBySeat(currentPlayer?.seat);
 
   return (
     <main className={sidebarstyles.pageWrapper}>
@@ -111,7 +114,7 @@ const GameRoom = () => {
             );
 
             return (
-              <div 
+              <div
                 key={participant.actorId}
                 className={clsx(
                   styles.playerCard,
@@ -141,23 +144,37 @@ const GameRoom = () => {
                   </div>
                 </div>
               </div>
-            );            
+            );
           })}
         </div>
-
-        <button onClick={handleAdvanceTurn} disabled={!isMyTurn} className={styles.advanceTurnButton}>
-          {isMyTurn ? 'ВАШ ХОД' : 'ОЖИДАНИЕ ХОДА'}
-        </button>
 
         <button onClick={() => setIsExitModalOpen(true)} className={styles.leftGameButton}>
           Покинуть игру
         </button>
       </div>
 
-      <div className={sidebarstyles.mainPage}>
-        <h1 className={styles.title}>Игра началась</h1>
-        {isMyTurn && <h2 className={styles.turnIndicator}>Ваша очередь выкладывать тайл!</h2>}
-      </div>
+      <div className={styles.boardContainer}>
+        <GameBoard
+          board={match?.gameState?.board || []}
+        />
+        {currentTileId && (
+          <img
+            src={TILE_IMAGES[currentTileId]}
+            alt="Next tile"
+            className={styles.nexTile}
+            style={{
+              ['--player-color' as string]: currentColor
+            }}
+          />
+        )}
+
+       {/* UI элементы поверх поля (например, текущий тайл в руке) */}
+       {isMyTurn && (
+         <div className={styles.turnOverlay}>
+            <p>Выбери место на карте</p>
+         </div>
+       )}
+    </div>
 
       <Modal isOpen={isExitModalOpen} onClose={() => setIsExitModalOpen(false)}>
         <div className={styles.confirmModal}>
