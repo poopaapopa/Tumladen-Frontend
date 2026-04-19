@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Stage, Layer, Group } from 'react-konva';
 import Konva from 'konva';
 import { GameTile } from '../tile/tile';
-import type { Tile } from "../gameRoom/gameRoom.tsx";
+import type { Tile } from "./gameRoom.tsx";
 
 interface GameBoardProps {
   board: Tile[];
