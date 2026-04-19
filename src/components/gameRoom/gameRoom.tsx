@@ -1,15 +1,17 @@
+import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './gameRoom.module.scss';
 import sidebarstyles from '../mainPage/MainPage.module.scss'
 import { useRoomSocket, type WebSocketMessage } from '../../api/ws';
 import { useState, useCallback, useEffect } from 'react';
 import { roomService, type RoomResponse } from '../../api/room';
-import castleImage from '../../assets/castle.png';
-import { User, Star, Crown} from "lucide-react";
 import { useUserStore } from '../../store/useUserStore';
-import clsx from 'clsx';
 import Modal from '../modal/modal';
 import gameExitImage from '../../assets/gameExit.png';
+import GameBoard from "./gameBoard.tsx";
+import { TILE_IMAGES } from "../../utils/tiles.config.ts";
+import { getPlayerColorBySeat } from "../../utils/playerColor.ts";
+import { MatchPlayerCard } from "../matchPlayerCard/matchPlayerCard.tsx";
 
 interface MatchPlayer {
   actorId: string;
@@ -33,7 +35,14 @@ interface GameState {
   players: MatchPlayer[];
   turnNumber: number;
   phase: string;
-  board: unknown[];
+  board: Tile[];
+}
+
+export interface Tile {
+  tileId: string;
+  x: number;
+  y: number;
+  rotation: number;
 }
 
 const GameRoom = () => {
@@ -72,16 +81,6 @@ const GameRoom = () => {
 
   const { sendMessage } = useRoomSocket(room?.id, handleMessage);
 
-  const handleAdvanceTurn = () => {
-    if (room?.id) {
-      sendMessage('match_action', {
-        roomId: room.id,
-        action: "advance_turn",
-        payload: {}
-      });
-    }
-  };
-
   const handleLeftGame = () => {
     if (room?.id) {
       sendMessage('finish_room_match', {
@@ -94,77 +93,68 @@ const GameRoom = () => {
   if (isLoading) return <div className={sidebarstyles.pageWrapper}>Загрузка...</div>;
 
   const currentTurnId = match?.gameState?.currentPlayerId;
-  const isMyTurn = currentUser?.id === currentTurnId;
-  const isOwner = currentUser?.id === room?.ownerActorId;
+  const ownerId = room?.ownerActorId;
+  const isOwner = currentUser?.id === ownerId;
+  const currentTileId = "1";
+  const players = match?.gameState?.players || [];
+  const sortedPlayers = [...players].sort((a, b) => {
+    if (a.actorId === currentUser?.id) return -1;
+    if (b.actorId === currentUser?.id) return 1;
+    return 0;
+  });
+  const currentPlayer = players.find(p => p.actorId === currentTurnId);
+  const currentColor = getPlayerColorBySeat(currentPlayer?.seat);
 
   return (
     <main className={sidebarstyles.pageWrapper}>
       <div className={sidebarstyles.sidebar}>
         <div className={sidebarstyles.sidebar__title}>Игроки</div>
-        <div className={sidebarstyles.sidebar__list}>
-          {room?.participants?.map((participant) =>{
-            const isRoomOwner = participant.actorId === room.ownerActorId;
-            const isTurn = participant.actorId === currentTurnId;
+        <div className={styles.playersList}>
+          {sortedPlayers.map((player, index) => (
+            <React.Fragment key={player.actorId}>
+              <MatchPlayerCard
+                displayName={player.displayName}
+                isRoomOwner={player.actorId === ownerId}
+                isTurn={player.actorId === currentTurnId}
+                score={player.score}
+                meeplesLeft={player.meeplesLeft}
+                seat={player.seat}
+              />
 
-            const matchStats = match?.gameState?.players?.find(
-              (p) => p.actorId === participant.actorId
-            );
-
-            return (
-              <div 
-                key={participant.actorId}
-                className={clsx(
-                  styles.playerCard,
-                  currentTurnId && (isTurn ? styles.playerCard_active : styles.playerCard_dimmed)
-                )}
-              >
-                <img src={castleImage} alt="Room" className={styles.playerCard__image} />
-                <div className={styles.playerCard__body}>
-                  <div className={styles.playerCard__nickname}>
-                    {participant.displayName}
-                    {isRoomOwner && <Crown size={16} style={{marginLeft: '8px', color: '#d4af37'}} />}
-                  </div>
-
-                  <div className={styles.playerCard__figurines}>
-                    {Array.from({ length: matchStats?.meeplesLeft ?? 0 }).map((_, i) => (
-                      <User key={i} size={20} strokeWidth={2.5} className={styles.playerCard__figurinesIcon} />
-                    ))}
-                  </div>
-
-                  <div className={styles.playerCard__footer}>
-                    <div className={styles.playerCard__capacity}>
-                      <span className={styles.playerCard__count}>
-                        <Star size={20} strokeWidth={2.5} className={styles.playerCard__figurinesIcon} />
-                        {matchStats?.score ?? 0} очков
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );            
-          })}
+              {index === 0 && (
+                <div className={styles.playersList__divider} />
+              )}
+            </React.Fragment>
+          ))}
         </div>
-
-        <button onClick={handleAdvanceTurn} disabled={!isMyTurn} className={styles.advanceTurnButton}>
-          {isMyTurn ? 'ВАШ ХОД' : 'ОЖИДАНИЕ ХОДА'}
-        </button>
 
         <button onClick={() => setIsExitModalOpen(true)} className={styles.leftGameButton}>
           Покинуть игру
         </button>
       </div>
 
-      <div className={sidebarstyles.mainPage}>
-        <h1 className={styles.title}>Игра началась</h1>
-        {isMyTurn && <h2 className={styles.turnIndicator}>Ваша очередь выкладывать тайл!</h2>}
-      </div>
+      <div className={styles.boardContainer}>
+        <GameBoard
+          board={match?.gameState?.board || []}
+        />
+        {currentTileId && (
+          <img
+            src={TILE_IMAGES[currentTileId]}
+            alt="Next tile"
+            className={styles.nexTile}
+            style={{
+              ['--player-color' as string]: currentColor
+            }}
+          />
+        )}
+    </div>
 
       <Modal isOpen={isExitModalOpen} onClose={() => setIsExitModalOpen(false)}>
         <div className={styles.confirmModal}>
         <img src={gameExitImage} alt="gameExitImage" className={styles.confirmModal__image} />
           <h2 className={styles.confirmModal__title}>
-            {isOwner 
-              ? "Вы точно хотите завершить матч для всех игроков?" 
+            {isOwner
+              ? "Вы точно хотите завершить матч для всех игроков?"
               : "Вы точно хотите покинуть игру?"}
           </h2>
           <div className={styles.confirmModal__actions}>

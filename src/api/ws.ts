@@ -80,7 +80,7 @@ export const useRoomSocket = (
         ws.close();
       }
     };
-  }, [roomId, token]);
+  }, [onKicked, roomId, token]);
 
   const sendMessage = (type: string, payload: Record<string, unknown>) => {
     if (socket.current?.readyState === WebSocket.OPEN) {
