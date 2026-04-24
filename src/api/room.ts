@@ -86,5 +86,14 @@ export const roomService = {
     });
     if (!res.ok) throw new Error('Ошибка при получении данных комнаты');
     return res.json();
+  },
+
+  async getWsTicket(): Promise<{ ticket: string }> {
+    const res = await fetch(`${API_BASE_URL}/ws-ticket`, { 
+      method: 'POST',
+      headers: this.getHeaders(),
+    });
+    if (!res.ok) throw new Error('Не удалось получить тикет');
+    return res.json();
   }
 };
