@@ -15,7 +15,10 @@ export interface ParticipantKickedPayload {
 
 interface CentrifugeEnvelope {
   push?: {
-    pub: {
+    pub?: {
+      data: WebSocketMessage;
+    };
+    message?: {
       data: WebSocketMessage;
     };
   };
@@ -127,6 +130,9 @@ export const useRoomSocket = (
                 } else {
                   onMessageRef.current(data);
                 }
+              } else if (envelope.push?.message?.data) {
+                const data = envelope.push.message.data;
+                onMessageRef.current(data);
               }
             } catch (err) {
               console.error('WS parsing error:', err);

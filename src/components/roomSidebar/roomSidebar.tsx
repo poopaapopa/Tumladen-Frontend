@@ -8,6 +8,7 @@ import styles from './roomSidebar.module.scss';
 
 import deleteRoomImg from '../../assets/deleteRoom.png';
 import deleteRoomOwnerImg from '../../assets/deleteRoomOwner.png';
+import { ConfirmModal } from '../confirmKick/confirmKick.tsx';
 
 interface RoomSidebarProps {
   room: RoomResponse;
@@ -147,49 +148,27 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
         </div>
       )}
       <Modal isOpen={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)}>
-        <div className={styles.deleteModal}>
-          <h2 className={styles.deleteModal__title}>Удаление комнаты</h2>
-          <img src={deleteRoomOwnerImg} alt="Удаление" className={styles.deleteModal__image} />
-          <p className={styles.deleteModal__text}>
-            Вы действительно хотите распустить группу и <strong>удалить комнату</strong>?<br/>
-            Это действие нельзя будет отменить, и все игроки будут исключены.
-          </p>
-          <div className={styles.deleteModal__layout} style={{ gap: '15px' }}>
-            <button
-              className={styles.deleteModal__btn}
-              style={{ backgroundColor: '#989898' }}
-              onClick={() => setIsDeleteConfirmOpen(false)}
-            >
-              Отмена
-            </button>
-            <button
-              className={styles.deleteModal__btn}
-              style={{ backgroundColor: '#e74c3c' }}
-              onClick={handleDeleteRoom}
-            >
-              Да, удалить
-            </button>
-          </div>
-        </div>
+        <ConfirmModal
+          title="Удаление комнаты"
+          text={<>Как владелец, вы в праве распустить игроков и <strong>безвозвратно уничтожить комнату</strong>.<br/>
+            Действительно ли вы принимаете это необратимое решение?</>}
+          onConfirm={handleDeleteRoom}
+          onConfirmText="Да, удалить"
+          onCancel={() => setIsDeleteConfirmOpen(false)}
+          onCancelText="Отмена"
+          image={deleteRoomOwnerImg}
+        />
       </Modal>
 
       <Modal isOpen={isRoomDeleted} onClose={() => navigate('/')}>
-        <div className={styles.deleteModal}>
-          <h2 className={styles.deleteModal__title}>Комната исчезла</h2>
-          <img src={deleteRoomImg} alt="Комната удалена" className={styles.deleteModal__image} />
-          <p className={styles.deleteModal__text}>
-            Организатор решил распустить группу и удалил эту комнату.
-            Все текущие приготовления были отменены.
-          </p>
-          <div className={styles.deleteModal__layout}>
-            <button
-              className={styles.deleteModal__btn}
-              onClick={() => navigate('/')}
-            >
-              Вернуться в долину
-            </button>
-          </div>
-        </div>
+        <ConfirmModal
+          title="Комната уничтожена"
+          text="К сожалению, организатор решил распустить группу и удалил эту комнату.
+            Все текущие приготовления были отменены — участиники ищут себе новое пристанище."
+          onConfirm={() => navigate('/')}
+          onConfirmText="Уйти на главную"
+          image={deleteRoomImg}
+        />
       </Modal>
     </aside>
   );

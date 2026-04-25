@@ -12,6 +12,7 @@ import GameBoard from "./gameBoard.tsx";
 import { TILE_IMAGES } from "../../utils/tiles.config.ts";
 import { getPlayerColorBySeat } from "../../utils/playerColor.ts";
 import { MatchPlayerCard } from "../matchPlayerCard/matchPlayerCard.tsx";
+import { ConfirmModal } from '../confirmKick/confirmKick.tsx';
 
 interface MatchPlayer {
   actorId: string;
@@ -35,7 +36,11 @@ interface GameState {
   players: MatchPlayer[];
   turnNumber: number;
   phase: string;
-  board: Tile[];
+  board: Board;
+}
+
+interface Board {
+  tiles: Tile[];
 }
 
 export interface Tile {
@@ -88,9 +93,6 @@ const GameRoom = () => {
 
   const handleLeftGame = () => {
     if (room?.id) {
-      sendMessage('leave_match', {
-        roomId: room.id
-      });
       sendMessage('delete_room', {
         roomId: room.id
       });
@@ -98,12 +100,10 @@ const GameRoom = () => {
     }
   };
 
-
   if (isLoading) return <div className={sidebarstyles.pageWrapper}>Загрузка...</div>;
 
   const currentTurnId = match?.gameState?.currentPlayerId;
   const ownerId = room?.ownerActorId;
-  const isOwner = currentUser?.id === ownerId;
   const currentTileId = "1";
   const players = match?.gameState?.players || [];
   const sortedPlayers = [...players].sort((a, b) => {
@@ -144,7 +144,7 @@ const GameRoom = () => {
 
       <div className={styles.boardContainer}>
         <GameBoard
-          board={match?.gameState?.board || []}
+          board={match?.gameState?.board?.tiles || []}
         />
         {currentTileId && (
           <img
@@ -156,50 +156,29 @@ const GameRoom = () => {
             }}
           />
         )}
-    </div>
+      </div>
 
       <Modal isOpen={isExitModalOpen} onClose={() => {setIsExitModalOpen(false); navigate('/')}}>
-        <div className={styles.confirmModal}>
-        <img src={gameExitImage} alt="gameExitImage" className={styles.confirmModal__image} />
-          <h2 className={styles.confirmModal__title}>
-            {isOwner
-              ? "Вы точно хотите завершить матч для всех игроков?"
-              : "Вы точно хотите покинуть игру?"}
-          </h2>
-          <div className={styles.confirmModal__actions}>
-            <button 
-              className={styles.confirmModal__btnCancel} 
-              onClick={() => setIsExitModalOpen(false)}
-            >
-              Остаться
-            </button>
-            <button 
-              className={styles.confirmModal__btnConfirm} 
-              onClick={() => {handleLeftGame(); navigate('/')}}
-            >
-              Да, выйти
-            </button>
-          </div>
-        </div>
+        <ConfirmModal
+          title="Вы действительно хотите покинуть игру?"
+          text="Игра будет завершена досрочно, а этот бесчестный поступок отразится на вашей репутации в сообществе"
+          onCancel={() => setIsExitModalOpen(false)}
+          onConfirm={() => {handleLeftGame(); navigate('/')}}
+          onConfirmText="Да, выйти"
+          onCancelText="Остаться"
+          image={gameExitImage}
+        />
       </Modal>
 
       <Modal isOpen={isRoomDeleted} onClose={() => navigate('/')}>
-        <div className={styles.confirmModal}>
-          <h2 className={styles.confirmModal__title}>Комната исчезла</h2>
-          <img src={gameExitImage} alt="Игра завершена" className={styles.confirmModal__image} />
-          <p className={styles.confirmModal__text}>
-            Один из воинов решил покинуть игру. 
-            Поэтому весь текущий сеанс был приостановлен.
-          </p>
-          <div className={styles.confirmModal__layout}>
-            <button
-              className={styles.confirmModal__btnConfirm}
-              onClick={() => navigate('/')}
-            >
-              Вернуться в долину
-            </button>
-          </div>
-        </div>
+        <ConfirmModal
+          title="Игра была завершена досрочно"
+          text="К превеликому сожалению, один из нас решил с позором покинуть игру.
+            В сообществе пойдёт молва о его трусливом дезертирстве."
+          onConfirm={() => navigate('/')}
+          onConfirmText="Уйти на главную"
+          image={gameExitImage}
+        />
       </Modal>
     </main>
   );

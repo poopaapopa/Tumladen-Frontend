@@ -5,11 +5,11 @@ import styles from './roomPage.module.scss';
 import castleImg from '../../assets/zamok.png';
 import { roomService, type RoomResponse, type UpdateRoomSettingsPayload } from '../../api/room.ts'
 import { useUserStore } from '../../store/useUserStore';
-import {useRoomSocket, type WebSocketMessage} from '../../api/ws.ts';
+import { useRoomSocket, type WebSocketMessage } from '../../api/ws.ts';
 
-import { RoomPlayers } from "../roomPlayers/roomPlayers.tsx";
 import { RoomSidebar } from "../roomSidebar/roomSidebar.tsx";
 import { RoomPageSkeleton } from "./roomPageSkeleton.tsx";
+import { RoomPlayers } from '../roomPlayers/roomPlayers.tsx';
 
 const RoomPage = () => {
   const { id } = useParams<{ id: string }>();

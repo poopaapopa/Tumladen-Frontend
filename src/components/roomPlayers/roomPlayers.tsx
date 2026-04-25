@@ -3,11 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Share2, LogOut, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import styles from './roomPage.module.scss';
+import styles from './roomPlayers.module.scss';
 import { type RoomResponse } from '../../api/room.ts';
 import { PlayerSlot } from "../playerSlot/playerSlot.tsx";
 import Modal from "../modal/modal.tsx";
-import { ConfirmKick } from "../confirmKick/confirmKick.tsx";
+import { ConfirmModal } from "../confirmKick/confirmKick.tsx";
+import elfExileImg from "../../assets/elf-exile.png";
 
 import ElfClosingDoorImg from '../../assets/elf-closing-door.png';
 
@@ -92,12 +93,12 @@ export const RoomPlayers = ({
   };
 
   return (
-    <section className={styles.roomPage__players}>
-        <h2 className={styles.roomPage__playersTitle}>
+    <section className={styles.roomPlayers}>
+        <h2 className={styles.roomPlayers__title}>
           Участники:
         </h2>
 
-        <div className={styles.roomPage__playerList}>
+        <div className={styles.roomPlayers__list}>
           {Array.from({ length: room.maxPlayers }).map((_, idx) => (
             <PlayerSlot
               key={idx}
@@ -110,13 +111,13 @@ export const RoomPlayers = ({
           ))}
         </div>
 
-        <div className={styles.roomPage__actions}>
-          <button className={styles.roomPage__btnInvite}
+        <div className={styles.roomPlayers__actions}>
+          <button className={styles.roomPlayers__btnInvite}
             onClick={(handleCopyLink)}>
             <Share2 size={20} /> Пригласить
           </button>
           <button
-            className={styles.roomPage__btnExit}
+            className={styles.roomPlayers__btnExit}
             onClick={handleLeftGame}
           >
             <LogOut size={20} /> Покинуть
@@ -137,33 +138,33 @@ export const RoomPlayers = ({
         </AnimatePresence>
         <Modal isOpen={kickTarget !== null} onClose={() => setKickTarget(null)}>
           {kickTarget && (
-            <ConfirmKick
-              targetName={kickTarget.name}
+            <ConfirmModal
+              title="Изгнание из комнаты"
+              text={
+                <>
+                  Вы действительно желаете выгнать игрока <strong>{kickTarget.name}</strong>?<br />
+                  Он сможет вернуться в комнату в любой момент, но ваше действие явно отразится на его желании играть с вами.
+                </>
+              }
               onConfirm={confirmKick}
               onCancel={() => setKickTarget(null)}
+              onConfirmText="Изгнать"
+              onCancelText="Оставить"
+              image={elfExileImg}
             />
           )}
         </Modal>
 
         <Modal isOpen={isKicked} onClose={() => navigate('/')}>
-          <div className={styles.kickedModal}>
-            <h2 className={styles.kickedModal__title}>Вы вне игры</h2>
-            <img src={ElfClosingDoorImg} alt="Изгнанник" className={styles.kickedModal__image} />
-            <p className={styles.kickedModal__text}>
-              Организатор партии решил продолжить подготовку без вашего участия.
-              Вы можете вновь войти в эту комнату, но вряд ли вам будут рады.
-            </p>
-            <div className={styles.kickedModal__layout}>
-              <button
-                className={styles.kickedModal__btn}
-                onClick={() => navigate('/')}
-              >
-                Уйти на главную
-              </button>
-            </div>
-          </div>
+          <ConfirmModal
+            title="Вы вне игры"
+            text="Организатор партии решил продолжить подготовку без вашего участия.
+              Вы можете вновь войти в эту комнату, но вряд ли вам будут рады."
+            onConfirm={() => navigate('/')}
+            onConfirmText="Уйти на главную"
+            image={ElfClosingDoorImg}
+          />
         </Modal>
     </section>
-
   );
 };
