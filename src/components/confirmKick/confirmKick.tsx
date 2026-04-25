@@ -1,36 +1,46 @@
 import styles from './confirmKick.module.scss';
-import elfExileImg from "../../assets/elf-exile.png";
+import type React from 'react';
+import clsx from 'clsx';
 
 interface Props {
-  targetName: string;
+  title: string;
+  text: React.ReactNode | string;
+  image?: string;
   onConfirm: () => void;
-  onCancel: () => void;
+  onCancel?: () => void;
+  onConfirmText: string;
+  onCancelText?: string;
 }
 
-export const ConfirmKick = ({ targetName, onConfirm, onCancel }: Props) => {
+export const ConfirmModal = ({ title, text, onConfirm, onCancel, onConfirmText, onCancelText, image }: Props) => {
+  const isCancelling = onCancelText && onCancel;
+
   return (
     <div className={styles.confirmKick}>
-      <h2 className={styles.confirmKick__title}>Изгнание из комнаты</h2>
+      <h2 className={styles.confirmKick__title}>{title}</h2>
 
-      <img src={elfExileImg} alt="Эльф изгнанник" className={styles.confirmKick__exiledElfImg} />
+      <img src={image} alt="Эльф изгнанник" className={styles.confirmKick__exiledElfImg} />
 
-      <p className={styles.confirmKick__text}>
-        Вы действительно желаете выгнать игрока <strong>{targetName}</strong>?<br />
-        Он сможет вернуться в комнату в любой момент, но ваше действие явно отразится на его желании играть с вами
-      </p>
+      <p className={styles.confirmKick__text}>{text}</p>
 
-      <div className={styles.confirmKick__actions}>
-        <button
-          className={styles.confirmKick__btnCancel}
-          onClick={onCancel}
-        >
-          Оставить
-        </button>
+      <div className={clsx(
+          styles.confirmKick__actions,
+          !isCancelling && styles.confirmKick__oneButton
+        )}
+      >
+        {isCancelling && (
+          <button
+            className={styles.confirmKick__btnCancel}
+            onClick={onCancel}
+          >
+            {onCancelText}
+          </button>
+        )}
         <button
           className={styles.confirmKick__btnConfirm}
           onClick={onConfirm}
         >
-          Изгнать
+          {onConfirmText}
         </button>
       </div>
     </div>
