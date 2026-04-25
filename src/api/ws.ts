@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react';
 import { useUserStore } from '../store/useUserStore';
 import { WS_BASE_URL } from './config.ts';
 import { roomService, type RoomResponse } from './room.ts';
-import type { MatchStatePayload } from "../components/gameRoom/gameRoom.tsx";
+import type { MatchStatePayload, PrivateState } from "../components/gameRoom/gameRoom.tsx";
 
 export interface WebSocketMessage {
-  type: 'room_state' | 'participant_kicked' | 'match_state' | 'error' | 'match_finished'| 'room_deleted';
-  payload: RoomResponse | ParticipantKickedPayload | MatchStatePayload;
+  type: 'room_state' | 'participant_kicked' | 'match_state' | 'match_private_state' | 'error' | 'match_finished'| 'room_deleted';
+  payload: RoomResponse | ParticipantKickedPayload | MatchStatePayload | PrivateState;
 }
 
 export interface ParticipantKickedPayload {
@@ -18,9 +18,13 @@ interface CentrifugeEnvelope {
     pub: {
       data: WebSocketMessage;
     };
+    message?: {
+      data: WebSocketMessage;
+    };
   };
   id?: number;
   connect?: string;
+  message?: string;
 }
 
 export const useRoomSocket = (
@@ -48,7 +52,7 @@ export const useRoomSocket = (
 
         const url = new URL(WS_BASE_URL); 
         url.searchParams.set('ticket', ticket);
-        // url.searchParams.set('cf_ws_frame_ping_pong', 'true');
+        url.searchParams.set('cf_ws_frame_ping_pong', 'true');
 
         const ws = new WebSocket(url.toString());
         socket.current = ws;
@@ -72,7 +76,7 @@ export const useRoomSocket = (
 
           for (const line of lines) {
             try {
-              const envelope: CentrifugeEnvelope = JSON.parse(line);
+              const envelope: CentrifugeEnvelope = JSON.parse(line);              
 
               if (envelope.push?.pub?.data) {
                 const data = envelope.push.pub.data;
@@ -83,6 +87,9 @@ export const useRoomSocket = (
                 }  else {
                   onMessageRef.current(data);
                 }
+              } else if (envelope.push?.message?.data) {
+                const data = envelope.push.message.data;
+                onMessageRef.current(data);
               }
             } catch (err) {
               console.error('WS parsing error:', err);

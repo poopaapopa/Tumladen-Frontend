@@ -121,30 +121,128 @@
 
 .nexTile {
   position: absolute;
-  top: 90px;
-  right: 20px;
+  top: 70px;
+  right: 0px;
   z-index: 10;
-  width: 150px;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 10px;
+  width: 200px;
+  height: 380px;
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+  background-color: $sage-gray;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
 
-  box-shadow: 0 0 15px var(--player-color);
-  border: 2px solid var(--player-color);
-  animation: glowPulse 3s infinite ease-in-out;
+  &__status {
+    text-align: center;
+    font-family: $font-main;
+    font-weight: 700;
+    line-height: 1.2;
+    pointer-events: none;
+  }
+
+  &__nickname {
+    display: block;
+    font-size: 20px;
+    color: var(--player-color);
+    text-transform: uppercase;
+    animation: glowPulse 3s infinite ease-in-out;
+  }
+
+  &__action {
+    display: block;
+    font-size: 14px;
+    color: $forest-dark;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  &__image {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    border: 3px solid var(--player-color);
+    background-color: $beige-light;
+    transition: all 0.3s ease;
+    pointer-events: auto !important; 
+    cursor: pointer;                 
+  }
+
+  &__image_active {
+      transform: scale(1.1) translateY(-10px);
+      box-shadow: 0 15px 30px var(--player-color);
+      border-width: 5px;
+      filter: brightness(1.2);
+    }
+
+  &__count {
+    position: relative;  
+    width: 100%;
+    height: 100px;
+    display: flex;
+    align-items: center;  
+    justify-content: center;
+    margin-top: 10px;
+  }
+
+  &__countIcon {
+    position: absolute; 
+    top: 0;
+    width: 100px;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 10px;
+    filter: brightness(50%);
+    z-index: 1;         
+  }
+
+  &__countText {
+    position: relative;   
+    z-index: 2;         
+    color: $beige-light;  
+    font-size: 54px;      
+    font-weight: 700;    
+    font-family: $font-main;
+    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); 
+    pointer-events: none; 
+  }
+}
+
+.skipButton {
+  margin-top: 10px;
+  width: 150px;
+  height: 50px;
+  background-color: $forest-mid;
+  color: $beige-light;
+  border: none;
+  border-radius: 10px;
+  font-family: $font-main;
+  font-weight: 600;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+
+  &:hover {
+    background-color: $forest-dark;
+    transform: scale(1.05);
+  }
 }
 
 @keyframes glowPulse {
   0% {
-    box-shadow: 0 0 5px var(--player-color);
+    text-shadow: 0 0 5px var(--player-color);
     filter: brightness(1);
   }
   50% {
-    box-shadow: 0 0 25px var(--player-color);
+    text-shadow: 0 0 25px var(--player-color);
     filter: brightness(1.1);
   }
   100% {
-    box-shadow: 0 0 5px var(--player-color);
+    text-shadow: 0 0 5px var(--player-color);
     filter: brightness(1);
   }
 }

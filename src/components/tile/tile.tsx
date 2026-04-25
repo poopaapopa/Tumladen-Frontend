@@ -11,7 +11,9 @@ interface GameTileProps {
   tileSize: number;
 }
 
-export const GameTile: React.FC<GameTileProps> = ({ tileId, x, y, rotation, tileSize }) => {
+export const GameTile: React.FC<GameTileProps & { opacity?: number }> = ({ 
+  tileId, x, y, rotation, tileSize, opacity = 1 
+}) => {
   const [image] = useImage(TILE_IMAGES[tileId]);
   const CORNER_RADIUS = 10;
   const BEVEL_SIZE = 4;
@@ -23,6 +25,7 @@ export const GameTile: React.FC<GameTileProps> = ({ tileId, x, y, rotation, tile
       rotation={rotation}
       offsetX={tileSize / 2}
       offsetY={tileSize / 2}
+      opacity={opacity}
     >
       <Rect
         width={tileSize}
