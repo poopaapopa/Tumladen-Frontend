@@ -10,15 +10,12 @@ import Modal from "../modal/modal.tsx";
 import { ConfirmKick } from "../confirmKick/confirmKick.tsx";
 
 import ElfClosingDoorImg from '../../assets/elf-closing-door.png';
-import deleteRoomImg from '../../assets/deleteRoom.png';
-import deleteRoomOwnerImg from '../../assets/deleteRoomOwner.png';
 
 interface RoomPlayersProps {
   room: RoomResponse;
   isOwner: boolean;
   sendMessage: (type: string, payload: Record<string, unknown>) => void;
-  isKicked: boolean;       
-  isRoomDeleted: boolean; 
+  isKicked: boolean;
 }
 
 const copyToClipboard = async (text: string) => {
@@ -48,17 +45,15 @@ const fallbackCopy = (text: string) => {
   }
 };
 export const RoomPlayers = ({
-  room, 
-  isOwner, 
-  sendMessage, 
-  isKicked, 
-  isRoomDeleted 
+  room,
+  isOwner,
+  sendMessage,
+  isKicked,
 }: RoomPlayersProps) => {
   const navigate = useNavigate();
 
   const [showCopyToast, setShowCopyToast] = useState(false);
   const [kickTarget, setKickTarget] = useState<{id: string, name: string} | null>(null);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -96,26 +91,6 @@ export const RoomPlayers = ({
     }
   };
 
-  const handleDeleteRoom = () => {
-    if (room?.id) {
-      sendMessage('delete_room', {  roomId: room.id });
-      setIsDeleteConfirmOpen(true);
-      navigate('/');
-    }
-  };
-
-  const deleteRoomOwner = () => {
-    if (room?.id) {
-      sendMessage('delete_room', {  roomId: room.id });
-      navigate('/');
-    }
-  }
-
-  const handleDeleteRequest = () => {
-    setIsDeleteConfirmOpen(true);
-  }
-  
-
   return (
     <section className={styles.roomPage__players}>
         <h2 className={styles.roomPage__playersTitle}>
@@ -142,22 +117,10 @@ export const RoomPlayers = ({
           </button>
           <button
             className={styles.roomPage__btnExit}
-            onClick={isOwner ? deleteRoomOwner : handleLeftGame}
+            onClick={handleLeftGame}
           >
             <LogOut size={20} /> Покинуть
           </button>
-          {isOwner ? (
-            <button
-              className={styles.roomPage__btnDelete}
-              onClick={handleDeleteRequest}
-            >
-              Удалить комнату
-            </button>
-          ) : (
-            <div className={styles.roomSidebar__waitMessage}>
-              
-            </div>
-          )}
         </div>
       <AnimatePresence>
         {showCopyToast && (
@@ -196,55 +159,6 @@ export const RoomPlayers = ({
                 onClick={() => navigate('/')}
               >
                 Уйти на главную
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal isOpen={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)}>
-          <div className={styles.kickedModal}>
-            <h2 className={styles.kickedModal__title}>Удаление комнаты</h2>
-            
-            <img src={deleteRoomOwnerImg} alt="Удаление" className={styles.kickedModal__image} />
-            
-            <p className={styles.kickedModal__text}>
-              Вы действительно хотите распустить группу и <strong>удалить комнату</strong>?<br/>
-              Это действие нельзя будет отменить, и все игроки будут исключены.
-            </p>
-            
-            <div className={styles.kickedModal__layout} style={{ gap: '15px' }}>
-              <button 
-                className={styles.kickedModal__btn} 
-                style={{ backgroundColor: '#989898' }}
-                onClick={() => setIsDeleteConfirmOpen(false)}
-              >
-                Отмена
-              </button>
-              <button 
-                className={styles.kickedModal__btn} 
-                style={{ backgroundColor: '#e74c3c' }}
-                onClick={handleDeleteRoom}
-              >
-                Да, удалить
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal isOpen={isRoomDeleted} onClose={() => navigate('/')}>
-          <div className={styles.kickedModal}>
-            <h2 className={styles.kickedModal__title}>Комната исчезла</h2>
-            <img src={deleteRoomImg} alt="Комната удалена" className={styles.kickedModal__image} />
-            <p className={styles.kickedModal__text}>
-              Организатор решил распустить группу и удалил эту комнату. 
-              Все текущие приготовления были отменены.
-            </p>
-            <div className={styles.kickedModal__layout}>
-              <button
-                className={styles.kickedModal__btn}
-                onClick={() => navigate('/')}
-              >
-                Вернуться в долину
               </button>
             </div>
           </div>

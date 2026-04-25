@@ -1,22 +1,38 @@
 import { useState } from 'react';
-import { Users, Clock, Pencil, Check, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Users, Clock, Pencil, Check, X, Trash2 } from 'lucide-react';
 import { type RoomResponse } from '../../api/room.ts';
 import { EditableSelector } from '../editableSelector/editableSelector.tsx';
+import Modal from '../modal/modal.tsx';
 import styles from './roomSidebar.module.scss';
+
+import deleteRoomImg from '../../assets/deleteRoom.png';
+import deleteRoomOwnerImg from '../../assets/deleteRoomOwner.png';
 
 interface RoomSidebarProps {
   room: RoomResponse;
   isOwner: boolean;
+  isRoomDeleted: boolean;
   onSaveSetting: (key: string, newValue: number | string | boolean) => void;
   sendMessage: (type: string, payload: Record<string, unknown>) => void;
 }
 
-export const RoomSidebar = ({ room, isOwner, onSaveSetting, sendMessage }: RoomSidebarProps) => {
+export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendMessage }: RoomSidebarProps) => {
+  const navigate = useNavigate();
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState("");
   const [isStarting, setIsStarting] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const currentSettings = (room?.settings as Record<string, number | string | boolean>) || {};
+
+  const handleDeleteRoom = () => {
+    if (room?.id) {
+      sendMessage('delete_room', { roomId: room.id });
+      setIsDeleteConfirmOpen(false);
+      navigate('/');
+    }
+  };
 
   const handleStartGame = () => {
     if (isOwner && room.canStart) {
@@ -84,9 +100,14 @@ export const RoomSidebar = ({ room, isOwner, onSaveSetting, sendMessage }: RoomS
             <div className={styles.roomSidebar__nameView}>
               <h2 className={styles.roomSidebar__roomName}>{room.name}</h2>
               {isOwner && (
-                <button onClick={handleStartEdit}>
-                  <Pencil className={styles.edit_icon} size={20} />
-                </button>
+                <>
+                  <button onClick={handleStartEdit}>
+                    <Pencil className={styles.edit_icon} size={20} />
+                  </button>
+                  <button onClick={() => setIsDeleteConfirmOpen(true)}>
+                    <Trash2 className={styles.delete_icon} size={20} />
+                  </button>
+                </> 
               )}
             </div>
           )}
@@ -125,6 +146,51 @@ export const RoomSidebar = ({ room, isOwner, onSaveSetting, sendMessage }: RoomS
           Организатор шепчется с ветром о стратегии грядущей партии
         </div>
       )}
+      <Modal isOpen={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)}>
+        <div className={styles.deleteModal}>
+          <h2 className={styles.deleteModal__title}>Удаление комнаты</h2>
+          <img src={deleteRoomOwnerImg} alt="Удаление" className={styles.deleteModal__image} />
+          <p className={styles.deleteModal__text}>
+            Вы действительно хотите распустить группу и <strong>удалить комнату</strong>?<br/>
+            Это действие нельзя будет отменить, и все игроки будут исключены.
+          </p>
+          <div className={styles.deleteModal__layout} style={{ gap: '15px' }}>
+            <button
+              className={styles.deleteModal__btn}
+              style={{ backgroundColor: '#989898' }}
+              onClick={() => setIsDeleteConfirmOpen(false)}
+            >
+              Отмена
+            </button>
+            <button
+              className={styles.deleteModal__btn}
+              style={{ backgroundColor: '#e74c3c' }}
+              onClick={handleDeleteRoom}
+            >
+              Да, удалить
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={isRoomDeleted} onClose={() => navigate('/')}>
+        <div className={styles.deleteModal}>
+          <h2 className={styles.deleteModal__title}>Комната исчезла</h2>
+          <img src={deleteRoomImg} alt="Комната удалена" className={styles.deleteModal__image} />
+          <p className={styles.deleteModal__text}>
+            Организатор решил распустить группу и удалил эту комнату.
+            Все текущие приготовления были отменены.
+          </p>
+          <div className={styles.deleteModal__layout}>
+            <button
+              className={styles.deleteModal__btn}
+              onClick={() => navigate('/')}
+            >
+              Вернуться в долину
+            </button>
+          </div>
+        </div>
+      </Modal>
     </aside>
   );
 };

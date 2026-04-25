@@ -121,6 +121,7 @@ const RoomPage = () => {
       <RoomSidebar
         room={room}
         isOwner={isOwner}
+        isRoomDeleted={isRoomDeleted}
         onSaveSetting={handleSaveSetting}
         sendMessage={sendMessage}
       />
@@ -134,12 +135,11 @@ const RoomPage = () => {
         <div className={styles.roomPage__rules}>Правила игры...</div>
       </main>
 
-      <RoomPlayers 
+      <RoomPlayers
         room={room}
         isOwner={currentUser?.id === room.ownerActorId}
         sendMessage={sendMessage}
         isKicked={isKicked}
-        isRoomDeleted={isRoomDeleted}
       />
     </div>
   );
