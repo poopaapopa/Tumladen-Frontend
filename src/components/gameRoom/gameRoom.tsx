@@ -177,7 +177,7 @@ const GameRoom = () => {
       sendMessage('leave_match', {
         roomId: room.id
       });
-      navigate('/');
+      navigate(`/room/${room.id}`);
     }
   };
 
