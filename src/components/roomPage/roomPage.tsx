@@ -1,47 +1,15 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { LogOut, Share2, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 
 import styles from './roomPage.module.scss';
 import castleImg from '../../assets/zamok.png';
-import ElfClosingDoorImg from '../../assets/elf-closing-door.png';
 import { roomService, type RoomResponse, type UpdateRoomSettingsPayload } from '../../api/room.ts'
 import { useUserStore } from '../../store/useUserStore';
 import {useRoomSocket, type WebSocketMessage} from '../../api/ws.ts';
 
-import { PlayerSlot } from "../playerSlot/playerSlot.tsx";
+import { RoomPlayers } from "../roomPlayers/roomPlayers.tsx";
 import { RoomSidebar } from "../roomSidebar/roomSidebar.tsx";
 import { RoomPageSkeleton } from "./roomPageSkeleton.tsx";
-import Modal from "../modal/modal.tsx";
-import { ConfirmKick } from "../confirmKick/confirmKick.tsx";
-
-const copyToClipboard = async (text: string) => {
-  if (navigator.clipboard && window.isSecureContext) {
-    try {
-      await navigator.clipboard.writeText(text);
-      return true;
-    } catch {
-      return fallbackCopy(text);
-    }
-  }
-  return fallbackCopy(text);
-};
-
-const fallbackCopy = (text: string) => {
-  const textArea = document.createElement("textarea");
-  textArea.value = text;
-  Object.assign(textArea.style, { position: "fixed", left: "-9999px", top: "0" });
-  document.body.appendChild(textArea);
-  textArea.select();
-  try {
-    return document.execCommand('copy');
-  } catch {
-    return false;
-  } finally {
-    document.body.removeChild(textArea);
-  }
-};
 
 const RoomPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -52,22 +20,8 @@ const RoomPage = () => {
   const [room, setRoom] = useState<RoomResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showCopyToast, setShowCopyToast] = useState(false);
-  const [kickTarget, setKickTarget] = useState<{id: string, name: string} | null>(null);
   const [isKicked, setIsKicked] = useState(false);
-
-  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const triggerToast = useCallback(() => {
-    if (toastTimer.current) clearTimeout(toastTimer.current);
-    setShowCopyToast(true);
-    toastTimer.current = setTimeout(() => setShowCopyToast(false), 3000);
-  }, []);
-
-  const handleCopyLink = async () => {
-    const success = await copyToClipboard(window.location.href);
-    if (success) triggerToast();
-  };
+  const [isRoomDeleted, setIsRoomDeleted] = useState(false);
 
   const checkAvailableSlots = useCallback((roomData: RoomResponse) => {
     if (!currentUser) return false;
@@ -98,14 +52,18 @@ const RoomPage = () => {
   }, [id, navigate, checkAvailableSlots]);
 
   const handleRoomUpdate = useCallback((data: WebSocketMessage) => {
-    const updatedRoom = data.payload as RoomResponse;
-
-    if (checkAvailableSlots(updatedRoom)) {
-      navigate('/');
-      return;
+    if (data.type === 'room_state') {
+      const updatedRoom = data.payload as RoomResponse;
+      if (checkAvailableSlots(updatedRoom)) {
+        navigate('/');
+        return;
+      }
+      setRoom(updatedRoom);
     }
 
-    setRoom(updatedRoom);
+    if (data.type === 'room_deleted') {
+      setIsRoomDeleted(true);
+    }
   }, [checkAvailableSlots, navigate]);
 
   const handleKicked = useCallback(() => {
@@ -143,20 +101,6 @@ const RoomPage = () => {
     sendMessage('update_room_settings', payload as unknown as Record<string, unknown>);
   };
 
-  const handleKick = (targetId: string, targetName: string) => {
-    setKickTarget({ id: targetId, name: targetName });
-  };
-
-  const confirmKick = () => {
-    if (kickTarget && room) {
-      sendMessage('kick_participant', {
-        roomId: room.id,
-        targetActorId: kickTarget.id
-      });
-      setKickTarget(null);
-    }
-  };
-
   useEffect(() => {
     fetchRoomData();
   }, [fetchRoomData]);
@@ -190,77 +134,13 @@ const RoomPage = () => {
         <div className={styles.roomPage__rules}>Правила игры...</div>
       </main>
 
-      <section className={styles.roomPage__players}>
-        <h2 className={styles.roomPage__playersTitle}>
-          Участники:
-        </h2>
-
-        <div className={styles.roomPage__playerList}>
-          {Array.from({ length: room.maxPlayers }).map((_, idx) => (
-            <PlayerSlot
-              key={idx}
-              idx={idx}
-              participant={room.participants?.[idx]}
-              room={room}
-              isOwner={isOwner}
-              onKick={handleKick}
-            />
-          ))}
-        </div>
-
-        <div className={styles.roomPage__actions}>
-          <button className={styles.roomPage__btnInvite}
-            onClick={(handleCopyLink)}>
-            <Share2 size={20} /> Пригласить
-          </button>
-          <button
-            className={styles.roomPage__btnExit}
-            onClick={() => navigate('/')}
-          >
-            <LogOut size={20} /> Покинуть
-          </button>
-        </div>
-      </section>
-      <AnimatePresence>
-        {showCopyToast && (
-          <motion.div
-            className={styles.copyToast}
-            initial={{ opacity: 0, y: 50, x: '-50%' }}
-            animate={{ opacity: 1, y: 0, x: '-50%' }}
-            exit={{ opacity: 0, y: 20, x: '-50%' }}
-          >
-            <Check size={20} className={styles.copyToast__icon} />
-            <span>Ссылка успешно скопирована</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-      <Modal isOpen={kickTarget !== null} onClose={() => setKickTarget(null)}>
-        {kickTarget && (
-          <ConfirmKick
-            targetName={kickTarget.name}
-            onConfirm={confirmKick}
-            onCancel={() => setKickTarget(null)}
-          />
-        )}
-      </Modal>
-      <Modal isOpen={isKicked} onClose={() => navigate('/')}>
-        <div className={styles.kickedModal}>
-          <h2 className={styles.kickedModal__title}>Вы вне игры</h2>
-          <img src={ElfClosingDoorImg} alt="Изгнанник" className={styles.kickedModal__image} />
-          <p className={styles.kickedModal__text}>
-            Организатор партии решил продолжить подготовку без вашего участия.
-            Вы можете вновь войти в эту комнату, но вряд ли вам будут рады.
-          </p>
-          <div className={styles.kickedModal__layout}>
-            <button
-              className={styles.kickedModal__btn}
-              onClick={() => navigate('/')}
-            >
-              Уйти на главную
-            </button>
-          </div>
-        </div>
-      </Modal>
+      <RoomPlayers 
+        room={room}
+        isOwner={currentUser?.id === room.ownerActorId}
+        sendMessage={sendMessage}
+        isKicked={isKicked}
+        isRoomDeleted={isRoomDeleted}
+      />
     </div>
   );
 };

@@ -54,6 +54,7 @@ const GameRoom = () => {
   const [match, setMatch] = useState<MatchStatePayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
+  const [isRoomDeleted, setIsRoomDeleted] = useState(false);
 
   const fetchInitialData = useCallback(async () => {
     if (!inviteCode) return;
@@ -77,18 +78,26 @@ const GameRoom = () => {
     if (data.type === 'match_state') {
       setMatch(data.payload as MatchStatePayload);
     }
+
+    if (data.type === 'match_finished') {
+      setIsRoomDeleted(true);
+    }
   }, []);
 
   const { sendMessage } = useRoomSocket(room?.id, handleMessage);
 
   const handleLeftGame = () => {
     if (room?.id) {
-      sendMessage('finish_room_match', {
+      sendMessage('leave_match', {
+        roomId: room.id
+      });
+      sendMessage('delete_room', {
         roomId: room.id
       });
       navigate('/');
     }
   };
+
 
   if (isLoading) return <div className={sidebarstyles.pageWrapper}>Загрузка...</div>;
 
@@ -149,7 +158,7 @@ const GameRoom = () => {
         )}
     </div>
 
-      <Modal isOpen={isExitModalOpen} onClose={() => setIsExitModalOpen(false)}>
+      <Modal isOpen={isExitModalOpen} onClose={() => {setIsExitModalOpen(false); navigate('/')}}>
         <div className={styles.confirmModal}>
         <img src={gameExitImage} alt="gameExitImage" className={styles.confirmModal__image} />
           <h2 className={styles.confirmModal__title}>
@@ -166,9 +175,28 @@ const GameRoom = () => {
             </button>
             <button 
               className={styles.confirmModal__btnConfirm} 
-              onClick={handleLeftGame}
+              onClick={() => {handleLeftGame(); navigate('/')}}
             >
               Да, выйти
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal isOpen={isRoomDeleted} onClose={() => navigate('/')}>
+        <div className={styles.confirmModal}>
+          <h2 className={styles.confirmModal__title}>Комната исчезла</h2>
+          <img src={gameExitImage} alt="Игра завершена" className={styles.confirmModal__image} />
+          <p className={styles.confirmModal__text}>
+            Один из воинов решил покинуть игру. 
+            Поэтому весь текущий сеанс был приостановлен.
+          </p>
+          <div className={styles.confirmModal__layout}>
+            <button
+              className={styles.confirmModal__btnConfirm}
+              onClick={() => navigate('/')}
+            >
+              Вернуться в долину
             </button>
           </div>
         </div>
