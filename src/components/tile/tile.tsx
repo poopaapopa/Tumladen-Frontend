@@ -9,21 +9,22 @@ interface GameTileProps {
   y: number;
   rotation: number;
   tileSize: number;
+  tileStep?: number;
   opacity?: number;
 }
 
-export const GameTile: React.FC<GameTileProps> = ({ 
-  tileId, x, y, rotation, tileSize, opacity = 1 
+export const GameTile: React.FC<GameTileProps> = ({
+  tileId, x, y, rotation, tileSize, tileStep, opacity = 1
 }) => {
+  const step = tileStep ?? tileSize;
   const [image] = useImage(TILE_IMAGES[tileId]);
   const CORNER_RADIUS = 10;
   const BEVEL_SIZE = 4;
 
   return (
     <Group
-      x={x * tileSize}
-      y={y * tileSize}
-      rotation={rotation}
+      x={x * step}
+      y={y * step}
       offsetX={tileSize / 2}
       offsetY={tileSize / 2}
       opacity={opacity}
@@ -64,6 +65,11 @@ export const GameTile: React.FC<GameTileProps> = ({
       >
         <Image
           image={image}
+          x={tileSize / 2}
+          y={tileSize / 2}
+          rotation={rotation}
+          offsetX={tileSize / 2}
+          offsetY={tileSize / 2}
           width={tileSize}
           height={tileSize}
         />

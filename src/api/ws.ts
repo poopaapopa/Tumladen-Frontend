@@ -75,9 +75,8 @@ export const useRoomSocket = (
 
     const connect = async () => {
       try {
-        const { ticket } = await roomService.getWsTicket();
-
         if (!isComponentMounted.current) return;
+        const { ticket } = await roomService.getWsTicket();
 
         const url = new URL(WS_BASE_URL);
         url.searchParams.set('ticket', ticket);
@@ -126,7 +125,6 @@ export const useRoomSocket = (
                 }
               } else if (envelope.push?.message?.data) {
                 const data = envelope.push.message.data;
-                console.log(data);
                 onMessageRef.current(data);
               }
             } catch (err) {

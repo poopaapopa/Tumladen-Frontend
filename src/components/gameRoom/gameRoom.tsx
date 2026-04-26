@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import styles from './gameRoom.module.scss';
 import sidebarstyles from '../mainPage/MainPage.module.scss'
 import { useRoomSocket, type WebSocketMessage } from '../../api/ws';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { roomService, type RoomResponse } from '../../api/room';
 import { useUserStore } from '../../store/useUserStore';
 import Modal from '../modal/modal';
@@ -75,11 +75,13 @@ const GameRoom = () => {
 
   const [room, setRoom] = useState<RoomResponse | null>(null);
   const [match, setMatch] = useState<MatchStatePayload | null>(null);
+  const matchRef = useRef<MatchStatePayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
   const [isRoomDeleted, setIsRoomDeleted] = useState(false);
   const [privateState, setPrivateState] = useState<PrivateState | null>(null);
   const [currentRotation, setCurrentRotation] = useState(0);
+  const [pendingPlacement, setPendingPlacement] = useState<{ x: number; y: number; rotation: number } | null>(null);
 
   const fetchInitialData = useCallback(async () => {
     if (!inviteCode) return;
@@ -101,8 +103,18 @@ const GameRoom = () => {
 
   const handleMessage = useCallback((data: WebSocketMessage) => {
     if (data.type === 'match_state') {
-      setMatch(data.payload as MatchStatePayload);
-      setCurrentRotation(0);
+      const newMatch = data.payload as MatchStatePayload;
+      const prevTurnNumber = matchRef.current?.gameState?.turnNumber;
+      const newTurnNumber = newMatch.gameState?.turnNumber;
+      const isTurnChanged = prevTurnNumber !== newTurnNumber;
+
+      setMatch(newMatch);
+      matchRef.current = newMatch;
+
+      if (isTurnChanged) {
+        setCurrentRotation(0);
+        setPendingPlacement(null);
+      }
     }
 
     if (data.type === 'match_private_state') {
@@ -119,23 +131,34 @@ const GameRoom = () => {
   const handlePlaceTile = (x: number, y: number) => {
     if (!room?.id) return;
 
-    // Находим доступные ротации для этой точки
     const placement = privateState?.validPlacements.find(p => p.x === x && p.y === y);
     if (!placement) return;
 
-    // Для простоты берем первую доступную ротацию (или текущую, если она валидна)
     const rotation = placement.rotations.includes(currentRotation)
       ? currentRotation
       : placement.rotations[0];
+
+    setPendingPlacement({ x, y, rotation });
+  };
+
+  const handleRotateTile = (x: number, y: number, rotations: number[]) => {
+    if (!pendingPlacement) return;
+    const currentIdx = rotations.indexOf(pendingPlacement.rotation);
+    const nextRotation = rotations[(currentIdx + 1) % rotations.length];
+    setPendingPlacement({ x, y, rotation: nextRotation });
+  };
+
+  const handleConfirmPlaceTile = () => {
+    if (!room?.id || !pendingPlacement) return;
 
     sendMessage('match_action', {
       roomId: room.id,
       action: 'place_tile',
       payload: {
         roomId: room.id,
-        x,
-        y,
-        rotation
+        x: pendingPlacement.x,
+        y: pendingPlacement.y,
+        rotation: pendingPlacement.rotation
       }
     });
   };
@@ -230,6 +253,7 @@ const GameRoom = () => {
           board={gameState?.board?.tiles || []}
           validPlacements={privateState?.validPlacements || []}
           onPlaceTile={handlePlaceTile}
+          onRotateTile={handleRotateTile}
           currentTileId={currentTileId}
           phase={phase}
           validMeeplePlacements={privateState?.validMeeplePlacements || []}
@@ -238,6 +262,7 @@ const GameRoom = () => {
           currentPlayerColor={currentColor}
           players={players}
           placedMeeples={gameState?.meeples || []}
+          pendingPlacement={pendingPlacement}
         />
         {currentTileId && (
           <div
@@ -273,6 +298,15 @@ const GameRoom = () => {
         {phase === 'place_meeple' && privateState?.isYourTurn && (
           <button className={styles.skipButton} onClick={handleSkipMeeple}>
             Не ставить мипла
+          </button>
+        )}
+        {phase === 'place_tile' && privateState?.isYourTurn && (
+          <button
+            className={styles.skipButton}
+            onClick={handleConfirmPlaceTile}
+            disabled={!pendingPlacement}
+          >
+            Поставить тайл
           </button>
         )}
       </div>

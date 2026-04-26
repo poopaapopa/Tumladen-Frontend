@@ -1,9 +1,10 @@
-import React, { useState, useMemo  } from 'react';
-import { Stage, Layer, Group, Rect, Circle } from 'react-konva';
+import React, { useState, useMemo, useRef } from 'react';
+import { Stage, Layer, Group, Circle } from 'react-konva';
 import Konva from 'konva';
 import { GameTile } from '../tile/tile';
 import type { Tile } from "./gameRoom.tsx";
 import { getPlayerColorBySeat } from "../../utils/playerColor.ts";
+import { PendingTileSlot } from './pendingTileSlot';
 
 interface Player {
   actorId: string;
@@ -14,7 +15,9 @@ interface GameBoardProps {
   board: Tile[];
   validPlacements?: Array<{ x: number, y: number, rotations: number[] }>;
   onPlaceTile?: (x: number, y: number) => void;
+  onRotateTile?: (x: number, y: number, rotations: number[]) => void;
   currentTileId?: string;
+  pendingPlacement?: { x: number; y: number; rotation: number } | null;
 
   phase?: string;
   validMeeplePlacements?: Array<{ zoneId: string, featureType: string }>;
@@ -25,11 +28,13 @@ interface GameBoardProps {
   players?: Player[];
 }
 
-const GameBoard: React.FC<GameBoardProps> = ({ 
+const GameBoard: React.FC<GameBoardProps> = ({
   board = [],
-  validPlacements = [], 
-  onPlaceTile, 
+  validPlacements = [],
+  onPlaceTile,
+  onRotateTile,
   currentTileId,
+  pendingPlacement,
   phase,
   validMeeplePlacements = [],
   onPlaceMeeple,
@@ -46,6 +51,14 @@ const GameBoard: React.FC<GameBoardProps> = ({
     scale: 1
   });
 
+  const stageRef = useRef<any>(null);
+
+  const setCursor = (cursor: string) => {
+    if (stageRef.current) {
+      stageRef.current.container().style.cursor = cursor;
+    }
+  };
+
   const tilesToRender = board.length === 0
     ? [{ tileId: '0', x: 0, y: 0, rotation: 0 }]
     : board;
@@ -53,6 +66,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   const MIN_SCALE = 0.3;
   const MAX_SCALE = 3.5;
   const TILE_SIZE = 150;
+  const TILE_STEP = 152;
 
   const getZoneOffset = (zoneId: string) => {
     const offset = 40;
@@ -99,6 +113,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
   return (
     <Stage
+      ref={stageRef}
       width={window.innerWidth - 450}
       height={window.innerHeight - 70}
       draggable
@@ -107,7 +122,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
       scaleX={stage.scale}
       scaleY={stage.scale}
       onWheel={handleWheel}
-      style={{ background: '#F5F5DC', cursor: 'grab' }}
+      onDragStart={() => setCursor('grabbing')}
+      onDragEnd={() => setCursor('default')}
+      style={{ background: '#F5F5DC', cursor: 'default' }}
     >
       <Layer>
         {/* 1. ТАЙЛЫ */}
@@ -120,6 +137,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
               y={tile.y}
               rotation={tile.rotation}
               tileSize={TILE_SIZE}
+              tileStep={TILE_STEP}
             />
           ))}
         </Group>
@@ -137,8 +155,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
             return (
               <Circle
                 key={`m-${index}`}
-                x={tile.x * TILE_SIZE + offset.x}
-                y={tile.y * TILE_SIZE + offset.y}
+                x={tile.x * TILE_STEP + offset.x}
+                y={tile.y * TILE_STEP + offset.y}
                 radius={10}
                 fill={color}
                 stroke="white"
@@ -151,7 +169,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
         {/* 3. СЛОТЫ ДЛЯ МИПЛОВ */}
         {phase === 'place_meeple' && lastPlacedTile && (
-          <Group x={lastPlacedTile.x * TILE_SIZE} y={lastPlacedTile.y * TILE_SIZE}>
+          <Group x={lastPlacedTile.x * TILE_STEP} y={lastPlacedTile.y * TILE_STEP}>
             {validMeeplePlacements.map((slot, i) => {
               const offset = getZoneOffset(slot.zoneId);
               return (
@@ -175,37 +193,26 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
         {/* 4. ПОДСВЕТКА ДЛЯ НОВЫХ ТАЙЛОВ */}
         <Group>
-          {validPlacements.map((pos, i) => (
-            <Group 
-              key={`v-${i}`}
-              x={pos.x * TILE_SIZE}
-              y={pos.y * TILE_SIZE}
-              onClick={() => onPlaceTile?.(pos.x, pos.y)}
-              onTap={() => onPlaceTile?.(pos.x, pos.y)}
-            >
-              {currentTileId && (
-                <GameTile
-                  tileId={currentTileId}
-                  x={0}
-                  y={0}
-                  rotation={pos.rotations[0]} 
-                  tileSize={TILE_SIZE}
-                  opacity={0.4}
-                />
-              )}
-              <Rect
-                width={TILE_SIZE}
-                height={TILE_SIZE}
-                offsetX={TILE_SIZE / 2}
-                offsetY={TILE_SIZE / 2}
-                stroke="#27AE60"
-                strokeWidth={5}
-                dash={[10, 10]}
-                cornerRadius={10}
-                fill="rgba(39, 174, 96, 0.1)"
+          {validPlacements.map((pos, i) => {
+            const isPending = pendingPlacement?.x === pos.x && pendingPlacement?.y === pos.y;
+            const displayRotation = isPending
+              ? pendingPlacement!.rotation
+              : pos.rotations[0];
+            return (
+              <PendingTileSlot
+                key={`v-${i}`}
+                pos={pos}
+                isPending={isPending}
+                displayRotation={displayRotation}
+                currentTileId={currentTileId}
+                TILE_SIZE={TILE_SIZE}
+                TILE_STEP={TILE_STEP}
+                onPlaceTile={onPlaceTile}
+                onRotateTile={onRotateTile}
+                setCursor={setCursor}
               />
-            </Group>
-          ))}
+            );
+          })}
         </Group>
       </Layer>
     </Stage>
