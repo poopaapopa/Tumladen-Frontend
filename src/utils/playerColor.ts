@@ -1,10 +1,10 @@
 const PLAYER_PALETTE = [
-  '#A62D2D',
-  '#2D54A6',
-  '#27AE60',
-  '#D4AF37',
-  '#7D2DA6',
-  '#2C3E50',
+  '#E8302A', // яркий красный
+  '#2E6FE8', // яркий синий
+  '#27C75A', // яркий зелёный
+  '#F5C518', // яркий жёлтый
+  '#A83FE8', // яркий фиолетовый
+  '#1AC8D4', // яркий бирюзовый
 ];
 
 export const getPlayerColorBySeat = (seat: number | undefined): string => {

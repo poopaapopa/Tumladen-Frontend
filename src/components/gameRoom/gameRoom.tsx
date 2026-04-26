@@ -3,16 +3,24 @@ import { useNavigate, useParams } from 'react-router-dom';
 import styles from './gameRoom.module.scss';
 import sidebarstyles from '../mainPage/MainPage.module.scss'
 import { useRoomSocket, type WebSocketMessage } from '../../api/ws';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { roomService, type RoomResponse } from '../../api/room';
 import { useUserStore } from '../../store/useUserStore';
 import Modal from '../modal/modal';
 import gameExitImage from '../../assets/gameExit.png';
+import iconImg from '../../assets/icon.png';
 import GameBoard from "./gameBoard.tsx";
 import { TILE_IMAGES } from "../../utils/tiles.config.ts";
 import { getPlayerColorBySeat } from "../../utils/playerColor.ts";
 import { MatchPlayerCard } from "../matchPlayerCard/matchPlayerCard.tsx";
 import { ConfirmModal } from '../confirmKick/confirmKick.tsx';
+
+export interface PrivateState {
+  isYourTurn: boolean;
+  phase: string;
+  validPlacements: Array<{ x: number, y: number, rotations: number[] }>;
+  validMeeplePlacements: Array<{ zoneId: string, featureType: string }>;
+}
 
 interface MatchPlayer {
   actorId: string;
@@ -35,12 +43,21 @@ interface GameState {
   currentPlayerId: string;
   players: MatchPlayer[];
   turnNumber: number;
-  phase: string;
-  board: Board;
-}
-
-interface Board {
-  tiles: Tile[];
+  phase: 'place_tile' | 'place_meeple' | string;
+  board: {
+    tiles: Tile[];
+  };
+  meeples: Array<{ tileInstanceId: string, zoneId: string, actorId: string, seat?: number }>;
+  currentTurn?: {
+    drawnTile: {
+      tileId: string;
+      imageUrl: string;
+    } | null;
+    placedTile?: Tile;
+  };
+  deck?: {
+    remainingCount: number;
+  };
 }
 
 export interface Tile {
@@ -48,6 +65,7 @@ export interface Tile {
   x: number;
   y: number;
   rotation: number;
+  instanceId?: string;
 }
 
 const GameRoom = () => {
@@ -57,9 +75,13 @@ const GameRoom = () => {
 
   const [room, setRoom] = useState<RoomResponse | null>(null);
   const [match, setMatch] = useState<MatchStatePayload | null>(null);
+  const matchRef = useRef<MatchStatePayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
   const [isRoomDeleted, setIsRoomDeleted] = useState(false);
+  const [privateState, setPrivateState] = useState<PrivateState | null>(null);
+  const [currentRotation, setCurrentRotation] = useState(0);
+  const [pendingPlacement, setPendingPlacement] = useState<{ x: number; y: number; rotation: number } | null>(null);
 
   const fetchInitialData = useCallback(async () => {
     if (!inviteCode) return;
@@ -81,7 +103,22 @@ const GameRoom = () => {
 
   const handleMessage = useCallback((data: WebSocketMessage) => {
     if (data.type === 'match_state') {
-      setMatch(data.payload as MatchStatePayload);
+      const newMatch = data.payload as MatchStatePayload;
+      const prevTurnNumber = matchRef.current?.gameState?.turnNumber;
+      const newTurnNumber = newMatch.gameState?.turnNumber;
+      const isTurnChanged = prevTurnNumber !== newTurnNumber;
+
+      setMatch(newMatch);
+      matchRef.current = newMatch;
+
+      if (isTurnChanged) {
+        setCurrentRotation(0);
+        setPendingPlacement(null);
+      }
+    }
+
+    if (data.type === 'match_private_state') {
+      setPrivateState(data.payload as PrivateState);
     }
 
     if (data.type === 'match_finished') {
@@ -91,28 +128,97 @@ const GameRoom = () => {
 
   const { sendMessage } = useRoomSocket(room?.id, handleMessage);
 
+  const handlePlaceTile = (x: number, y: number) => {
+    if (!room?.id) return;
+
+    const placement = privateState?.validPlacements.find(p => p.x === x && p.y === y);
+    if (!placement) return;
+
+    const rotation = placement.rotations.includes(currentRotation)
+      ? currentRotation
+      : placement.rotations[0];
+
+    setPendingPlacement({ x, y, rotation });
+  };
+
+  const handleRotateTile = (x: number, y: number, rotations: number[]) => {
+    if (!pendingPlacement) return;
+    const currentIdx = rotations.indexOf(pendingPlacement.rotation);
+    const nextRotation = rotations[(currentIdx + 1) % rotations.length];
+    setPendingPlacement({ x, y, rotation: nextRotation });
+  };
+
+  const handleConfirmPlaceTile = () => {
+    if (!room?.id || !pendingPlacement) return;
+
+    sendMessage('match_action', {
+      roomId: room.id,
+      action: 'place_tile',
+      payload: {
+        roomId: room.id,
+        x: pendingPlacement.x,
+        y: pendingPlacement.y,
+        rotation: pendingPlacement.rotation
+      }
+    });
+  };
+
+  const handlePlaceMeeple = (zoneId: string) => {
+    if (!room?.id) return;
+    sendMessage('match_action', {
+      roomId: room.id,
+      action: 'place_meeple',
+      payload: {
+        roomId: room.id,
+        zoneId: zoneId
+      }
+    });
+  };
+
+  const handleSkipMeeple = () => {
+    if (!room?.id) return;
+    sendMessage('match_action', {
+      roomId: room.id,
+      action: 'skip_meeple',
+      payload: { roomId: room.id }
+    });
+  };
+
   const handleLeftGame = () => {
-    if (room?.id) {
-      sendMessage('delete_room', {
+    if (room?.inviteCode) {
+      sendMessage('leave_match', {
         roomId: room.id
       });
-      navigate('/');
+      navigate(`/room/${room.inviteCode}`);
     }
   };
 
   if (isLoading) return <div className={sidebarstyles.pageWrapper}>Загрузка...</div>;
 
-  const currentTurnId = match?.gameState?.currentPlayerId;
   const ownerId = room?.ownerActorId;
-  const currentTileId = "1";
   const players = match?.gameState?.players || [];
   const sortedPlayers = [...players].sort((a, b) => {
     if (a.actorId === currentUser?.id) return -1;
     if (b.actorId === currentUser?.id) return 1;
     return 0;
   });
+  const gameState = match?.gameState;
+  const currentTurnId = gameState?.currentPlayerId;
+  const phase = gameState?.phase;
+  const drawnTile = gameState?.currentTurn?.drawnTile;
+  const remainingTiles = gameState?.deck?.remainingCount;
+  const currentTileId = drawnTile?.tileId || "1";
+
   const currentPlayer = players.find(p => p.actorId === currentTurnId);
   const currentColor = getPlayerColorBySeat(currentPlayer?.seat);
+
+  // Находим координаты только что поставленного тайла (из gameState.currentTurn)
+  const lastPlacedTile = gameState?.currentTurn?.placedTile;
+
+  const getActionText = (phase: string | undefined) => {
+    if (phase === 'place_meeple') return 'ставит мипла на тайл:';
+    return 'ставит тайл:';
+  };
 
   return (
     <main className={sidebarstyles.pageWrapper}>
@@ -144,26 +250,73 @@ const GameRoom = () => {
 
       <div className={styles.boardContainer}>
         <GameBoard
-          board={match?.gameState?.board?.tiles || []}
+          board={gameState?.board?.tiles || []}
+          validPlacements={privateState?.validPlacements || []}
+          onPlaceTile={handlePlaceTile}
+          onRotateTile={handleRotateTile}
+          currentTileId={currentTileId}
+          phase={phase}
+          validMeeplePlacements={privateState?.validMeeplePlacements || []}
+          onPlaceMeeple={handlePlaceMeeple}
+          lastPlacedTile={lastPlacedTile}
+          currentPlayerColor={currentColor}
+          players={players}
+          placedMeeples={gameState?.meeples || []}
+          pendingPlacement={pendingPlacement}
         />
         {currentTileId && (
-          <img
-            src={TILE_IMAGES[currentTileId]}
-            alt="Next tile"
+          <div
             className={styles.nexTile}
-            style={{
-              ['--player-color' as string]: currentColor
-            }}
-          />
+            style={{ '--player-color': currentColor } as React.CSSProperties}
+          >
+            <div className={styles.nexTile__status}>
+              <span className={styles.nexTile__nickname}>
+                {currentPlayer?.displayName || "Ожидание..."}
+              </span>
+              <span className={styles.nexTile__action}>
+                {getActionText(phase)}
+              </span>
+            </div>
+
+            <div className={styles.nexTile__tileWrapper}>
+              <div className={styles.nexTile__tileOverlay} />
+              <img src={TILE_IMAGES[currentTileId]} className={styles.nexTile__image} />
+            </div>
+
+            <div className={styles.nexTile__count}>
+              <img
+                src={iconImg}
+                alt="Осталось тайлов"
+                className={styles.nexTile__countIcon}
+              />
+              <span className={styles.nexTile__countText}>
+                {remainingTiles}
+              </span>
+            </div>
+          </div>
+        )}
+        {phase === 'place_meeple' && privateState?.isYourTurn && (
+          <button className={styles.skipButton} onClick={handleSkipMeeple}>
+            Не ставить мипла
+          </button>
+        )}
+        {phase === 'place_tile' && privateState?.isYourTurn && (
+          <button
+            className={styles.skipButton}
+            onClick={handleConfirmPlaceTile}
+            disabled={!pendingPlacement}
+          >
+            Поставить тайл
+          </button>
         )}
       </div>
 
-      <Modal isOpen={isExitModalOpen} onClose={() => {setIsExitModalOpen(false); navigate('/')}}>
+      <Modal isOpen={isExitModalOpen} onClose={() => setIsExitModalOpen(false)}>
         <ConfirmModal
           title="Вы действительно хотите покинуть игру?"
           text="Игра будет завершена досрочно, а этот бесчестный поступок отразится на вашей репутации в сообществе"
           onCancel={() => setIsExitModalOpen(false)}
-          onConfirm={() => {handleLeftGame(); navigate('/')}}
+          onConfirm={() => handleLeftGame()}
           onConfirmText="Да, выйти"
           onCancelText="Остаться"
           image={gameExitImage}
@@ -175,8 +328,8 @@ const GameRoom = () => {
           title="Игра была завершена досрочно"
           text="К превеликому сожалению, один из нас решил с позором покинуть игру.
             В сообществе пойдёт молва о его трусливом дезертирстве."
-          onConfirm={() => navigate('/')}
-          onConfirmText="Уйти на главную"
+          onConfirm={() => {room?.inviteCode ? navigate(`/room/${room.inviteCode}`) : navigate('/');}}
+          onConfirmText="Вернуться в комнату"
           image={gameExitImage}
         />
       </Modal>

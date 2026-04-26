@@ -53,6 +53,7 @@ export const MatchPlayerCard: React.FC<MatchPlayerCardProps> = ({
           {Array.from({ length: meeplesLeft }).map((_, i) => (
             <Meeple3D
               key={i}
+              size={40}
               color={playerColor}
               className={styles.playerCard__figurinesIcon}
             />

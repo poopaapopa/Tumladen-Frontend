@@ -9,7 +9,6 @@ import { PlayerSlot } from "../playerSlot/playerSlot.tsx";
 import Modal from "../modal/modal.tsx";
 import { ConfirmModal } from "../confirmKick/confirmKick.tsx";
 import elfExileImg from "../../assets/elf-exile.png";
-
 import ElfClosingDoorImg from '../../assets/elf-closing-door.png';
 
 interface RoomPlayersProps {
@@ -45,6 +44,7 @@ const fallbackCopy = (text: string) => {
     document.body.removeChild(textArea);
   }
 };
+
 export const RoomPlayers = ({
   room,
   isOwner,
