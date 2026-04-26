@@ -56,9 +56,6 @@ export const useRoomSocket = (
   useEffect(() => {
     if (!roomId || !token) return;
 
-    // Fix: reset the flag at the start of each effect run,
-    // not just on initial mount — prevents blocking reconnects
-    // after RoomPage → GameRoom navigation.
     isComponentMounted.current = true;
     reconnectAttempt.current = 0;
 
@@ -77,10 +74,10 @@ export const useRoomSocket = (
     };
 
     const connect = async () => {
-      if (!isComponentMounted.current) return;
-
       try {
         const { ticket } = await roomService.getWsTicket();
+
+        if (!isComponentMounted.current) return;
 
         const url = new URL(WS_BASE_URL);
         url.searchParams.set('ticket', ticket);
@@ -129,6 +126,7 @@ export const useRoomSocket = (
                 }
               } else if (envelope.push?.message?.data) {
                 const data = envelope.push.message.data;
+                console.log(data);
                 onMessageRef.current(data);
               }
             } catch (err) {

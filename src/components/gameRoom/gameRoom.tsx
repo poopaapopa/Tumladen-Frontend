@@ -14,7 +14,6 @@ import { TILE_IMAGES } from "../../utils/tiles.config.ts";
 import { getPlayerColorBySeat } from "../../utils/playerColor.ts";
 import { MatchPlayerCard } from "../matchPlayerCard/matchPlayerCard.tsx";
 import { ConfirmModal } from '../confirmKick/confirmKick.tsx';
-import { clsx } from 'clsx';
 
 export interface PrivateState {
   isYourTurn: boolean;
@@ -80,7 +79,6 @@ const GameRoom = () => {
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
   const [isRoomDeleted, setIsRoomDeleted] = useState(false);
   const [privateState, setPrivateState] = useState<PrivateState | null>(null);
-  const [isTilePicked, setIsTilePicked] = useState(false);
   const [currentRotation, setCurrentRotation] = useState(0);
 
   const fetchInitialData = useCallback(async () => {
@@ -104,7 +102,6 @@ const GameRoom = () => {
   const handleMessage = useCallback((data: WebSocketMessage) => {
     if (data.type === 'match_state') {
       setMatch(data.payload as MatchStatePayload);
-      setIsTilePicked(false);
       setCurrentRotation(0);
     }
 
@@ -118,12 +115,6 @@ const GameRoom = () => {
   }, []);
 
   const { sendMessage } = useRoomSocket(room?.id, handleMessage);
-
-  const handlePickTile = () => {
-    if (privateState?.isYourTurn && privateState.phase === 'place_tile') {
-      setIsTilePicked(!isTilePicked);
-    }
-  };
 
   const handlePlaceTile = (x: number, y: number) => {
     if (!room?.id) return;
@@ -147,7 +138,6 @@ const GameRoom = () => {
         rotation
       }
     });
-    setIsTilePicked(false);
   };
 
   const handlePlaceMeeple = (zoneId: string) => {
@@ -172,11 +162,11 @@ const GameRoom = () => {
   };
 
   const handleLeftGame = () => {
-    if (room?.id) {
+    if (room?.inviteCode) {
       sendMessage('leave_match', {
         roomId: room.id
       });
-      navigate(`/room/${room.id}`);
+      navigate(`/room/${room.inviteCode}`);
     }
   };
 
@@ -202,10 +192,9 @@ const GameRoom = () => {
   // Находим координаты только что поставленного тайла (из gameState.currentTurn)
   const lastPlacedTile = gameState?.currentTurn?.placedTile;
 
-  // Функция для понятного текста действия
   const getActionText = (phase: string | undefined) => {
-    if (phase === 'place_meeple') return 'ставит мипла';
-    return 'ставит тайл';
+    if (phase === 'place_meeple') return 'ставит мипла на тайл:';
+    return 'ставит тайл:';
   };
 
   return (
@@ -239,7 +228,7 @@ const GameRoom = () => {
       <div className={styles.boardContainer}>
         <GameBoard
           board={gameState?.board?.tiles || []}
-          validPlacements={isTilePicked ? privateState?.validPlacements : []}
+          validPlacements={privateState?.validPlacements || []}
           onPlaceTile={handlePlaceTile}
           currentTileId={currentTileId}
           phase={phase}
@@ -264,14 +253,10 @@ const GameRoom = () => {
               </span>
             </div>
 
-            <img
-              src={TILE_IMAGES[currentTileId]}
-              className={clsx(styles.nexTile__image, isTilePicked && styles.nexTile__image_active)}
-              onClick={handlePickTile}
-              style={{ cursor: privateState?.isYourTurn ? 'pointer' : 'default' }}
-            />
-
-
+            <div className={styles.nexTile__tileWrapper}>
+              <div className={styles.nexTile__tileOverlay} />
+              <img src={TILE_IMAGES[currentTileId]} className={styles.nexTile__image} />
+            </div>
 
             <div className={styles.nexTile__count}>
               <img
@@ -283,22 +268,21 @@ const GameRoom = () => {
                 {remainingTiles}
               </span>
             </div>
-            {phase === 'place_meeple' && privateState?.isYourTurn && (
-              <button className={styles.skipButton} onClick={handleSkipMeeple}>
-                Не ставить мипла
-              </button>
-            )}
           </div>
-
+        )}
+        {phase === 'place_meeple' && privateState?.isYourTurn && (
+          <button className={styles.skipButton} onClick={handleSkipMeeple}>
+            Не ставить мипла
+          </button>
         )}
       </div>
 
-      <Modal isOpen={isExitModalOpen} onClose={() => {setIsExitModalOpen(false); navigate('/')}}>
+      <Modal isOpen={isExitModalOpen} onClose={() => setIsExitModalOpen(false)}>
         <ConfirmModal
           title="Вы действительно хотите покинуть игру?"
           text="Игра будет завершена досрочно, а этот бесчестный поступок отразится на вашей репутации в сообществе"
           onCancel={() => setIsExitModalOpen(false)}
-          onConfirm={() => {handleLeftGame(); navigate('/')}}
+          onConfirm={() => handleLeftGame()}
           onConfirmText="Да, выйти"
           onCancelText="Остаться"
           image={gameExitImage}
@@ -310,8 +294,8 @@ const GameRoom = () => {
           title="Игра была завершена досрочно"
           text="К превеликому сожалению, один из нас решил с позором покинуть игру.
             В сообществе пойдёт молва о его трусливом дезертирстве."
-          onConfirm={() => navigate('/')}
-          onConfirmText="Уйти на главную"
+          onConfirm={() => {room?.inviteCode ? navigate(`/room/${room.inviteCode}`) : navigate('/');}}
+          onConfirmText="Вернуться в комнату"
           image={gameExitImage}
         />
       </Modal>

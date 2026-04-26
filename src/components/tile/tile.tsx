@@ -9,9 +9,10 @@ interface GameTileProps {
   y: number;
   rotation: number;
   tileSize: number;
+  opacity?: number;
 }
 
-export const GameTile: React.FC<GameTileProps & { opacity?: number }> = ({ 
+export const GameTile: React.FC<GameTileProps> = ({ 
   tileId, x, y, rotation, tileSize, opacity = 1 
 }) => {
   const [image] = useImage(TILE_IMAGES[tileId]);
