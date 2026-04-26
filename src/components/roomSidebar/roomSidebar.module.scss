@@ -43,7 +43,7 @@
       color: $accept;
     }
 
-    .icon_cancel {
+    .icon_cancel, .delete_icon {
       color: $decline;
     }
   }
@@ -52,7 +52,7 @@
     display: flex;
     align-items: center;
     padding: 4px 0;
-    gap: 12px;
+    gap: 5px;
   }
 
   &__nameEditWrapper {
@@ -87,7 +87,7 @@
   &__roomName {
     font-size: 32px;
     color: $forest-dark;
-    margin: 0;
+    margin-right: 10px;
   }
 
   &__status {

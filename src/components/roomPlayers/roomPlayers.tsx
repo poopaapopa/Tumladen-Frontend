@@ -3,22 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import { Share2, LogOut, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import styles from './roomPage.module.scss';
+import styles from './roomPlayers.module.scss';
 import { type RoomResponse } from '../../api/room.ts';
 import { PlayerSlot } from "../playerSlot/playerSlot.tsx";
 import Modal from "../modal/modal.tsx";
-import { ConfirmKick } from "../confirmKick/confirmKick.tsx";
+import { ConfirmModal } from "../confirmKick/confirmKick.tsx";
+import elfExileImg from "../../assets/elf-exile.png";
 
 import ElfClosingDoorImg from '../../assets/elf-closing-door.png';
-import deleteRoomImg from '../../assets/deleteRoom.png';
-import deleteRoomOwnerImg from '../../assets/deleteRoomOwner.png';
 
 interface RoomPlayersProps {
   room: RoomResponse;
   isOwner: boolean;
   sendMessage: (type: string, payload: Record<string, unknown>) => void;
-  isKicked: boolean;       
-  isRoomDeleted: boolean; 
+  isKicked: boolean;
 }
 
 const copyToClipboard = async (text: string) => {
@@ -48,17 +46,15 @@ const fallbackCopy = (text: string) => {
   }
 };
 export const RoomPlayers = ({
-  room, 
-  isOwner, 
-  sendMessage, 
-  isKicked, 
-  isRoomDeleted 
+  room,
+  isOwner,
+  sendMessage,
+  isKicked,
 }: RoomPlayersProps) => {
   const navigate = useNavigate();
 
   const [showCopyToast, setShowCopyToast] = useState(false);
   const [kickTarget, setKickTarget] = useState<{id: string, name: string} | null>(null);
-  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -96,33 +92,13 @@ export const RoomPlayers = ({
     }
   };
 
-  const handleDeleteRoom = () => {
-    if (room?.id) {
-      sendMessage('delete_room', {  roomId: room.id });
-      setIsDeleteConfirmOpen(true);
-      navigate('/');
-    }
-  };
-
-  const deleteRoomOwner = () => {
-    if (room?.id) {
-      sendMessage('delete_room', {  roomId: room.id });
-      navigate('/');
-    }
-  }
-
-  const handleDeleteRequest = () => {
-    setIsDeleteConfirmOpen(true);
-  }
-  
-
   return (
-    <section className={styles.roomPage__players}>
-        <h2 className={styles.roomPage__playersTitle}>
+    <section className={styles.roomPlayers}>
+        <h2 className={styles.roomPlayers__title}>
           Участники:
         </h2>
 
-        <div className={styles.roomPage__playerList}>
+        <div className={styles.roomPlayers__list}>
           {Array.from({ length: room.maxPlayers }).map((_, idx) => (
             <PlayerSlot
               key={idx}
@@ -135,29 +111,17 @@ export const RoomPlayers = ({
           ))}
         </div>
 
-        <div className={styles.roomPage__actions}>
-          <button className={styles.roomPage__btnInvite}
+        <div className={styles.roomPlayers__actions}>
+          <button className={styles.roomPlayers__btnInvite}
             onClick={(handleCopyLink)}>
             <Share2 size={20} /> Пригласить
           </button>
           <button
-            className={styles.roomPage__btnExit}
-            onClick={isOwner ? deleteRoomOwner : handleLeftGame}
+            className={styles.roomPlayers__btnExit}
+            onClick={handleLeftGame}
           >
             <LogOut size={20} /> Покинуть
           </button>
-          {isOwner ? (
-            <button
-              className={styles.roomPage__btnDelete}
-              onClick={handleDeleteRequest}
-            >
-              Удалить комнату
-            </button>
-          ) : (
-            <div className={styles.roomSidebar__waitMessage}>
-              
-            </div>
-          )}
         </div>
       <AnimatePresence>
         {showCopyToast && (
@@ -174,82 +138,33 @@ export const RoomPlayers = ({
         </AnimatePresence>
         <Modal isOpen={kickTarget !== null} onClose={() => setKickTarget(null)}>
           {kickTarget && (
-            <ConfirmKick
-              targetName={kickTarget.name}
+            <ConfirmModal
+              title="Изгнание из комнаты"
+              text={
+                <>
+                  Вы действительно желаете выгнать игрока <strong>{kickTarget.name}</strong>?<br />
+                  Он сможет вернуться в комнату в любой момент, но ваше действие явно отразится на его желании играть с вами.
+                </>
+              }
               onConfirm={confirmKick}
               onCancel={() => setKickTarget(null)}
+              onConfirmText="Изгнать"
+              onCancelText="Оставить"
+              image={elfExileImg}
             />
           )}
         </Modal>
 
         <Modal isOpen={isKicked} onClose={() => navigate('/')}>
-          <div className={styles.kickedModal}>
-            <h2 className={styles.kickedModal__title}>Вы вне игры</h2>
-            <img src={ElfClosingDoorImg} alt="Изгнанник" className={styles.kickedModal__image} />
-            <p className={styles.kickedModal__text}>
-              Организатор партии решил продолжить подготовку без вашего участия.
-              Вы можете вновь войти в эту комнату, но вряд ли вам будут рады.
-            </p>
-            <div className={styles.kickedModal__layout}>
-              <button
-                className={styles.kickedModal__btn}
-                onClick={() => navigate('/')}
-              >
-                Уйти на главную
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal isOpen={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)}>
-          <div className={styles.kickedModal}>
-            <h2 className={styles.kickedModal__title}>Удаление комнаты</h2>
-            
-            <img src={deleteRoomOwnerImg} alt="Удаление" className={styles.kickedModal__image} />
-            
-            <p className={styles.kickedModal__text}>
-              Вы действительно хотите распустить группу и <strong>удалить комнату</strong>?<br/>
-              Это действие нельзя будет отменить, и все игроки будут исключены.
-            </p>
-            
-            <div className={styles.kickedModal__layout} style={{ gap: '15px' }}>
-              <button 
-                className={styles.kickedModal__btn} 
-                style={{ backgroundColor: '#989898' }}
-                onClick={() => setIsDeleteConfirmOpen(false)}
-              >
-                Отмена
-              </button>
-              <button 
-                className={styles.kickedModal__btn} 
-                style={{ backgroundColor: '#e74c3c' }}
-                onClick={handleDeleteRoom}
-              >
-                Да, удалить
-              </button>
-            </div>
-          </div>
-        </Modal>
-
-        <Modal isOpen={isRoomDeleted} onClose={() => navigate('/')}>
-          <div className={styles.kickedModal}>
-            <h2 className={styles.kickedModal__title}>Комната исчезла</h2>
-            <img src={deleteRoomImg} alt="Комната удалена" className={styles.kickedModal__image} />
-            <p className={styles.kickedModal__text}>
-              Организатор решил распустить группу и удалил эту комнату. 
-              Все текущие приготовления были отменены.
-            </p>
-            <div className={styles.kickedModal__layout}>
-              <button
-                className={styles.kickedModal__btn}
-                onClick={() => navigate('/')}
-              >
-                Вернуться в долину
-              </button>
-            </div>
-          </div>
+          <ConfirmModal
+            title="Вы вне игры"
+            text="Организатор партии решил продолжить подготовку без вашего участия.
+              Вы можете вновь войти в эту комнату, но вряд ли вам будут рады."
+            onConfirm={() => navigate('/')}
+            onConfirmText="Уйти на главную"
+            image={ElfClosingDoorImg}
+          />
         </Modal>
     </section>
-
   );
 };

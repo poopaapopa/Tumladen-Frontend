@@ -39,6 +39,11 @@
     gap: 15px;
   }
 
+  &__oneButton {
+    display: flex;
+    justify-content: right;
+  }
+
   &__btnConfirm, &__btnCancel {
     all: unset;
     cursor: pointer;

@@ -1,0 +1,86 @@
+@use "sass:color";
+
+.roomPlayers {
+  flex: 1;
+  background-color: $sage-gray;
+  border-top-left-radius: 20px;
+  border-bottom-left-radius: 20px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -4px 0 15px rgba(0, 0, 0, 0.05);
+  z-index: 5;
+
+  &__title {
+    color: $forest-dark;
+    font-size: 24px;
+    margin-bottom: 18px;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  &__actions {
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  &__btnInvite, &__btnExit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: none;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+
+  &__btnInvite {
+    background-color: $forest-mid;
+    color: $beige-light;
+    &:hover { background-color: $forest-dark; }
+  }
+
+  &__btnExit {
+    background-color: $metal-gray;
+    color: $beige-light;
+    &:hover { background-color: color.adjust($metal-gray, $lightness: -10%); }
+  }
+}
+
+.copyToast {
+  position: fixed;
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: $forest-mid;
+  color: $beige-light;
+  padding: 14px 24px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  z-index: 2000;
+  border: 1px solid rgba($beige-light, 0.1);
+  pointer-events: none;
+
+  &__icon {
+    color: $accept;
+  }
+
+  span {
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+}

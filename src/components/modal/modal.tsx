@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { createPortal } from 'react-dom';
 import styles from './modal.module.scss';
 import React from 'react';
 
@@ -9,7 +10,7 @@ interface ModalProps {
 }
 
 function Modal({ isOpen, onClose, children }: ModalProps) {
-  return (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <>
@@ -32,7 +33,8 @@ function Modal({ isOpen, onClose, children }: ModalProps) {
           </motion.div>
         </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 }
 

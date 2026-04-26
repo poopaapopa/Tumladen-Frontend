@@ -13,6 +13,7 @@ import GameBoard from "./gameBoard.tsx";
 import { TILE_IMAGES } from "../../utils/tiles.config.ts";
 import { getPlayerColorBySeat } from "../../utils/playerColor.ts";
 import { MatchPlayerCard } from "../matchPlayerCard/matchPlayerCard.tsx";
+import { ConfirmModal } from '../confirmKick/confirmKick.tsx';
 import { clsx } from 'clsx';
 
 export interface PrivateState {
@@ -103,7 +104,7 @@ const GameRoom = () => {
   const handleMessage = useCallback((data: WebSocketMessage) => {
     if (data.type === 'match_state') {
       setMatch(data.payload as MatchStatePayload);
-      setIsTilePicked(false); 
+      setIsTilePicked(false);
       setCurrentRotation(0);
     }
 
@@ -126,14 +127,14 @@ const GameRoom = () => {
 
   const handlePlaceTile = (x: number, y: number) => {
     if (!room?.id) return;
-    
+
     // Находим доступные ротации для этой точки
     const placement = privateState?.validPlacements.find(p => p.x === x && p.y === y);
     if (!placement) return;
 
     // Для простоты берем первую доступную ротацию (или текущую, если она валидна)
-    const rotation = placement.rotations.includes(currentRotation) 
-      ? currentRotation 
+    const rotation = placement.rotations.includes(currentRotation)
+      ? currentRotation
       : placement.rotations[0];
 
     sendMessage('match_action', {
@@ -170,8 +171,6 @@ const GameRoom = () => {
     });
   };
 
-  
-
   const handleLeftGame = () => {
     if (room?.id) {
       sendMessage('leave_match', {
@@ -181,11 +180,9 @@ const GameRoom = () => {
     }
   };
 
-
   if (isLoading) return <div className={sidebarstyles.pageWrapper}>Загрузка...</div>;
 
   const ownerId = room?.ownerActorId;
-  const isOwner = currentUser?.id === ownerId;
   const players = match?.gameState?.players || [];
   const sortedPlayers = [...players].sort((a, b) => {
     if (a.actorId === currentUser?.id) return -1;
@@ -197,7 +194,7 @@ const GameRoom = () => {
   const phase = gameState?.phase;
   const drawnTile = gameState?.currentTurn?.drawnTile;
   const remainingTiles = gameState?.deck?.remainingCount;
-  const currentTileId = drawnTile?.tileId || "1"; 
+  const currentTileId = drawnTile?.tileId || "1";
 
   const currentPlayer = players.find(p => p.actorId === currentTurnId);
   const currentColor = getPlayerColorBySeat(currentPlayer?.seat);
@@ -240,7 +237,8 @@ const GameRoom = () => {
       </div>
 
       <div className={styles.boardContainer}>
-        <GameBoard board={gameState?.board?.tiles || []}
+        <GameBoard
+          board={gameState?.board?.tiles || []}
           validPlacements={isTilePicked ? privateState?.validPlacements : []}
           onPlaceTile={handlePlaceTile}
           currentTileId={currentTileId}
@@ -248,13 +246,12 @@ const GameRoom = () => {
           validMeeplePlacements={privateState?.validMeeplePlacements || []}
           onPlaceMeeple={handlePlaceMeeple}
           lastPlacedTile={lastPlacedTile}
-          currentPlayerColor={currentColor} 
-          players={players} 
+          currentPlayerColor={currentColor}
+          players={players}
           placedMeeples={gameState?.meeples || []}
         />
-        
         {currentTileId && (
-          <div 
+          <div
             className={styles.nexTile}
             style={{ '--player-color': currentColor } as React.CSSProperties}
           >
@@ -274,7 +271,7 @@ const GameRoom = () => {
               style={{ cursor: privateState?.isYourTurn ? 'pointer' : 'default' }}
             />
 
-            
+
 
             <div className={styles.nexTile__count}>
               <img
@@ -292,52 +289,31 @@ const GameRoom = () => {
               </button>
             )}
           </div>
-          
+
         )}
-    </div>
+      </div>
 
       <Modal isOpen={isExitModalOpen} onClose={() => {setIsExitModalOpen(false); navigate('/')}}>
-        <div className={styles.confirmModal}>
-        <img src={gameExitImage} alt="gameExitImage" className={styles.confirmModal__image} />
-          <h2 className={styles.confirmModal__title}>
-            {isOwner
-              ? "Вы точно хотите завершить матч для всех игроков?"
-              : "Вы точно хотите покинуть игру?"}
-          </h2>
-          <div className={styles.confirmModal__actions}>
-            <button 
-              className={styles.confirmModal__btnCancel} 
-              onClick={() => setIsExitModalOpen(false)}
-            >
-              Остаться
-            </button>
-            <button 
-              className={styles.confirmModal__btnConfirm} 
-              onClick={() => {handleLeftGame(); navigate('/')}}
-            >
-              Да, выйти
-            </button>
-          </div>
-        </div>
+        <ConfirmModal
+          title="Вы действительно хотите покинуть игру?"
+          text="Игра будет завершена досрочно, а этот бесчестный поступок отразится на вашей репутации в сообществе"
+          onCancel={() => setIsExitModalOpen(false)}
+          onConfirm={() => {handleLeftGame(); navigate('/')}}
+          onConfirmText="Да, выйти"
+          onCancelText="Остаться"
+          image={gameExitImage}
+        />
       </Modal>
 
       <Modal isOpen={isRoomDeleted} onClose={() => navigate('/')}>
-        <div className={styles.confirmModal}>
-          <h2 className={styles.confirmModal__title}>Комната исчезла</h2>
-          <img src={gameExitImage} alt="Игра завершена" className={styles.confirmModal__image} />
-          <p className={styles.confirmModal__text}>
-            Один из воинов решил покинуть игру. 
-            Поэтому весь текущий сеанс был приостановлен.
-          </p>
-          <div className={styles.confirmModal__layout}>
-            <button
-              className={styles.confirmModal__btnConfirm}
-              onClick={() => navigate('/')}
-            >
-              Вернуться в долину
-            </button>
-          </div>
-        </div>
+        <ConfirmModal
+          title="Игра была завершена досрочно"
+          text="К превеликому сожалению, один из нас решил с позором покинуть игру.
+            В сообществе пойдёт молва о его трусливом дезертирстве."
+          onConfirm={() => navigate('/')}
+          onConfirmText="Уйти на главную"
+          image={gameExitImage}
+        />
       </Modal>
     </main>
   );
