@@ -5,6 +5,7 @@ import { GameTile } from '../tile/tile';
 import type { Tile } from "./gameRoom.tsx";
 import { getPlayerColorBySeat } from "../../utils/playerColor.ts";
 import { PendingTileSlot } from './pendingTileSlot';
+import { KonvaMeeple } from '../matchPlayerCard/meeple.tsx';
 
 interface Player {
   actorId: string;
@@ -18,7 +19,6 @@ interface GameBoardProps {
   onRotateTile?: (x: number, y: number, rotations: number[]) => void;
   currentTileId?: string;
   pendingPlacement?: { x: number; y: number; rotation: number } | null;
-
   phase?: string;
   validMeeplePlacements?: Array<{ zoneId: string, featureType: string }>;
   onPlaceMeeple?: (zoneId: string) => void;
@@ -45,12 +45,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
   const centerX = (window.innerWidth - 450) / 2;
   const centerY = (window.innerHeight - 70) / 2;
 
-  const [stage, setStage] = useState({
-    x: centerX,
-    y: centerY,
-    scale: 1
-  });
-
+  const [stage, setStage] = useState({ x: centerX, y: centerY, scale: 1 });
   const stageRef = useRef<any>(null);
 
   const setCursor = (cursor: string) => {
@@ -70,38 +65,35 @@ const GameBoard: React.FC<GameBoardProps> = ({
 
   const getZoneOffset = (zoneId: string) => {
     const offset = 40;
-    if (zoneId.includes('top')) return { x: 0, y: -offset };
-    if (zoneId.includes('bottom')) return { x: 0, y: offset };
-    if (zoneId.includes('left')) return { x: -offset, y: 0 };
-    if (zoneId.includes('right')) return { x: offset, y: 0 };
+    if (zoneId.includes('top'))    return { x: 0,       y: -offset };
+    if (zoneId.includes('bottom')) return { x: 0,       y:  offset };
+    if (zoneId.includes('left'))   return { x: -offset, y: 0       };
+    if (zoneId.includes('right'))  return { x:  offset, y: 0       };
     return { x: 0, y: 0 };
   };
 
   const playerColorMap = useMemo(() => {
     const map: Record<string, string> = {};
-    players.forEach(p => {
-      map[p.actorId] = getPlayerColorBySeat(p.seat);
-    });
+    players.forEach(p => { map[p.actorId] = getPlayerColorBySeat(p.seat); });
     return map;
   }, [players]);
 
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
-    const stage = e.target.getStage();
-    if (!stage) return;
-    const oldScale = stage.scaleX();
-    const pointer = stage.getPointerPosition();
+    const s = e.target.getStage();
+    if (!s) return;
+    const oldScale = s.scaleX();
+    const pointer = s.getPointerPosition();
     if (!pointer) return;
 
     const mousePointTo = {
-      x: (pointer.x - stage.x()) / oldScale,
-      y: (pointer.y - stage.y()) / oldScale,
+      x: (pointer.x - s.x()) / oldScale,
+      y: (pointer.y - s.y()) / oldScale,
     };
 
     const scaleBy = 1.1;
     let newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
-    if (newScale < MIN_SCALE) newScale = MIN_SCALE;
-    if (newScale > MAX_SCALE) newScale = MAX_SCALE;
+    newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, newScale));
     if (newScale === oldScale) return;
 
     setStage({
@@ -148,20 +140,17 @@ const GameBoard: React.FC<GameBoardProps> = ({
             const tile = board.find(t => 'instanceId' in t && t.instanceId === meeple.tileInstanceId);
             if (!tile) return null;
             const offset = getZoneOffset(meeple.zoneId);
-
-            const color = meeple.seat !== undefined 
-              ? getPlayerColorBySeat(meeple.seat) 
+            const color = meeple.seat !== undefined
+              ? getPlayerColorBySeat(meeple.seat)
               : (playerColorMap[meeple.actorId] || '#989898');
             return (
-              <Circle
+              <KonvaMeeple
                 key={`m-${index}`}
                 x={tile.x * TILE_STEP + offset.x}
                 y={tile.y * TILE_STEP + offset.y}
-                radius={10}
-                fill={color}
-                stroke="white"
-                strokeWidth={2}
-                cursor="pointer"
+                color={color}
+                variant="standing" 
+                size={60}
               />
             );
           })}
@@ -177,7 +166,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
                   key={`slot-${i}`}
                   x={offset.x}
                   y={offset.y}
-                  radius={16}
+                  radius={10}
                   fill="rgba(255, 255, 255, 0.4)"
                   stroke="white"
                   strokeWidth={2}
@@ -195,9 +184,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
         <Group>
           {validPlacements.map((pos, i) => {
             const isPending = pendingPlacement?.x === pos.x && pendingPlacement?.y === pos.y;
-            const displayRotation = isPending
-              ? pendingPlacement!.rotation
-              : pos.rotations[0];
+            const displayRotation = isPending ? pendingPlacement!.rotation : pos.rotations[0];
             return (
               <PendingTileSlot
                 key={`v-${i}`}
