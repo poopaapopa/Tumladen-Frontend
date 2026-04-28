@@ -13,7 +13,7 @@ const VARIANT_CONFIG: Record<MeepleVariant, {
   dy: number;
 }> = {
   lying: {
-    viewBox: '0 30 530 490',
+    viewBox: '-60 -20 650 590',
     layers: 8,
     dx: 5,
     dy: 7,
