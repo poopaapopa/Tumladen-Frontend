@@ -14,6 +14,7 @@ import { TILE_IMAGES } from "../../utils/tiles.config.ts";
 import { getPlayerColorBySeat } from "../../utils/playerColor.ts";
 import { MatchPlayerCard } from "../matchPlayerCard/matchPlayerCard.tsx";
 import { ConfirmModal } from '../confirmKick/confirmKick.tsx';
+import {AlarmClock} from 'lucide-react';
 
 export interface PrivateState {
   isYourTurn: boolean;
@@ -58,6 +59,9 @@ interface GameState {
   deck?: {
     remainingCount: number;
   };
+  settings?: {
+    turnTimeSeconds: number;
+  };
 }
 
 export interface Tile {
@@ -66,6 +70,14 @@ export interface Tile {
   y: number;
   rotation: number;
   instanceId?: string;
+}
+
+interface LogEntry {
+  id: string;
+  text: string;
+  color: string;
+  timestamp: Date;
+  nickname: string; 
 }
 
 const GameRoom = () => {
@@ -82,6 +94,53 @@ const GameRoom = () => {
   const [privateState, setPrivateState] = useState<PrivateState | null>(null);
   const [currentRotation, setCurrentRotation] = useState(0);
   const [pendingPlacement, setPendingPlacement] = useState<{ x: number; y: number; rotation: number } | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [actionLog, setActionLog] = useState<LogEntry[]>(() => {
+    const saved = localStorage.getItem(`log_${inviteCode}`);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        return parsed.map((entry: LogEntry) => ({
+          ...entry,
+          timestamp: new Date(entry.timestamp)
+        }));
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+
+  useEffect(() => {
+    if (inviteCode && actionLog.length > 0) {
+      localStorage.setItem(`log_${inviteCode}`, JSON.stringify(actionLog));
+    }
+  }, [actionLog, inviteCode]);
+
+  const addToLog = useCallback((text: string, actorId: string, players: MatchPlayer[]) => {
+    const player = players.find(p => p.actorId === actorId);
+    const color = getPlayerColorBySeat(player?.seat);
+    const nickname = player?.displayName || "Неизвестный герой";
+    
+    const newEntry: LogEntry = {
+      id: Math.random().toString(36).substring(2, 9),
+      text,
+      color,
+      timestamp: new Date(),
+      nickname
+    };
+
+    setActionLog(prev => {
+      if (prev.length > 0 && prev[0].text === text && prev[0].nickname === nickname) {
+        const diff = newEntry.timestamp.getTime() - prev[0].timestamp.getTime();
+        if (diff < 1000) return prev;
+      }
+
+      return [newEntry, ...prev].slice(0, 50);
+    });
+  }, []);
 
   const fetchInitialData = useCallback(async () => {
     if (!inviteCode) return;
@@ -107,6 +166,33 @@ const GameRoom = () => {
       const prevTurnNumber = matchRef.current?.gameState?.turnNumber;
       const newTurnNumber = newMatch.gameState?.turnNumber;
       const isTurnChanged = prevTurnNumber !== newTurnNumber;
+      const prevMatch = matchRef.current;
+      const isNewTurn = prevMatch?.gameState?.currentPlayerId !== newMatch.gameState?.currentPlayerId;
+      const isNewPhase = prevMatch?.gameState?.phase !== newMatch.gameState?.phase;
+      
+      if (prevMatch) {
+        const prevGs = prevMatch.gameState;
+        const nextGs = newMatch.gameState;
+
+        if (prevGs.phase === 'place_tile' && nextGs.phase === 'place_meeple') {
+          addToLog("поставил тайл", prevGs.currentPlayerId, prevGs.players);
+        }
+
+        if (nextGs.meeples.length > prevGs.meeples.length) {
+          addToLog("поставил мипла", prevGs.currentPlayerId, prevGs.players);
+        }
+
+        if (nextGs.turnNumber > prevGs.turnNumber) {
+          if (nextGs.meeples.length === prevGs.meeples.length) {
+              addToLog("решил не ставить мипла", prevGs.currentPlayerId, nextGs.players);
+           }
+        }
+      }
+      
+      if (isNewTurn || isNewPhase) {
+        const turnTime = newMatch.gameState?.settings?.turnTimeSeconds || 120;
+        setTimeLeft(turnTime);
+      }
 
       setMatch(newMatch);
       matchRef.current = newMatch;
@@ -122,9 +208,10 @@ const GameRoom = () => {
     }
 
     if (data.type === 'match_finished') {
+      localStorage.removeItem(`log_${inviteCode}`);
       setIsRoomDeleted(true);
     }
-  }, []);
+  }, [addToLog, inviteCode]);
 
   const { sendMessage } = useRoomSocket(room?.id, handleMessage);
 
@@ -186,12 +273,60 @@ const GameRoom = () => {
 
   const handleLeftGame = () => {
     if (room?.inviteCode) {
+      localStorage.removeItem(`log_${inviteCode}`);
       sendMessage('leave_match', {
         roomId: room.id
       });
       navigate(`/room/${room.inviteCode}`);
     }
   };
+
+  const gameState = match?.gameState;
+  const currentTurnId = gameState?.currentPlayerId;
+  const phase = gameState?.phase;
+
+  const performAutoAction = useCallback(() => {
+    if (!privateState?.isYourTurn || !room?.id) return;
+
+    if (phase === 'place_tile') {
+      const firstValid = privateState.validPlacements[0];
+      if (firstValid) {
+        sendMessage('match_action', {
+          roomId: room.id,
+          action: 'place_tile',
+          payload: {
+            roomId: room.id,
+            x: firstValid.x,
+            y: firstValid.y,
+            rotation: firstValid.rotations[0]
+          }
+        });
+      }
+    } else if (phase === 'place_meeple') {
+      handleSkipMeeple();
+    }
+  }, [privateState, phase, room, sendMessage, currentUser, gameState, addToLog]);
+
+  useEffect(() => {
+    if (timerRef.current) clearInterval(timerRef.current);
+
+    if (match?.status === 'active') {
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current!);
+            if (privateState?.isYourTurn) performAutoAction();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [match?.status, privateState?.isYourTurn, performAutoAction]);
 
   if (isLoading) return <div className={sidebarstyles.pageWrapper}>Загрузка...</div>;
 
@@ -202,9 +337,7 @@ const GameRoom = () => {
     if (b.actorId === currentUser?.id) return 1;
     return 0;
   });
-  const gameState = match?.gameState;
-  const currentTurnId = gameState?.currentPlayerId;
-  const phase = gameState?.phase;
+  
   const drawnTile = gameState?.currentTurn?.drawnTile;
   const remainingTiles = gameState?.deck?.remainingCount;
   const currentTileId = drawnTile?.tileId || "1";
@@ -212,7 +345,6 @@ const GameRoom = () => {
   const currentPlayer = players.find(p => p.actorId === currentTurnId);
   const currentColor = getPlayerColorBySeat(currentPlayer?.seat);
 
-  // Находим координаты только что поставленного тайла (из gameState.currentTurn)
   const lastPlacedTile = gameState?.currentTurn?.placedTile;
 
   const getActionText = (phase: string | undefined) => {
@@ -223,7 +355,14 @@ const GameRoom = () => {
   return (
     <main className={sidebarstyles.pageWrapper}>
       <div className={sidebarstyles.sidebar}>
-        <div className={sidebarstyles.sidebar__title}>Игроки</div>
+        <div className={sidebarstyles.sidebar__gameInfo}>
+          <div className={sidebarstyles.sidebar__title}>Игроки</div>
+          <div className={sidebarstyles.sidebar__timer}>
+            <AlarmClock className={sidebarstyles.sidebar__timerIcon} />
+            {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+          </div>
+        </div>
+        
         <div className={styles.playersList}>
           {sortedPlayers.map((player, index) => (
             <React.Fragment key={player.actorId}>
@@ -309,6 +448,32 @@ const GameRoom = () => {
             Поставить тайл
           </button>
         )}
+        <div className={styles.latestActions}>
+          <h4 className={styles.latestActions__title}>Последние действия:</h4>
+          <div className={styles.latestActions__list}>
+            {actionLog.length === 0 && <p>Пока что в долине тишина...</p>}
+            {actionLog.map((entry) => (
+              <div key={entry.id} className={styles.latestActions__item}>
+                <span className={styles.latestActions__time}>
+                  {entry.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                </span>
+
+                <div className={styles.latestActions__content}>
+                  <span 
+                    className={styles.latestActions__nickname}
+                    style={{ color: entry.color }}
+                  >
+                    {entry.nickname}
+                  </span>
+                  <span className={styles.latestActions__text}>
+                    {entry.text}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+        </div>
       </div>
 
       <Modal isOpen={isExitModalOpen} onClose={() => setIsExitModalOpen(false)}>
