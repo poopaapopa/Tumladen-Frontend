@@ -24,10 +24,9 @@ function App() {
     const isRoomPage = location.pathname.startsWith('/room/');
     
     if (isRoomPage && !isAuthenticated) {
-      const timer = setTimeout(() => {
-        setActiveModal(true);
-      }, 0);
-      return () => clearTimeout(timer);
+      setActiveModal(true);
+    } else {
+      setActiveModal(false);
     }
   }, [location.pathname, isAuthenticated]);
 
