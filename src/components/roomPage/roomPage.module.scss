@@ -48,4 +48,21 @@
     color: #1e1e1e;
     margin-top: 5px;
   }
+
+  
+}
+
+.error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: calc(100vh - 70px);
+  background-color: $beige-light;
+  color: $forest-mid;
+  font-family: $font-main;
+  text-align: center;
+  padding: 20px;
+  font-size: 36px;
+  font-weight: 700;
 }
