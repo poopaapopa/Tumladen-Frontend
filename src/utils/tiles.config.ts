@@ -1,61 +1,37 @@
-// Импорт всех ассетов из папки assets/tiles
-import cityCapWithRoad from '../assets/tiles/city_cap_with_road.webp';
-import cityCap from '../assets/tiles/city_cap.webp';
-import cityCurveShield from '../assets/tiles/city_curve_shield.webp';
-import cityCurveWithRoadCurveShield from '../assets/tiles/city_curve_with_road_curve_shield.webp';
-import cityCurveWithRoadCurve from '../assets/tiles/city_curve_with_road_curve.webp';
-import cityCurve from '../assets/tiles/city_curve.webp';
-import cityFullShield from '../assets/tiles/city_full_shield.webp';
-import cityGateShieldWithRoad from '../assets/tiles/city_gate_shield_with_road.webp';
-import cityGateShield from '../assets/tiles/city_gate_shield.webp';
-import cityGateWithRoad from '../assets/tiles/city_gate_with_road.webp';
-import cityGate from '../assets/tiles/city_gate.webp';
-import cityRoadStraight from '../assets/tiles/city_road_straigh.webp'; // В названии файла в структуре опечатка (straigh), сохранил её
-import cityStraightShield from '../assets/tiles/city_straight_shield.webp';
-import cityStraight from '../assets/tiles/city_straight.webp';
-import doubleCityCurve from '../assets/tiles/double_city_curve.webp';
-import doubleCityOpposite from '../assets/tiles/double_city_opposite.webp';
-import monasteryRoad from '../assets/tiles/monastery_road.webp';
-import monastery from '../assets/tiles/monastery.webp';
-import roadCross from '../assets/tiles/road_cross.webp';
-import roadCurveCitySide from '../assets/tiles/road_curve_city_side.webp';
-import roadCurve from '../assets/tiles/road_curve.webp';
-import roadStraight from '../assets/tiles/road_straight.webp';
-import roadTCitySide from '../assets/tiles/road_t_city_side.webp';
-import roadT from '../assets/tiles/road_t.webp';
-import startTile from '../assets/tiles/start_tile.webp';
+import { MINIO_URL } from '../api/config';
+
+const getTileUrl = (fileName: string) => `${MINIO_URL}/tiles/${fileName}.webp`;
 
 export const TILE_IMAGES: Record<string, string> = {
-  // Основные ключи по названиям
-  'city_cap_with_road': cityCapWithRoad,
-  'city_cap': cityCap,
-  'city_curve_shield': cityCurveShield,
-  'city_curve_with_road_curve_shield': cityCurveWithRoadCurveShield,
-  'city_curve_with_road_curve': cityCurveWithRoadCurve,
-  'city_curve': cityCurve,
-  'city_full_shield': cityFullShield,
-  'city_gate_shield_with_road': cityGateShieldWithRoad,
-  'city_gate_shield': cityGateShield,
-  'city_gate_with_road': cityGateWithRoad,
-  'city_gate': cityGate,
-  'city_road_straight': cityRoadStraight,
-  'city_straight_shield': cityStraightShield,
-  'city_straight': cityStraight,
-  'double_city_curve': doubleCityCurve,
-  'double_city_opposite': doubleCityOpposite,
-  'monastery_road': monasteryRoad,
-  'monastery': monastery,
-  'road_cross': roadCross,
-  'road_curve_city_side': roadCurveCitySide,
-  'road_curve': roadCurve,
-  'road_straight': roadStraight,
-  'road_t_city_side': roadTCitySide,
-  'road_t': roadT,
-  'start_tile': startTile,
+  'city_cap_with_road': getTileUrl('city_cap_with_road'),
+  'city_cap': getTileUrl('city_cap'),
+  'city_curve_shield': getTileUrl('city_curve_shield'),
+  'city_curve_with_road_curve_shield': getTileUrl('city_curve_with_road_curve_shield'),
+  'city_curve_with_road_curve': getTileUrl('city_curve_with_road_curve'),
+  'city_curve': getTileUrl('city_curve'),
+  'city_full_shield': getTileUrl('city_full_shield'),
+  'city_gate_shield_with_road': getTileUrl('city_gate_shield_with_road'),
+  'city_gate_shield': getTileUrl('city_gate_shield'),
+  'city_gate_with_road': getTileUrl('city_gate_with_road'),
+  'city_gate': getTileUrl('city_gate'),
+  'city_road_straight': getTileUrl('city_road_straigh'),
+  'city_straight_shield': getTileUrl('city_straight_shield'),
+  'city_straight': getTileUrl('city_straight'),
+  'double_city_curve': getTileUrl('double_city_curve'),
+  'double_city_opposite': getTileUrl('double_city_opposite'),
+  'monastery_road': getTileUrl('monastery_road'),
+  'monastery': getTileUrl('monastery'),
+  'road_cross': getTileUrl('road_cross'),
+  'road_curve_city_side': getTileUrl('road_curve_city_side'),
+  'road_curve': getTileUrl('road_curve'),
+  'road_straight': getTileUrl('road_straight'),
+  'road_t_city_side': getTileUrl('road_t_city_side'),
+  'road_t': getTileUrl('road_t'),
+  'start_tile': getTileUrl('start_tile'),
 
-  // Алиасы (если бэкенд присылает числовые ID или короткие строки)
-  '0': startTile,
-  '1': roadT,
-  '2': roadCurve,
-  '3': cityStraight,
+  // Алиасы
+  '0': getTileUrl('start_tile'),
+  '1': getTileUrl('road_t'),
+  '2': getTileUrl('road_curve'),
+  '3': getTileUrl('city_straight'),
 };
