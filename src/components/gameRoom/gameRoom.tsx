@@ -118,7 +118,23 @@ const GameRoom = () => {
     }
 
     if (data.type === 'match_private_state') {
-      setPrivateState(data.payload as PrivateState);
+      const privatePayload = data.payload as PrivateState;
+      setPrivateState(privatePayload);
+
+      if (
+        privatePayload.phase === 'place_meeple' &&
+        privatePayload.isYourTurn &&
+        privatePayload.validMeeplePlacements.length === 0
+      ) {
+        const currentRoom = matchRef.current;
+        if (currentRoom?.roomId) {
+          sendMessage('match_action', {
+            roomId: currentRoom.roomId,
+            action: 'skip_meeple',
+            payload: { roomId: currentRoom.roomId }
+          });
+        }
+      }
     }
 
     if (data.type === 'match_finished') {
@@ -300,11 +316,10 @@ const GameRoom = () => {
             Не ставить мипла
           </button>
         )}
-        {phase === 'place_tile' && privateState?.isYourTurn && (
+        {phase === 'place_tile' && privateState?.isYourTurn && pendingPlacement !== null && (
           <button
             className={styles.skipButton}
             onClick={handleConfirmPlaceTile}
-            disabled={!pendingPlacement}
           >
             Поставить тайл
           </button>
