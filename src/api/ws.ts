@@ -2,11 +2,11 @@ import { useEffect, useRef } from 'react';
 import { useUserStore } from '../store/useUserStore';
 import { WS_BASE_URL } from './config.ts';
 import { roomService, type RoomResponse } from './room.ts';
-import type { MatchStatePayload } from "../components/gameRoom/gameRoom.tsx";
+import type { MatchStatePayload, PrivateState } from "../components/gameRoom/gameRoom.tsx";
 
 export interface WebSocketMessage {
-  type: 'room_state' | 'participant_kicked' | 'match_state' | 'error' | 'match_finished'| 'room_deleted';
-  payload: RoomResponse | ParticipantKickedPayload | MatchStatePayload;
+  type: 'room_state' | 'participant_kicked' | 'match_state' | 'match_private_state' | 'error' | 'match_finished'| 'room_deleted';
+  payload: RoomResponse | ParticipantKickedPayload | MatchStatePayload | PrivateState;
 }
 
 export interface ParticipantKickedPayload {
@@ -56,9 +56,6 @@ export const useRoomSocket = (
   useEffect(() => {
     if (!roomId || !token) return;
 
-    // Fix: reset the flag at the start of each effect run,
-    // not just on initial mount — prevents blocking reconnects
-    // after RoomPage → GameRoom navigation.
     isComponentMounted.current = true;
     reconnectAttempt.current = 0;
 
@@ -77,15 +74,13 @@ export const useRoomSocket = (
     };
 
     const connect = async () => {
-      if (!isComponentMounted.current) return;
-
       try {
-        const { ticket } = await roomService.getWsTicket();
-
         if (!isComponentMounted.current) return;
+        const { ticket } = await roomService.getWsTicket();
 
         const url = new URL(WS_BASE_URL);
         url.searchParams.set('ticket', ticket);
+        url.searchParams.set('cf_ws_frame_ping_pong', 'true');
 
         const ws = new WebSocket(url.toString());
         socket.current = ws;
@@ -105,8 +100,6 @@ export const useRoomSocket = (
             }
           }));
 
-          // Heartbeat: send a ping every 30s to keep the connection
-          // alive through proxies/nginx that close idle connections.
           clearHeartbeat();
           heartbeatTimer.current = setInterval(() => {
             if (ws.readyState === WebSocket.OPEN) {
@@ -145,8 +138,6 @@ export const useRoomSocket = (
         ws.onclose = () => {
           clearHeartbeat();
 
-          // Reconnect only if the component is still mounted and
-          // we haven't exceeded the maximum number of attempts.
           if (
             !isComponentMounted.current ||
             reconnectAttempt.current >= RECONNECT_MAX_ATTEMPTS
@@ -186,8 +177,6 @@ export const useRoomSocket = (
         socket.current = null;
       }
     };
-    // token is intentionally included: if the token changes a new
-    // WS ticket must be obtained, so we reconnect from scratch.
   }, [roomId, token]);
 
   const sendMessage = (type: string, payload: Record<string, unknown>) => {
