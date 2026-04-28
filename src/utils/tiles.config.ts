@@ -10,7 +10,7 @@ import cityGateShieldWithRoad from '../assets/tiles/city_gate_shield_with_road.w
 import cityGateShield from '../assets/tiles/city_gate_shield.webp';
 import cityGateWithRoad from '../assets/tiles/city_gate_with_road.webp';
 import cityGate from '../assets/tiles/city_gate.webp';
-import cityRoadStraight from '../assets/tiles/city_road_straigh.webp'; // В названии файла в структуре опечатка (straigh), сохранил её
+import cityRoadStraight from '../assets/tiles/city_road_straigh.webp'; 
 import cityStraightShield from '../assets/tiles/city_straight_shield.webp';
 import cityStraight from '../assets/tiles/city_straight.webp';
 import doubleCityCurve from '../assets/tiles/double_city_curve.webp';
