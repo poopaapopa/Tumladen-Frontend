@@ -6,6 +6,7 @@ import type { Tile } from "./gameRoom.tsx";
 import { getPlayerColorBySeat } from "../../utils/playerColor.ts";
 import { PendingTileSlot } from './pendingTileSlot';
 import { KonvaMeeple } from '../matchPlayerCard/meeple.tsx';
+import { getZoneOffset } from '../../utils/tileZones.ts';
 
 interface Player {
   actorId: string;
@@ -62,15 +63,6 @@ const GameBoard: React.FC<GameBoardProps> = ({
   const MAX_SCALE = 3.5;
   const TILE_SIZE = 150;
   const TILE_STEP = 152;
-
-  const getZoneOffset = (zoneId: string) => {
-    const offset = 40;
-    if (zoneId.includes('top'))    return { x: 0,       y: -offset };
-    if (zoneId.includes('bottom')) return { x: 0,       y:  offset };
-    if (zoneId.includes('left'))   return { x: -offset, y: 0       };
-    if (zoneId.includes('right'))  return { x:  offset, y: 0       };
-    return { x: 0, y: 0 };
-  };
 
   const playerColorMap = useMemo(() => {
     const map: Record<string, string> = {};
@@ -139,7 +131,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
           {placedMeeples.map((meeple, index) => {
             const tile = board.find(t => 'instanceId' in t && t.instanceId === meeple.tileInstanceId);
             if (!tile) return null;
-            const offset = getZoneOffset(meeple.zoneId);
+            const offset = getZoneOffset(tile.tileId, meeple.zoneId, tile.rotation);
             const color = meeple.seat !== undefined
               ? getPlayerColorBySeat(meeple.seat)
               : (playerColorMap[meeple.actorId] || '#989898');
@@ -149,8 +141,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 x={tile.x * TILE_STEP + offset.x}
                 y={tile.y * TILE_STEP + offset.y}
                 color={color}
-                variant="standing" 
-                size={60}
+                variant={meeple.zoneId.startsWith('field') ? 'lying' : 'standing'}
+                size={55}
               />
             );
           })}
@@ -160,7 +152,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
         {phase === 'place_meeple' && lastPlacedTile && (
           <Group x={lastPlacedTile.x * TILE_STEP} y={lastPlacedTile.y * TILE_STEP}>
             {validMeeplePlacements.map((slot, i) => {
-              const offset = getZoneOffset(slot.zoneId);
+              const offset = getZoneOffset(lastPlacedTile.tileId, slot.zoneId, lastPlacedTile.rotation);
               return (
                 <Circle
                   key={`slot-${i}`}
@@ -173,7 +165,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
                   dash={[5, 5]}
                   onClick={() => onPlaceMeeple?.(slot.zoneId)}
                   onTap={() => onPlaceMeeple?.(slot.zoneId)}
-                  cursor="pointer"
+                  onMouseEnter={() => setCursor('pointer')}
+                  onMouseLeave={() => setCursor('default')}
                 />
               );
             })}
