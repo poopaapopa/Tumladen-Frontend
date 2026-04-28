@@ -78,6 +78,7 @@ interface LogEntry {
   color: string;
   timestamp: Date;
   nickname: string; 
+  tileId?: string;
 }
 
 const GameRoom = () => {
@@ -119,7 +120,7 @@ const GameRoom = () => {
     }
   }, [actionLog, inviteCode]);
 
-  const addToLog = useCallback((text: string, actorId: string, players: MatchPlayer[]) => {
+  const addToLog = useCallback((text: string, actorId: string, players: MatchPlayer[], tileId?: string) => {
     const player = players.find(p => p.actorId === actorId);
     const color = getPlayerColorBySeat(player?.seat);
     const nickname = player?.displayName || "Неизвестный герой";
@@ -129,7 +130,8 @@ const GameRoom = () => {
       text,
       color,
       timestamp: new Date(),
-      nickname
+      nickname,
+      tileId
     };
 
     setActionLog(prev => {
@@ -175,7 +177,8 @@ const GameRoom = () => {
         const nextGs = newMatch.gameState;
 
         if (prevGs.phase === 'place_tile' && nextGs.phase === 'place_meeple') {
-          addToLog("поставил тайл", prevGs.currentPlayerId, prevGs.players);
+          const placedTileId = prevGs.currentTurn?.drawnTile?.tileId;
+          addToLog("поставил тайл", prevGs.currentPlayerId, prevGs.players, placedTileId);
         }
 
         if (nextGs.meeples.length > prevGs.meeples.length) {
@@ -358,8 +361,8 @@ const GameRoom = () => {
         <div className={sidebarstyles.sidebar__gameInfo}>
           <div className={sidebarstyles.sidebar__title}>Игроки</div>
           <div className={sidebarstyles.sidebar__timer}>
-            <AlarmClock className={sidebarstyles.sidebar__timerIcon} />
             {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+            <AlarmClock className={sidebarstyles.sidebar__timerIcon} />
           </div>
         </div>
         
@@ -451,7 +454,6 @@ const GameRoom = () => {
         <div className={styles.latestActions}>
           <h4 className={styles.latestActions__title}>Последние действия:</h4>
           <div className={styles.latestActions__list}>
-            {actionLog.length === 0 && <p>Пока что в долине тишина...</p>}
             {actionLog.map((entry) => (
               <div key={entry.id} className={styles.latestActions__item}>
                 <span className={styles.latestActions__time}>
@@ -468,6 +470,11 @@ const GameRoom = () => {
                   <span className={styles.latestActions__text}>
                     {entry.text}
                   </span>
+                  {entry.tileId && (
+                    <div className={styles.latestActions__image}>
+                      <img src={TILE_IMAGES[entry.tileId]} alt="tile" />
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

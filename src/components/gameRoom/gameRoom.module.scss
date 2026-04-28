@@ -208,7 +208,7 @@
   right: 0px;
   z-index: 10;
   width: 250px;
-  height: 200px;
+  height: 250px;
   border-radius: 20px 0 0 20px;
   padding: 20px 15px;
   background-color: $sage-gray;
@@ -285,6 +285,20 @@
     color: $metal-gray;
     text-align: center;
     margin-top: 20px;
+  }
+
+  &__image{
+    width: 70px;
+    height: auto;
+    border-radius: 10px;
+    overflow: hidden;
+    display: flex;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
   }
 }
 
