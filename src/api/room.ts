@@ -1,49 +1,6 @@
 import { API_BASE_URL } from './config.ts';
 import { useUserStore } from '../store/useUserStore';
-
-export interface ParticipantResponse {
-  actorId: string;
-  displayName: string;
-  joinedAt: string;
-}
-
-export interface Settings {
-  [key: string]: string | number;
-}
-
-export interface RoomResponse {
-  settings: Settings;
-  id: string;
-  name: string;
-  isPrivate: boolean;
-  inviteCode: string;
-  ownerActorId: string;
-  status: string;
-  gameType: string;
-  maxPlayers: number;
-  canStart: boolean;
-  playersCount: number;
-  participants?: ParticipantResponse[];
-  createdAt: string;
-  updatedAt: string;
-  currentTurnActorId?: string;
-}
-
-export interface ListPublicRoomsResponse {
-  rooms: RoomResponse[];
-}
-
-export interface GetRoomByInviteCodeResponse {
-  room: RoomResponse;
-}
-
-export interface UpdateRoomSettingsPayload {
-  name: string;
-  roomId: string;
-  gameType: string;
-  maxPlayers: number;
-  settings: Record<string, number | string | boolean>;
-}
+import type { GetRoomByInviteCodeResponse, ListPublicRoomsResponse, RoomResponse } from '../types/room';
 
 export const roomService = {
   getHeaders(): HeadersInit {

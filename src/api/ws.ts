@@ -1,17 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { useUserStore } from '../store/useUserStore';
 import { WS_BASE_URL } from './config.ts';
-import { roomService, type RoomResponse } from './room.ts';
-import type { MatchStatePayload, PrivateState } from "../components/gameRoom/gameRoom.tsx";
-
-export interface WebSocketMessage {
-  type: 'room_state' | 'participant_kicked' | 'match_state' | 'match_private_state' | 'error' | 'match_finished'| 'room_deleted';
-  payload: RoomResponse | ParticipantKickedPayload | MatchStatePayload | PrivateState;
-}
-
-export interface ParticipantKickedPayload {
-  reason: string;
-}
+import { roomService } from './room.ts';
+import type { WebSocketMessage } from '../types/ws';
+export type { WebSocketMessage, ParticipantKickedPayload } from '../types/ws';
 
 interface CentrifugeEnvelope {
   push?: {

@@ -3,13 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 
 import styles from './roomPage.module.scss';
 import castleImg from '../../assets/zamok.png';
-import { roomService, type RoomResponse, type UpdateRoomSettingsPayload } from '../../api/room.ts'
+import { roomService } from '../../api/room.ts'
 import { useUserStore } from '../../store/useUserStore';
 import { useRoomSocket, type WebSocketMessage } from '../../api/ws.ts';
 
 import { RoomSidebar } from "../roomSidebar/roomSidebar.tsx";
 import { RoomPageSkeleton } from "./roomPageSkeleton.tsx";
 import { RoomPlayers } from '../roomPlayers/roomPlayers.tsx';
+import type { RoomResponse, UpdateRoomSettingsPayload } from '../../types/room';
 
 const RoomPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -53,7 +54,7 @@ const RoomPage = () => {
 
   const handleRoomUpdate = useCallback((data: WebSocketMessage) => {
     if (data.type === 'room_state') {
-      const updatedRoom = data.payload as RoomResponse;
+      const updatedRoom = data.payload;
       if (checkAvailableSlots(updatedRoom)) {
         navigate('/');
         return;
@@ -75,7 +76,7 @@ const RoomPage = () => {
   const handleSaveSetting = (key: string, newValue: number | string | boolean) => {
     if (!room || !isOwner) return;
 
-    const currentSettings = (room.settings as unknown as Record<string, number | string | boolean>) || {};
+    const currentSettings = room.settings || {};
 
     let hasChanged: boolean;
 

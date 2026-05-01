@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Clock, Pencil, Check, X, Trash2 } from 'lucide-react';
-import { type RoomResponse } from '../../api/room.ts';
+import type { RoomResponse } from '../../types/room.ts';
 import { EditableSelector } from '../editableSelector/editableSelector.tsx';
 import Modal from '../modal/modal.tsx';
 import styles from './roomSidebar.module.scss';
@@ -25,7 +25,7 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
   const [isStarting, setIsStarting] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
-  const currentSettings = (room?.settings as Record<string, number | string | boolean>) || {};
+  const currentSettings = room?.settings || {};
 
   const handleDeleteRoom = () => {
     if (room?.id) {

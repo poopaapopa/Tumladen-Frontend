@@ -1,7 +1,7 @@
 import styles from './roomCard.module.scss';
 import castleImage from '../../assets/castle.png';
 import { UsersRound } from "lucide-react";
-import type { RoomResponse } from "../../api/room.ts";
+import type { RoomResponse } from '../../types/room.ts';
 
 interface RoomCardProps {
   room: RoomResponse;

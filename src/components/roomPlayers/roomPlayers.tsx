@@ -4,7 +4,7 @@ import { Share2, LogOut, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import styles from './roomPlayers.module.scss';
-import { type RoomResponse } from '../../api/room.ts';
+import type { RoomResponse } from '../../types/room.ts';
 import { PlayerSlot } from "../playerSlot/playerSlot.tsx";
 import Modal from "../modal/modal.tsx";
 import { ConfirmModal } from "../confirmKick/confirmKick.tsx";

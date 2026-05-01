@@ -4,7 +4,8 @@ import RoomCard from "../roomCard/roomCard.tsx";
 import RoomCardSkeleton from '../roomCard/roomCardSkeleton'
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { type RoomResponse, roomService } from "../../api/room.ts";
+import { roomService } from "../../api/room.ts";
+import type { RoomResponse } from '../../types/room.ts';
 import { useUserStore } from "../../store/useUserStore.ts";
 import sadElfImg from '../../assets/sad-elf.png';
 

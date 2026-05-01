@@ -2,9 +2,17 @@ import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './gameRoom.module.scss';
 import sidebarstyles from '../mainPage/MainPage.module.scss'
-import { useRoomSocket, type WebSocketMessage } from '../../api/ws';
+import { useRoomSocket } from '../../api/ws';
+import type { WebSocketMessage } from '../../types/ws';
+import {
+  type MatchStatePayload,
+  type PrivateState,
+  type MatchPlayer,
+  type LogEntry,
+} from '../../types/match';
+import type { RoomResponse } from '../../types/room';
 import { useState, useCallback, useEffect, useRef } from 'react';
-import { roomService, type RoomResponse } from '../../api/room';
+import { roomService } from '../../api/room';
 import { useUserStore } from '../../store/useUserStore';
 import Modal from '../modal/modal';
 import gameExitImage from '../../assets/gameExit.png';
@@ -16,71 +24,7 @@ import { MatchPlayerCard } from "../matchPlayerCard/matchPlayerCard.tsx";
 import { ConfirmModal } from '../confirmKick/confirmKick.tsx';
 import { AlarmClock } from 'lucide-react';
 
-export interface PrivateState {
-  isYourTurn: boolean;
-  phase: string;
-  validPlacements: Array<{ x: number, y: number, rotations: number[] }>;
-  validMeeplePlacements: Array<{ zoneId: string, featureType: string }>;
-}
-
-interface MatchPlayer {
-  actorId: string;
-  displayName: string;
-  score: number;
-  meeplesLeft: number;
-  seat: number;
-}
-
-export interface MatchStatePayload {
-  id: string;
-  roomId: string;
-  status: string;
-  gameType: string;
-  isYourTurn: boolean;
-  gameState: GameState;
-}
-
-interface GameState {
-  currentPlayerId: string;
-  players: MatchPlayer[];
-  turnNumber: number;
-  phase: 'place_tile' | 'place_meeple' | string;
-  board: {
-    tiles: Tile[];
-  };
-  meeples: Array<{ tileInstanceId: string, zoneId: string, actorId: string, seat?: number, featureType: string }>;
-  currentTurn?: {
-    drawnTile: {
-      tileId: string;
-      imageUrl: string;
-    } | null;
-    placedTile?: Tile;
-    turnEndsAt?: string;
-  };
-  deck?: {
-    remainingCount: number;
-  };
-  settings?: {
-    turnTimeSeconds: number;
-  };
-}
-
-export interface Tile {
-  tileId: string;
-  x: number;
-  y: number;
-  rotation: number;
-  instanceId?: string;
-}
-
-interface LogEntry {
-  id: string;
-  text: string;
-  color: string;
-  timestamp: Date;
-  nickname: string; 
-  tileId?: string;
-}
+export type { Tile, MatchStatePayload, PrivateState } from '../../types/match';
 
 const GameRoom = () => {
   const { id: inviteCode } = useParams<{ id: string }>();
@@ -166,7 +110,7 @@ const GameRoom = () => {
 
   const handleMessage = useCallback((data: WebSocketMessage) => {
     if (data.type === 'match_state') {
-      const newMatch = data.payload as MatchStatePayload;
+      const newMatch = data.payload;
       const prevTurnNumber = matchRef.current?.gameState?.turnNumber;
       const newTurnNumber = newMatch.gameState?.turnNumber;
       const isTurnChanged = prevTurnNumber !== newTurnNumber;
@@ -209,7 +153,7 @@ const GameRoom = () => {
     }
 
     if (data.type === 'match_private_state') {
-      const privatePayload = data.payload as PrivateState;
+      const privatePayload = data.payload;
       setPrivateState(privatePayload);
 
       if (
