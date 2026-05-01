@@ -1,6 +1,6 @@
 import { API_BASE_URL } from './config.ts';
-import { useUserStore } from '../store/useUserStore';
-import type { GetRoomByInviteCodeResponse, ListPublicRoomsResponse, RoomResponse } from '../types/room';
+import { useUserStore } from '@/store/useUserStore';
+import type { GetRoomByInviteCodeResponse, ListPublicRoomsResponse, RoomResponse } from '@/types/room';
 
 export const roomService = {
   getHeaders(): HeadersInit {

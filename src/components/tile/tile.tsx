@@ -11,10 +11,13 @@ interface GameTileProps {
   tileSize: number;
   tileStep?: number;
   opacity?: number;
+  highlightColor?: string;
+  highlightDashed?: boolean;
+  highlightFill?: string;
 }
 
 export const GameTile: React.FC<GameTileProps> = ({
-  tileId, x, y, rotation, tileSize, tileStep, opacity = 1
+  tileId, x, y, rotation, tileSize, tileStep, opacity = 1, highlightColor, highlightDashed, highlightFill
 }) => {
   const step = tileStep ?? tileSize;
   const [image] = useImage(TILE_IMAGES[tileId]);
@@ -113,6 +116,19 @@ export const GameTile: React.FC<GameTileProps> = ({
         ]}
         listening={false}
       />
+
+      {highlightColor && (
+        <Rect
+          width={tileSize}
+          height={tileSize}
+          stroke={highlightColor}
+          strokeWidth={5}
+          dash={highlightDashed ? [10, 10] : undefined}
+          fill={highlightFill}
+          cornerRadius={CORNER_RADIUS}
+          listening={false}
+        />
+      )}
     </Group>
   );
 };

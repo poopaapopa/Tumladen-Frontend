@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { useUserStore } from '../store/useUserStore';
+import { useUserStore } from '@/store/useUserStore';
 import { WS_BASE_URL } from './config.ts';
 import { roomService } from './room.ts';
 import type { WebSocketMessage } from '../types/ws';
-export type { WebSocketMessage, ParticipantKickedPayload } from '../types/ws';
+export type { WebSocketMessage, ParticipantKickedPayload } from '@/types/ws';
 
 interface CentrifugeEnvelope {
   push?: {

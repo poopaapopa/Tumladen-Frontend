@@ -24,6 +24,7 @@ interface GameBoardProps {
   validMeeplePlacements?: Array<{ zoneId: string, featureType: string }>;
   onPlaceMeeple?: (zoneId: string) => void;
   lastPlacedTile?: Tile | null;
+  lastPlacedByPlayer?: Record<string, { x: number; y: number; color: string }>;
   placedMeeples?: Array<{ tileInstanceId: string, zoneId: string, actorId: string, seat?: number, featureType: string }>;
   currentPlayerColor?: string;
   players?: Player[];
@@ -40,8 +41,9 @@ const GameBoard: React.FC<GameBoardProps> = ({
   validMeeplePlacements = [],
   onPlaceMeeple,
   lastPlacedTile,
+  lastPlacedByPlayer = {},
   placedMeeples = [],
-  players = []
+  players = [],
 }) => {
   const centerX = (window.innerWidth - 450) / 2;
   const centerY = (window.innerHeight - 70) / 2;
@@ -113,17 +115,23 @@ const GameBoard: React.FC<GameBoardProps> = ({
       <Layer>
         {/* 1. ТАЙЛЫ */}
         <Group>
-          {tilesToRender.map((tile, index) => (
-            <GameTile
-              key={`tile-${index}-${tile.x}-${tile.y}`}
-              tileId={tile.tileId}
-              x={tile.x}
-              y={tile.y}
-              rotation={tile.rotation}
-              tileSize={TILE_SIZE}
-              tileStep={TILE_STEP}
-            />
-          ))}
+          {tilesToRender.map((tile, index) => {
+            const highlight = Object.values(lastPlacedByPlayer).find(
+              (info) => info.x === tile.x && info.y === tile.y
+            );
+            return (
+              <GameTile
+                key={`tile-${index}-${tile.x}-${tile.y}`}
+                tileId={tile.tileId}
+                x={tile.x}
+                y={tile.y}
+                rotation={tile.rotation}
+                tileSize={TILE_SIZE}
+                tileStep={TILE_STEP}
+                highlightColor={highlight?.color}
+              />
+            );
+          })}
         </Group>
 
         {/* 2. УСТАНОВЛЕННЫЕ МИПЛЫ */}
@@ -200,3 +208,4 @@ const GameBoard: React.FC<GameBoardProps> = ({
 };
 
 export default GameBoard;
+

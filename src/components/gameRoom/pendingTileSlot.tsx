@@ -2,6 +2,10 @@ import React, { useState } from 'react';
 import { Group, Rect, Text } from 'react-konva';
 import { GameTile } from '../tile/tile';
 
+const PLACEMENT_OUTLINE_COLOR = "#27AE60";
+const PLACEMENT_FILL_COLOR = "rgba(39, 174, 96, 0.1)";
+const PENDING_OUTLINE_COLOR = "#2f2f2f";
+
 interface PendingTileSlotProps {
   pos: { x: number; y: number; rotations: number[] };
   isPending: boolean;
@@ -44,19 +48,11 @@ export const PendingTileSlot: React.FC<PendingTileSlotProps> = ({
           rotation={displayRotation}
           tileSize={TILE_SIZE}
           opacity={isPending ? 1 : 0.4}
+          highlightColor={isPending ? PENDING_OUTLINE_COLOR : PLACEMENT_OUTLINE_COLOR}
+          highlightDashed={!isPending}
+          highlightFill={isPending ? undefined : PLACEMENT_FILL_COLOR}
         />
       )}
-      <Rect
-        width={TILE_SIZE}
-        height={TILE_SIZE}
-        offsetX={TILE_SIZE / 2}
-        offsetY={TILE_SIZE / 2}
-        stroke={isPending ? "#2f2f2f" : "#27AE60"}
-        strokeWidth={4}
-        dash={isPending ? [] : [10, 10]}
-        cornerRadius={10}
-        fill={isPending ? "" : "rgba(39, 174, 96, 0.1)"}
-      />
       {isPending && hovered && (
         <>
           <Rect

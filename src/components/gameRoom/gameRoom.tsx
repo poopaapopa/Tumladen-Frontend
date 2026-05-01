@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { preloadTileImages } from '@/utils/tiles.config';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './gameRoom.module.scss';
 import sidebarstyles from '../mainPage/MainPage.module.scss';
 import { useRoomSocket } from '@/api/ws';
-import type { WebSocketMessage } from '@/types/ws';
+import type { MatchFinishedPayload, WebSocketMessage } from '@/types/ws';
 import {
   type MatchStatePayload,
   type PrivateState,
@@ -16,6 +17,7 @@ import Modal from '../modal/modal';
 import gameExitImage from '@/assets/gameExit.png';
 import GameBoard from './gameBoard.tsx';
 import { ConfirmModal } from '../confirmKick/confirmKick.tsx';
+import { MatchResultModal } from '../matchResult/matchResult.tsx';
 import { GameRoomSidebar } from './gameRoomSidebar.tsx';
 import { CurrentTurnPanel } from '../turnPanel/currentTurnPanel.tsx';
 import { GameActionLog } from '../latestActions/gameActionLog.tsx';
@@ -35,12 +37,21 @@ const GameRoom = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
   const [isRoomDeleted, setIsRoomDeleted] = useState(false);
+  const [matchResult, setMatchResult] = useState<MatchFinishedPayload | null>(null);
   const [privateState, setPrivateState] = useState<PrivateState | null>(null);
   const [currentRotation, setCurrentRotation] = useState(0);
   const [pendingPlacement, setPendingPlacement] = useState<{ x: number; y: number; rotation: number } | null>(null);
+  // Карта последних поставленных тайлов по каждому игроку: actorId -> { x, y, color }
+  const [lastPlacedByPlayer, setLastPlacedByPlayer] = useState<
+    Record<string, { x: number; y: number; color: string }>
+  >({});
 
-  const { actionLog, addToLog, clearLog } = useMatchActionLog(inviteCode);
+  const { actionLog, recordMatchUpdate, clearLog } = useMatchActionLog(inviteCode);
   const { timeLeft, setTurnDeadline } = useTurnTimer(match?.status === 'active');
+
+  useEffect(() => {
+    preloadTileImages();
+  }, []);
 
   const fetchInitialData = useCallback(async () => {
     if (!inviteCode) return;
@@ -64,27 +75,34 @@ const GameRoom = () => {
   const handleMessage = useCallback((data: WebSocketMessage) => {
     if (data.type === 'match_state') {
       const newMatch = data.payload;
-      const prevTurnNumber = matchRef.current?.gameState?.turnNumber;
-      const newTurnNumber = newMatch.gameState?.turnNumber;
-      const isTurnChanged = prevTurnNumber !== newTurnNumber;
       const prevMatch = matchRef.current;
+      const isTurnChanged =
+        prevMatch?.gameState?.turnNumber !== newMatch.gameState?.turnNumber;
 
-      if (prevMatch) {
-        const prevGs = prevMatch.gameState;
-        const nextGs = newMatch.gameState;
+      recordMatchUpdate(prevMatch, newMatch);
 
-        if (prevGs.phase === 'place_tile' && nextGs.phase === 'place_meeple') {
-          const placedTileId = prevGs.currentTurn?.drawnTile?.tileId;
-          addToLog('поставил тайл', prevGs.currentPlayerId, prevGs.players, placedTileId);
-        }
-
-        if (nextGs.meeples.length > prevGs.meeples.length) {
-          addToLog('поставил мипла на тайл', prevGs.currentPlayerId, prevGs.players);
-        }
-
-        if (nextGs.turnNumber > prevGs.turnNumber && nextGs.meeples.length === prevGs.meeples.length) {
-          addToLog('решил не ставить мипла', prevGs.currentPlayerId, nextGs.players);
-        }
+      const newPlacedTile = newMatch.gameState?.currentTurn?.placedTile;
+      const placerId = newMatch.gameState?.currentPlayerId;
+      if (newPlacedTile && placerId) {
+        const placer = newMatch.gameState?.players?.find(
+          (p) => p.actorId === placerId
+        );
+        const color = getPlayerColorBySeat(placer?.seat);
+        setLastPlacedByPlayer((prev) => {
+          const existing = prev[placerId];
+          if (
+            existing &&
+            existing.x === newPlacedTile.x &&
+            existing.y === newPlacedTile.y &&
+            existing.color === color
+          ) {
+            return prev;
+          }
+          return {
+            ...prev,
+            [placerId]: { x: newPlacedTile.x, y: newPlacedTile.y, color },
+          };
+        });
       }
 
       setTurnDeadline(newMatch.gameState?.currentTurn?.turnEndsAt);
@@ -119,9 +137,14 @@ const GameRoom = () => {
 
     if (data.type === 'match_finished') {
       clearLog();
-      setIsRoomDeleted(true);
+      const payload = data.payload;
+      if (payload && payload.terminationReason === 'normal_completion') {
+        setMatchResult(payload);
+      } else {
+        setIsRoomDeleted(true);
+      }
     }
-  }, [addToLog, clearLog, setTurnDeadline]);
+  }, [recordMatchUpdate, clearLog, setTurnDeadline]);
 
   const { sendMessage } = useRoomSocket(room?.id, handleMessage);
 
@@ -235,6 +258,7 @@ const GameRoom = () => {
           onPlaceMeeple={handlePlaceMeeple}
           lastPlacedTile={lastPlacedTile}
           currentPlayerColor={currentColor}
+          lastPlacedByPlayer={lastPlacedByPlayer}
           players={players}
           placedMeeples={gameState?.meeples || []}
           pendingPlacement={pendingPlacement}
@@ -287,6 +311,25 @@ const GameRoom = () => {
           onConfirmText="Вернуться в комнату"
           image={gameExitImage}
         />
+      </Modal>
+
+      <Modal
+        isOpen={matchResult !== null}
+        onClose={() => {
+          setMatchResult(null);
+          room?.inviteCode ? navigate(`/room/${room.inviteCode}`) : navigate('/');
+        }}
+      >
+        {matchResult && (
+          <MatchResultModal
+            result={matchResult}
+            players={players}
+            onConfirm={() => {
+              setMatchResult(null);
+              room?.inviteCode ? navigate(`/room/${room.inviteCode}`) : navigate('/');
+            }}
+          />
+        )}
       </Modal>
     </main>
   );
