@@ -3,10 +3,10 @@ import { Stage, Layer, Group, Circle } from 'react-konva';
 import Konva from 'konva';
 import { GameTile } from '../tile/tile';
 import type { Tile } from "./gameRoom.tsx";
-import { getPlayerColorBySeat } from "../../utils/playerColor.ts";
+import { getPlayerColorBySeat } from "@/utils/playerColor.ts";
 import { PendingTileSlot } from './pendingTileSlot';
 import { KonvaMeeple } from '../matchPlayerCard/meeple.tsx';
-import { getZoneOffset } from '../../utils/tileZones.ts';
+import { getZoneOffset } from '@/utils/tileZones.ts';
 
 interface Player {
   actorId: string;

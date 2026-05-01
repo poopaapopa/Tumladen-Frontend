@@ -1,28 +1,26 @@
-import React from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './gameRoom.module.scss';
-import sidebarstyles from '../mainPage/MainPage.module.scss'
-import { useRoomSocket } from '../../api/ws';
-import type { WebSocketMessage } from '../../types/ws';
+import sidebarstyles from '../mainPage/MainPage.module.scss';
+import { useRoomSocket } from '@/api/ws';
+import type { WebSocketMessage } from '@/types/ws';
 import {
   type MatchStatePayload,
   type PrivateState,
-  type MatchPlayer,
-  type LogEntry,
-} from '../../types/match';
-import type { RoomResponse } from '../../types/room';
-import { useState, useCallback, useEffect, useRef } from 'react';
-import { roomService } from '../../api/room';
-import { useUserStore } from '../../store/useUserStore';
+} from '@/types/match';
+import type { RoomResponse } from '@/types/room';
+import { roomService } from '@/api/room';
+import { useUserStore } from '@/store/useUserStore';
+import { getPlayerColorBySeat } from '@/utils/playerColor.ts';
 import Modal from '../modal/modal';
-import gameExitImage from '../../assets/gameExit.png';
-import iconImg from '../../assets/icon.png';
-import GameBoard from "./gameBoard.tsx";
-import { TILE_IMAGES } from "../../utils/tiles.config.ts";
-import { getPlayerColorBySeat } from "../../utils/playerColor.ts";
-import { MatchPlayerCard } from "../matchPlayerCard/matchPlayerCard.tsx";
+import gameExitImage from '@/assets/gameExit.png';
+import GameBoard from './gameBoard.tsx';
 import { ConfirmModal } from '../confirmKick/confirmKick.tsx';
-import { AlarmClock } from 'lucide-react';
+import { GameRoomSidebar } from './gameRoomSidebar.tsx';
+import { CurrentTurnPanel } from '../turnPanel/currentTurnPanel.tsx';
+import { GameActionLog } from '../latestActions/gameActionLog.tsx';
+import { useMatchActionLog } from './hooks/useMatchActionLog.ts';
+import { useTurnTimer } from './hooks/useTurnTimer.ts';
 
 export type { Tile, MatchStatePayload, PrivateState } from '../../types/match';
 
@@ -40,64 +38,17 @@ const GameRoom = () => {
   const [privateState, setPrivateState] = useState<PrivateState | null>(null);
   const [currentRotation, setCurrentRotation] = useState(0);
   const [pendingPlacement, setPendingPlacement] = useState<{ x: number; y: number; rotation: number } | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const turnDeadlineRef = useRef<number | null>(null);
 
-  const [actionLog, setActionLog] = useState<LogEntry[]>(() => {
-    const saved = localStorage.getItem(`log_${inviteCode}`);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return parsed.map((entry: LogEntry) => ({
-          ...entry,
-          timestamp: new Date(entry.timestamp)
-        }));
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  });
-
-  useEffect(() => {
-    if (inviteCode && actionLog.length > 0) {
-      localStorage.setItem(`log_${inviteCode}`, JSON.stringify(actionLog));
-    }
-  }, [actionLog, inviteCode]);
-
-  const addToLog = useCallback((text: string, actorId: string, players: MatchPlayer[], tileId?: string) => {
-    const player = players.find(p => p.actorId === actorId);
-    const color = getPlayerColorBySeat(player?.seat);
-    const nickname = player?.displayName || "Неизвестный герой";
-    
-    const newEntry: LogEntry = {
-      id: Math.random().toString(36).substring(2, 9),
-      text,
-      color,
-      timestamp: new Date(),
-      nickname,
-      tileId
-    };
-
-    setActionLog(prev => {
-      if (prev.length > 0 && prev[0].text === text && prev[0].nickname === nickname) {
-        const diff = newEntry.timestamp.getTime() - prev[0].timestamp.getTime();
-        if (diff < 1000) return prev;
-      }
-
-      return [newEntry, ...prev].slice(0, 50);
-    });
-  }, []);
+  const { actionLog, addToLog, clearLog } = useMatchActionLog(inviteCode);
+  const { timeLeft, setTurnDeadline } = useTurnTimer(match?.status === 'active');
 
   const fetchInitialData = useCallback(async () => {
     if (!inviteCode) return;
     try {
       const data = await roomService.getRoomById(inviteCode);
       setRoom(data.room);
-
     } catch (err) {
-      console.error("Ошибка:", err);
+      console.error('Ошибка:', err);
       navigate('/');
     } finally {
       setIsLoading(false);
@@ -107,6 +58,8 @@ const GameRoom = () => {
   useEffect(() => {
     fetchInitialData();
   }, [fetchInitialData]);
+
+  const sendMessageRef = useRef<ReturnType<typeof useRoomSocket>['sendMessage'] | null>(null);
 
   const handleMessage = useCallback((data: WebSocketMessage) => {
     if (data.type === 'match_state') {
@@ -122,27 +75,19 @@ const GameRoom = () => {
 
         if (prevGs.phase === 'place_tile' && nextGs.phase === 'place_meeple') {
           const placedTileId = prevGs.currentTurn?.drawnTile?.tileId;
-          addToLog("поставил тайл", prevGs.currentPlayerId, prevGs.players, placedTileId);
+          addToLog('поставил тайл', prevGs.currentPlayerId, prevGs.players, placedTileId);
         }
 
         if (nextGs.meeples.length > prevGs.meeples.length) {
-          addToLog("поставил мипла на тайл", prevGs.currentPlayerId, prevGs.players);
+          addToLog('поставил мипла на тайл', prevGs.currentPlayerId, prevGs.players);
         }
 
-        if (nextGs.turnNumber > prevGs.turnNumber) {
-          if (nextGs.meeples.length === prevGs.meeples.length) {
-              addToLog("решил не ставить мипла", prevGs.currentPlayerId, nextGs.players);
-           }
+        if (nextGs.turnNumber > prevGs.turnNumber && nextGs.meeples.length === prevGs.meeples.length) {
+          addToLog('решил не ставить мипла', prevGs.currentPlayerId, nextGs.players);
         }
       }
 
-      const turnEndsAtIso = newMatch.gameState?.currentTurn?.turnEndsAt;
-      if (turnEndsAtIso) {
-        const deadline = new Date(turnEndsAtIso).getTime();
-        turnDeadlineRef.current = deadline;
-        setTimeLeft(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
-      }
-
+      setTurnDeadline(newMatch.gameState?.currentTurn?.turnEndsAt);
       setMatch(newMatch);
       matchRef.current = newMatch;
 
@@ -163,27 +108,31 @@ const GameRoom = () => {
       ) {
         const currentRoom = matchRef.current;
         if (currentRoom?.roomId) {
-          sendMessage('match_action', {
+          sendMessageRef.current?.('match_action', {
             roomId: currentRoom.roomId,
             action: 'skip_meeple',
-            payload: { roomId: currentRoom.roomId }
+            payload: { roomId: currentRoom.roomId },
           });
         }
       }
     }
 
     if (data.type === 'match_finished') {
-      localStorage.removeItem(`log_${inviteCode}`);
+      clearLog();
       setIsRoomDeleted(true);
     }
-  }, [addToLog, inviteCode]);
+  }, [addToLog, clearLog, setTurnDeadline]);
 
   const { sendMessage } = useRoomSocket(room?.id, handleMessage);
+
+  useEffect(() => {
+    sendMessageRef.current = sendMessage;
+  }, [sendMessage]);
 
   const handlePlaceTile = (x: number, y: number) => {
     if (!room?.id) return;
 
-    const placement = privateState?.validPlacements.find(p => p.x === x && p.y === y);
+    const placement = privateState?.validPlacements.find((p) => p.x === x && p.y === y);
     if (!placement) return;
 
     const rotation = placement.rotations.includes(currentRotation)
@@ -210,8 +159,8 @@ const GameRoom = () => {
         roomId: room.id,
         x: pendingPlacement.x,
         y: pendingPlacement.y,
-        rotation: pendingPlacement.rotation
-      }
+        rotation: pendingPlacement.rotation,
+      },
     });
   };
 
@@ -222,8 +171,8 @@ const GameRoom = () => {
       action: 'place_meeple',
       payload: {
         roomId: room.id,
-        zoneId: zoneId
-      }
+        zoneId,
+      },
     });
   };
 
@@ -232,15 +181,15 @@ const GameRoom = () => {
     sendMessage('match_action', {
       roomId: room.id,
       action: 'skip_meeple',
-      payload: { roomId: room.id }
+      payload: { roomId: room.id },
     });
   };
 
   const handleLeftGame = () => {
     if (room?.inviteCode) {
-      localStorage.removeItem(`log_${inviteCode}`);
+      clearLog();
       sendMessage('leave_match', {
-        roomId: room.id
+        roomId: room.id,
       });
       navigate(`/room/${room.inviteCode}`);
     }
@@ -250,88 +199,29 @@ const GameRoom = () => {
   const currentTurnId = gameState?.currentPlayerId;
   const phase = gameState?.phase;
 
-  useEffect(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
-
-    if (match?.status !== 'active') return;
-
-    const tick = () => {
-      const deadline = turnDeadlineRef.current;
-      if (deadline == null) {
-        setTimeLeft(null);
-        return;
-      }
-      setTimeLeft(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
-    };
-
-    tick();
-    timerRef.current = setInterval(tick, 250);
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  }, [match?.status]);
-
   if (isLoading) return <div className={sidebarstyles.pageWrapper}>Загрузка...</div>;
 
   const ownerId = room?.ownerActorId;
   const players = match?.gameState?.players || [];
-  const sortedPlayers = [...players].sort((a, b) => {
-    if (a.actorId === currentUser?.id) return -1;
-    if (b.actorId === currentUser?.id) return 1;
-    return 0;
-  });
-  
   const drawnTile = gameState?.currentTurn?.drawnTile;
   const remainingTiles = gameState?.deck?.remainingCount;
-  const currentTileId = drawnTile?.tileId || "1";
+  const currentTileId = drawnTile?.tileId || '1';
 
-  const currentPlayer = players.find(p => p.actorId === currentTurnId);
+  const currentPlayer = players.find((player) => player.actorId === currentTurnId);
   const currentColor = getPlayerColorBySeat(currentPlayer?.seat);
 
   const lastPlacedTile = gameState?.currentTurn?.placedTile;
 
-  const getActionText = (phase: string | undefined) => {
-    if (phase === 'place_meeple') return 'ставит мипла на тайл:';
-    return 'ставит тайл:';
-  };
-
   return (
     <main className={sidebarstyles.pageWrapper}>
-      <div className={sidebarstyles.sidebar}>
-        <div className={sidebarstyles.sidebar__gameInfo}>
-          <div className={sidebarstyles.sidebar__title}>Игроки</div>
-          {timeLeft !== null && (
-            <div className={sidebarstyles.sidebar__timer}>
-              {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
-              <AlarmClock className={sidebarstyles.sidebar__timerIcon} />
-            </div>
-          )}
-        </div>
-
-        <div className={styles.playersList}>
-          {sortedPlayers.map((player, index) => (
-            <React.Fragment key={player.actorId}>
-              <MatchPlayerCard
-                displayName={player.displayName}
-                isRoomOwner={player.actorId === ownerId}
-                isTurn={player.actorId === currentTurnId}
-                score={player.score}
-                meeplesLeft={player.meeplesLeft}
-                seat={player.seat}
-              />
-
-              {index === 0 && (
-                <div className={styles.playersList__divider} />
-              )}
-            </React.Fragment>
-          ))}
-        </div>
-
-        <button onClick={() => setIsExitModalOpen(true)} className={styles.leftGameButton}>
-          Покинуть игру
-        </button>
-      </div>
+      <GameRoomSidebar
+        players={players}
+        currentUserId={currentUser?.id}
+        ownerId={ownerId}
+        currentTurnId={currentTurnId}
+        timeLeft={timeLeft}
+        onLeaveClick={() => setIsExitModalOpen(true)}
+      />
 
       <div className={styles.boardContainer}>
         <GameBoard
@@ -349,48 +239,21 @@ const GameRoom = () => {
           placedMeeples={gameState?.meeples || []}
           pendingPlacement={pendingPlacement}
         />
-        {currentTileId && (
-          <div
-            className={styles.nexTile}
-            style={{ '--player-color': currentColor } as React.CSSProperties}
-          >
-            <div className={styles.nexTile__status}>
-              <span className={styles.nexTile__nickname}>
-                {currentPlayer?.displayName || "Ожидание..."}
-              </span>
-              <span className={styles.nexTile__action}>
-                {getActionText(phase)}
-              </span>
-            </div>
 
-            <div className={styles.nexTile__tileWrapper}>
-              <div className={styles.nexTile__tileOverlay} />
-              <img src={TILE_IMAGES[currentTileId]} className={styles.nexTile__image} />
-            </div>
+        <CurrentTurnPanel
+          currentPlayerName={currentPlayer?.displayName || 'Ожидание...'}
+          phase={phase}
+          currentTileId={currentTileId}
+          remainingTiles={remainingTiles}
+          currentColor={currentColor}
+        />
 
-            <div className={styles.nexTile__count}>
-              <img
-                src={iconImg}
-                alt="Осталось тайлов"
-                className={styles.nexTile__countIcon}
-              />
-              <span className={styles.nexTile__countSubtext}>
-                осталось
-              </span>
-              <span className={styles.nexTile__countText}>
-                {remainingTiles}
-              </span>
-              <span className={styles.nexTile__countSubtext}>
-                тайлов
-              </span>
-            </div>
-          </div>
-        )}
         {phase === 'place_meeple' && privateState?.isYourTurn && (
           <button className={styles.skipButton} onClick={handleSkipMeeple}>
             Не ставить мипла
           </button>
         )}
+
         {phase === 'place_tile' && privateState?.isYourTurn && pendingPlacement !== null && (
           <button
             className={styles.skipButton}
@@ -399,36 +262,8 @@ const GameRoom = () => {
             Поставить тайл
           </button>
         )}
-        <div className={styles.latestActions}>
-          <h4 className={styles.latestActions__title}>Последние действия:</h4>
-          <div className={styles.latestActions__list}>
-            {actionLog.map((entry) => (
-              <div key={entry.id} className={styles.latestActions__item}>
-                <span className={styles.latestActions__time}>
-                  {entry.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-                </span>
 
-                <div className={styles.latestActions__content}>
-                  <span 
-                    className={styles.latestActions__nickname}
-                    style={{ color: entry.color }}
-                  >
-                    {entry.nickname}
-                  </span>
-                  <span className={styles.latestActions__text}>
-                    {entry.text}
-                  </span>
-                  {entry.tileId && (
-                    <div className={styles.latestActions__image}>
-                      <img src={TILE_IMAGES[entry.tileId]} alt="tile" />
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-          
-        </div>
+        <GameActionLog entries={actionLog} />
       </div>
 
       <Modal isOpen={isExitModalOpen} onClose={() => setIsExitModalOpen(false)}>
@@ -448,7 +283,7 @@ const GameRoom = () => {
           title="Игра была завершена досрочно"
           text="К превеликому сожалению, один из нас решил с позором покинуть игру.
             В сообществе пойдёт молва о его трусливом дезертирстве."
-          onConfirm={() => {room?.inviteCode ? navigate(`/room/${room.inviteCode}`) : navigate('/');}}
+          onConfirm={() => { room?.inviteCode ? navigate(`/room/${room.inviteCode}`) : navigate('/'); }}
           onConfirmText="Вернуться в комнату"
           image={gameExitImage}
         />

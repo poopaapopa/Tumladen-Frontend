@@ -1,7 +1,7 @@
 import styles from "./guestAuth.module.scss"
 import { useState } from "react";
-import { useUserStore } from '../../store/useUserStore.ts';
-import { authService } from "../../api/auth.ts";
+import { useUserStore } from '@/store/useUserStore.ts';
+import { authService } from "@/api/auth.ts";
 
 interface GuestAuthProps {
   onConfirm: () => void;

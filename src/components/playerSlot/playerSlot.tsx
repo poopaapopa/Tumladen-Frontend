@@ -1,6 +1,6 @@
 import { Crown, Star, UserRoundX } from 'lucide-react';
 import clsx from 'clsx';
-import type { RoomResponse, ParticipantResponse } from '../../types/room.ts';
+import type { RoomResponse, ParticipantResponse } from '@/types/room.ts';
 import styles from './playerSlot.module.scss';
 
 interface PlayerSlotProps {
