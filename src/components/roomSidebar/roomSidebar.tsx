@@ -56,7 +56,7 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
     setIsEditingName(false);
   };
 
-  const maxPlayersOptions = Array.from({ length: 5 }, (_, i) => {
+  const maxPlayersOptions = Array.from({ length: 4 }, (_, i) => {
     const val = i + 2;
     return {
       value: val,
@@ -66,10 +66,12 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
   });
 
   const timerOptions = [
+    { value: 30, label: '30 с.' },
     { value: 60, label: '60 с.' },
     { value: 90, label: '90 с.' },
     { value: 120, label: '120 с.' },
     { value: 180, label: '180 с.' },
+    { value: 0, label: '∞' }
   ];
 
   return (

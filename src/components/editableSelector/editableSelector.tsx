@@ -22,6 +22,8 @@ interface Props {
 export const EditableSelector = ({ value, icon: Icon, options, onSelect, isOwner, suffix }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const stringValue = value === 0 ? '∞' : value.toString();
+  const stringSuffix = suffix && value !== 0 ? ` ${suffix}` : '';
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -48,7 +50,7 @@ export const EditableSelector = ({ value, icon: Icon, options, onSelect, isOwner
         onClick={() => isOwner && setIsOpen(!isOpen)}
       >
         <Icon size={20} />
-        <span>{value}{suffix && ` ${suffix}`}</span>
+        <span>{stringValue + stringSuffix}</span>
         {isOwner && (
           <ChevronDown
             size={26}

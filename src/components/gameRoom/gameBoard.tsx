@@ -24,7 +24,7 @@ interface GameBoardProps {
   validMeeplePlacements?: Array<{ zoneId: string, featureType: string }>;
   onPlaceMeeple?: (zoneId: string) => void;
   lastPlacedTile?: Tile | null;
-  placedMeeples?: Array<{ tileInstanceId: string, zoneId: string, actorId: string, seat?: number }>;
+  placedMeeples?: Array<{ tileInstanceId: string, zoneId: string, actorId: string, seat?: number, featureType: string }>;
   currentPlayerColor?: string;
   players?: Player[];
 }
@@ -141,7 +141,7 @@ const GameBoard: React.FC<GameBoardProps> = ({
                 x={tile.x * TILE_STEP + offset.x}
                 y={tile.y * TILE_STEP + offset.y}
                 color={color}
-                variant={meeple.zoneId.startsWith('field') ? 'lying' : 'standing'}
+                variant={meeple.featureType === 'field' ? 'lying' : 'standing'}
                 size={55}
               />
             );

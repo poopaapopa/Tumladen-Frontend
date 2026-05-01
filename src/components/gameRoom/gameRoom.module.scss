@@ -138,17 +138,18 @@
   &__count {
     position: relative;  
     width: 100%;
-    height: 100px;
+    height: 110px;
     display: flex;
-    align-items: center;  
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
   }
 
   &__countIcon {
     position: absolute; 
     top: 0;
-    width: 100px;
-    height: 100px;
+    width: 110px;
+    height: 110px;
     object-fit: cover;
     border-radius: 10px;
     filter: brightness(50%);
@@ -156,14 +157,22 @@
   }
 
   &__countText {
-    position: relative;   
-    z-index: 2;         
-    color: $beige-light;  
-    font-size: 42px;      
-    font-weight: 700;    
-    font-family: $font-main;
-    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); 
-    pointer-events: none; 
+    z-index: 2;
+    color: $beige-light;
+    margin: -3px 0;
+    font-size: 42px;
+    font-weight: 700;
+    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+  }
+
+  &__countSubtext {
+    z-index: 2;
+    color: $beige-light;
+    font-size: 18px;
+    font-weight: 500;
+    text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
   }
 }
 
@@ -222,7 +231,7 @@
   }
 
   &__title {
-    font-size: 16px;
+    font-size: 18px;
     color: $forest-dark;
     margin-bottom: 10px;
     border-bottom: 1px solid rgba($forest-dark, 0.2);

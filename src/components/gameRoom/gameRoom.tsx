@@ -14,7 +14,7 @@ import { TILE_IMAGES } from "../../utils/tiles.config.ts";
 import { getPlayerColorBySeat } from "../../utils/playerColor.ts";
 import { MatchPlayerCard } from "../matchPlayerCard/matchPlayerCard.tsx";
 import { ConfirmModal } from '../confirmKick/confirmKick.tsx';
-import {AlarmClock} from 'lucide-react';
+import { AlarmClock } from 'lucide-react';
 
 export interface PrivateState {
   isYourTurn: boolean;
@@ -48,13 +48,14 @@ interface GameState {
   board: {
     tiles: Tile[];
   };
-  meeples: Array<{ tileInstanceId: string, zoneId: string, actorId: string, seat?: number }>;
+  meeples: Array<{ tileInstanceId: string, zoneId: string, actorId: string, seat?: number, featureType: string }>;
   currentTurn?: {
     drawnTile: {
       tileId: string;
       imageUrl: string;
     } | null;
     placedTile?: Tile;
+    turnEndsAt?: string;
   };
   deck?: {
     remainingCount: number;
@@ -95,8 +96,9 @@ const GameRoom = () => {
   const [privateState, setPrivateState] = useState<PrivateState | null>(null);
   const [currentRotation, setCurrentRotation] = useState(0);
   const [pendingPlacement, setPendingPlacement] = useState<{ x: number; y: number; rotation: number } | null>(null);
-  const [timeLeft, setTimeLeft] = useState<number>(0);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const turnDeadlineRef = useRef<number | null>(null);
 
   const [actionLog, setActionLog] = useState<LogEntry[]>(() => {
     const saved = localStorage.getItem(`log_${inviteCode}`);
@@ -169,9 +171,7 @@ const GameRoom = () => {
       const newTurnNumber = newMatch.gameState?.turnNumber;
       const isTurnChanged = prevTurnNumber !== newTurnNumber;
       const prevMatch = matchRef.current;
-      const isNewTurn = prevMatch?.gameState?.currentPlayerId !== newMatch.gameState?.currentPlayerId;
-      const isNewPhase = prevMatch?.gameState?.phase !== newMatch.gameState?.phase;
-      
+
       if (prevMatch) {
         const prevGs = prevMatch.gameState;
         const nextGs = newMatch.gameState;
@@ -182,7 +182,7 @@ const GameRoom = () => {
         }
 
         if (nextGs.meeples.length > prevGs.meeples.length) {
-          addToLog("поставил мипла", prevGs.currentPlayerId, prevGs.players);
+          addToLog("поставил мипла на тайл", prevGs.currentPlayerId, prevGs.players);
         }
 
         if (nextGs.turnNumber > prevGs.turnNumber) {
@@ -191,10 +191,12 @@ const GameRoom = () => {
            }
         }
       }
-      
-      if (isNewTurn || isNewPhase) {
-        const turnTime = newMatch.gameState?.settings?.turnTimeSeconds || 120;
-        setTimeLeft(turnTime);
+
+      const turnEndsAtIso = newMatch.gameState?.currentTurn?.turnEndsAt;
+      if (turnEndsAtIso) {
+        const deadline = new Date(turnEndsAtIso).getTime();
+        turnDeadlineRef.current = deadline;
+        setTimeLeft(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
       }
 
       setMatch(newMatch);
@@ -304,48 +306,27 @@ const GameRoom = () => {
   const currentTurnId = gameState?.currentPlayerId;
   const phase = gameState?.phase;
 
-  const performAutoAction = useCallback(() => {
-    if (!privateState?.isYourTurn || !room?.id) return;
-
-    if (phase === 'place_tile') {
-      const firstValid = privateState.validPlacements[0];
-      if (firstValid) {
-        sendMessage('match_action', {
-          roomId: room.id,
-          action: 'place_tile',
-          payload: {
-            roomId: room.id,
-            x: firstValid.x,
-            y: firstValid.y,
-            rotation: firstValid.rotations[0]
-          }
-        });
-      }
-    } else if (phase === 'place_meeple') {
-      handleSkipMeeple();
-    }
-  }, [privateState, phase, room, sendMessage, currentUser, gameState, addToLog]);
-
   useEffect(() => {
     if (timerRef.current) clearInterval(timerRef.current);
 
-    if (match?.status === 'active') {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(timerRef.current!);
-            if (privateState?.isYourTurn) performAutoAction();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
+    if (match?.status !== 'active') return;
+
+    const tick = () => {
+      const deadline = turnDeadlineRef.current;
+      if (deadline == null) {
+        setTimeLeft(null);
+        return;
+      }
+      setTimeLeft(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
+    };
+
+    tick();
+    timerRef.current = setInterval(tick, 250);
 
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [match?.status, privateState?.isYourTurn, performAutoAction]);
+  }, [match?.status]);
 
   if (isLoading) return <div className={sidebarstyles.pageWrapper}>Загрузка...</div>;
 
@@ -376,12 +357,14 @@ const GameRoom = () => {
       <div className={sidebarstyles.sidebar}>
         <div className={sidebarstyles.sidebar__gameInfo}>
           <div className={sidebarstyles.sidebar__title}>Игроки</div>
-          <div className={sidebarstyles.sidebar__timer}>
-            {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
-            <AlarmClock className={sidebarstyles.sidebar__timerIcon} />
-          </div>
+          {timeLeft !== null && (
+            <div className={sidebarstyles.sidebar__timer}>
+              {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
+              <AlarmClock className={sidebarstyles.sidebar__timerIcon} />
+            </div>
+          )}
         </div>
-        
+
         <div className={styles.playersList}>
           {sortedPlayers.map((player, index) => (
             <React.Fragment key={player.actorId}>
@@ -447,8 +430,14 @@ const GameRoom = () => {
                 alt="Осталось тайлов"
                 className={styles.nexTile__countIcon}
               />
+              <span className={styles.nexTile__countSubtext}>
+                осталось
+              </span>
               <span className={styles.nexTile__countText}>
                 {remainingTiles}
+              </span>
+              <span className={styles.nexTile__countSubtext}>
+                тайлов
               </span>
             </div>
           </div>
