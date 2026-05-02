@@ -55,14 +55,14 @@ export const MatchResultModal = ({
   const winnerNames = ranked.filter((r) => r.isWinner).map((r) => r.displayName);
   const subtitle =
     winnerNames.length === 0
-      ? 'Игра завершена'
+      ? ''
       : winnerNames.length === 1
-        ? `Победитель — ${winnerNames[0]}`
-        : `Победители — ${winnerNames.join(', ')}`;
+        ? `Браво, ${winnerNames[0]}! Ваша стратегия оказалась самой мудрой в этой партии. Славься победитель!`
+        : `В коробке игры сегодня не одна золотая медаль! ${winnerNames.join(', ')} набрали одинаковое количество очков. Ваша стратегия была зеркально безупречной!`;
 
   return (
     <div className={styles.matchResult}>
-      <h2 className={styles.matchResult__title}>Игра завершена</h2>
+      <h2 className={styles.matchResult__title}>Партия окончена</h2>
       <p className={styles.matchResult__subtitle}>{subtitle}</p>
 
       <ul className={styles.matchResult__list}>

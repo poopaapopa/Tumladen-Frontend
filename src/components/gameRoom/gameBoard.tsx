@@ -1,11 +1,17 @@
-import React, { useState, useMemo, useRef } from 'react';
-import { Stage, Layer, Group, Circle } from 'react-konva';
+import { forwardRef, useImperativeHandle, useState, useMemo, useRef } from 'react';
+import { Stage, Layer, Group } from 'react-konva';
 import Konva from 'konva';
+
+export interface GameBoardHandle {
+  getStage: () => Konva.Stage | null;
+  getTileStep: () => number;
+}
 import { GameTile } from '../tile/tile';
 import type { Tile } from "./gameRoom.tsx";
 import { getPlayerColorBySeat } from "@/utils/playerColor.ts";
 import { PendingTileSlot } from './pendingTileSlot';
 import { KonvaMeeple } from '../matchPlayerCard/meeple.tsx';
+import { MeepleSlot } from '../meepleSlot/meepleSlot';
 import { getZoneOffset } from '@/utils/tileZones.ts';
 
 interface Player {
@@ -30,7 +36,7 @@ interface GameBoardProps {
   players?: Player[];
 }
 
-const GameBoard: React.FC<GameBoardProps> = ({
+const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
   board = [],
   validPlacements = [],
   onPlaceTile,
@@ -43,13 +49,19 @@ const GameBoard: React.FC<GameBoardProps> = ({
   lastPlacedTile,
   lastPlacedByPlayer = {},
   placedMeeples = [],
+  currentPlayerColor,
   players = [],
-}) => {
+}, ref) => {
   const centerX = (window.innerWidth - 450) / 2;
   const centerY = (window.innerHeight - 70) / 2;
 
   const [stage, setStage] = useState({ x: centerX, y: centerY, scale: 1 });
-  const stageRef = useRef<any>(null);
+  const stageRef = useRef<Konva.Stage | null>(null);
+
+  useImperativeHandle(ref, () => ({
+    getStage: () => stageRef.current,
+    getTileStep: () => TILE_STEP,
+  }), []);
 
   const setCursor = (cursor: string) => {
     if (stageRef.current) {
@@ -162,17 +174,12 @@ const GameBoard: React.FC<GameBoardProps> = ({
             {validMeeplePlacements.map((slot, i) => {
               const offset = getZoneOffset(lastPlacedTile.tileId, slot.zoneId, lastPlacedTile.rotation);
               return (
-                <Circle
+                <MeepleSlot
                   key={`slot-${i}`}
                   x={offset.x}
                   y={offset.y}
-                  radius={10}
-                  fill="rgba(255, 255, 255, 0.4)"
-                  stroke="white"
-                  strokeWidth={2}
-                  dash={[5, 5]}
+                  color={currentPlayerColor || 'white'}
                   onClick={() => onPlaceMeeple?.(slot.zoneId)}
-                  onTap={() => onPlaceMeeple?.(slot.zoneId)}
                   onMouseEnter={() => setCursor('pointer')}
                   onMouseLeave={() => setCursor('default')}
                 />
@@ -205,7 +212,8 @@ const GameBoard: React.FC<GameBoardProps> = ({
       </Layer>
     </Stage>
   );
-};
+});
+
+GameBoard.displayName = 'GameBoard';
 
 export default GameBoard;
-

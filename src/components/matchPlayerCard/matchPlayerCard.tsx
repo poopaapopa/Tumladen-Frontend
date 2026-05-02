@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { Star, Crown } from "lucide-react";
 import clsx from 'clsx';
 import styles from './matchPlayerCard.module.scss';
@@ -15,14 +15,14 @@ interface MatchPlayerCardProps {
   seat: number;
 }
 
-export const MatchPlayerCard: React.FC<MatchPlayerCardProps> = ({
+export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(({
   displayName,
   isRoomOwner,
   isTurn,
   score,
   meeplesLeft,
   seat
-}) => {
+}, ref) => {
   const playerColor = getPlayerColorBySeat(seat);
   const [displayScore, setDisplayScore] = useState(score);
   const [isScoreAnimating, setIsScoreAnimating] = useState(false);
@@ -95,6 +95,7 @@ export const MatchPlayerCard: React.FC<MatchPlayerCardProps> = ({
 
   return (
     <div
+      ref={ref}
       className={clsx(
         styles.playerCard,
         isTurn ? styles.playerCard_active : styles.playerCard_dimmed
@@ -130,4 +131,6 @@ export const MatchPlayerCard: React.FC<MatchPlayerCardProps> = ({
       </div>
     </div>
   );
-};
+});
+
+MatchPlayerCard.displayName = 'MatchPlayerCard';

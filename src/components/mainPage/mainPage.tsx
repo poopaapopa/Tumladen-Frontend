@@ -8,6 +8,7 @@ import { roomService } from "@/api/room.ts";
 import type { RoomResponse } from '@/types/room.ts';
 import { useUserStore } from "@/store/useUserStore.ts";
 import sadElfImg from '@/assets/sad-elf.png';
+import { AlertTriangle, X } from 'lucide-react';
 
 interface MainPageProps {
   isSelecting: boolean;
@@ -33,6 +34,9 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
 
   const [pendingGameId, setPendingGameId] = useState<number | null>(null);
+  const [creatingGameId, setCreatingGameId] = useState<number | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [lastFailedGameId, setLastFailedGameId] = useState<number | null>(null);
 
   useEffect(() => {
     if (isAuthenticated && isSelecting && pendingGameId) {
@@ -40,27 +44,42 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
       setPendingGameId(null);
     }
   }, [isAuthenticated, isSelecting, pendingGameId]);
-  
+
+  const createRoomForGame = async (gameId: number) => {
+    if (creatingGameId !== null) return;
+
+    setCreateError(null);
+    setLastFailedGameId(null);
+    setCreatingGameId(gameId);
+
+    try {
+      const newRoom = await roomService.createRoom(`Комната «${actor?.displayName}»`);
+      setIsSelecting(false);
+      navigate(`/room/${newRoom.inviteCode}`);
+    } catch (err) {
+      const message = err instanceof Error && err.message
+        ? err.message
+        : 'Не удалось создать комнату. Попробуйте ещё раз.';
+      setCreateError(message);
+      setLastFailedGameId(gameId);
+    } finally {
+      setCreatingGameId(null);
+    }
+  };
+
   const handleGameAction = async (gameId: number) => {
     if (!isSelecting) {
       onPlayClick();
       return;
     }
-  
+
     if (!isAuthenticated) {
       setPendingGameId(gameId);
       onPlayClick();
       return;
     }
 
-    try {
-       const newRoom = await roomService.createRoom(`Комната «${actor?.displayName}»`);
-       console.log(newRoom);
-       setIsSelecting(false);
-       navigate(`/room/${newRoom.inviteCode}`);
-    } catch {
-       alert("Ошибка");
-    }
+    await createRoomForGame(gameId);
   };
 
   const fetchRooms = async () => {
@@ -85,6 +104,13 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
     navigate(`/room/${roomId}`);
   };
 
+  const handleCancelSelection = () => {
+    setIsSelecting(false);
+    setCreateError(null);
+    setLastFailedGameId(null);
+    setPendingGameId(null);
+  };
+
   const games: Game[] = [
     { id: 1, title: 'Легенда', description: 'Классическая битва за территории с эльфийской магией.', minPlayers: 2, maxPlayers: 5 },
     { id: 2, title: 'Долина', description: 'Усложненные правила строительства в горах.', minPlayers: 3, maxPlayers: 6 },
@@ -92,6 +118,8 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
     { id: 4, title: 'Холм', description: 'Быстрая партия для двоих игроков.', minPlayers: 2, maxPlayers: 2 },
     { id: 5, title: 'Холм', description: 'Быстрая партия для двоих игроков.', minPlayers: 2, maxPlayers: 2 },
   ];
+
+  const isCreating = creatingGameId !== null;
 
   return (
     <main className={styles.pageWrapper}>
@@ -127,10 +155,45 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
 
       <div className={styles.mainPage}>
         {isSelecting && (
-          <div className={styles.selectionModal}>
-            <p>Выберите игру для создания комнаты</p>
-            <button onClick={() => setIsSelecting(false)} className={styles.cancelBtn}>
+          <div className={styles.selectionModal} role="status" aria-live="polite">
+            <p>
+              {isCreating
+                ? 'Создаём комнату…'
+                : 'Выберите игру для создания комнаты'}
+            </p>
+            <button
+              type="button"
+              onClick={handleCancelSelection}
+              disabled={isCreating}
+              className={styles.cancelBtn}
+              aria-label="Отменить создание комнаты"
+            >
               Отмена
+            </button>
+          </div>
+        )}
+
+        {createError && (
+          <div className={styles.errorBanner} role="alert">
+            <AlertTriangle size={20} strokeWidth={2.5} />
+            <span className={styles.errorBanner__text}>{createError}</span>
+            {lastFailedGameId !== null && (
+              <button
+                type="button"
+                className={styles.errorBanner__retry}
+                onClick={() => createRoomForGame(lastFailedGameId)}
+                disabled={isCreating}
+              >
+                Повторить
+              </button>
+            )}
+            <button
+              type="button"
+              className={styles.errorBanner__close}
+              onClick={() => { setCreateError(null); setLastFailedGameId(null); }}
+              aria-label="Закрыть сообщение об ошибке"
+            >
+              <X size={16} strokeWidth={2.5} />
             </button>
           </div>
         )}
@@ -139,7 +202,14 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
 
         <div className={styles.mainPage__grid}>
           {games.map((game) => (
-            <GameCard {...game} key={ game.id } isHighlight={isSelecting} onJoin={() => handleGameAction(game.id)}/>
+            <GameCard
+              {...game}
+              key={game.id}
+              isHighlight={isSelecting}
+              isLoading={creatingGameId === game.id}
+              disabled={isCreating && creatingGameId !== game.id}
+              onJoin={() => handleGameAction(game.id)}
+            />
           ))}
         </div>
       </div>

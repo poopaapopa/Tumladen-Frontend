@@ -1,0 +1,16 @@
+.flightLayer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1500;
+  overflow: visible;
+}
+
+.flight {
+  position: absolute;
+  top: 0;
+  left: 0;
+  will-change: transform, opacity;
+  transform-origin: center center;
+  filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.35));
+}

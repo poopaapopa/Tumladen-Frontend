@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { LogEntry, MatchPlayer, MatchStatePayload, PlacedMeeple } from '@/types/match';
 import { getPlayerColorBySeat } from '@/utils/playerColor.ts';
+import { pluralizePoints } from '@/utils/pluralize.ts';
 
 type MatchAction =
   | { kind: 'tile_placed'; actorId: string; tileId?: string }
-  | { kind: 'meeple_placed'; actorId: string; featureType: string; tileId?: string };
+  | { kind: 'meeple_placed'; actorId: string; featureType: string; tileId?: string }
+  | { kind: 'score_gained'; actorId: string; delta: number };
 
 const FEATURE_TYPE_LABELS: Record<string, string> = {
   city: 'в город',
@@ -22,6 +24,8 @@ const buildText = (action: MatchAction): string => {
       return 'поставил тайл';
     case 'meeple_placed':
       return `поставил мипла ${describeFeature(action.featureType)}`;
+    case 'score_gained':
+      return `получил ${action.delta} ${pluralizePoints(action.delta)}`;
   }
 };
 
@@ -70,7 +74,7 @@ export const useMatchActionLog = (inviteCode?: string) => {
       color,
       timestamp: new Date(),
       nickname,
-      tileId: action.tileId,
+      tileId: 'tileId' in action ? action.tileId : undefined,
     };
 
     setActionLog((prev) => {
@@ -111,6 +115,19 @@ export const useMatchActionLog = (inviteCode?: string) => {
           },
           players,
         );
+      }
+
+      // Дельты очков по каждому игроку — фиксируем закрытие фич/финальный скоринг
+      const prevScoreById = new Map(prevGs.players.map((p) => [p.actorId, p.score]));
+      for (const np of nextGs.players) {
+        const prevScore = prevScoreById.get(np.actorId) ?? np.score;
+        const delta = np.score - prevScore;
+        if (delta > 0) {
+          pushEntry(
+            { kind: 'score_gained', actorId: np.actorId, delta },
+            nextGs.players,
+          );
+        }
       }
     },
     [pushEntry],

@@ -16,7 +16,7 @@ const SEGMENT_COORDS: Record<string, { x: number; y: number }> = {
   right_right_b:  { x:  30, y:  55 },
   bottom_bottom:  { x:   0, y:  60 },
   right_right_t:  { x:  60, y: -25 },
-  right_right_c:  { x:  60, y:   0 },
+  right_right_c:  { x:  55, y:   0 },
   right_b_b:      { x:  35, y:  60 },
   left_b_b:       { x: -35, y:  60 },
 };

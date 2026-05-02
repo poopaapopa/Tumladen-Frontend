@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useUserStore } from '@/store/useUserStore';
 import { WS_BASE_URL } from './config.ts';
-import { roomService } from './room.ts';
+import { roomService, UnauthorizedError } from './room.ts';
 import type { WebSocketMessage } from '../types/ws';
 export type { WebSocketMessage, ParticipantKickedPayload } from '@/types/ws';
 
@@ -147,6 +147,8 @@ export const useRoomSocket = (
 
       } catch (err) {
         console.error('WebSocket connection error:', err);
+
+        if (err instanceof UnauthorizedError) return;
 
         if (!isComponentMounted.current) return;
 

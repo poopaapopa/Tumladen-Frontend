@@ -12,6 +12,10 @@ interface GameRoomSidebarProps {
   currentTurnId?: string;
   timeLeft: number | null;
   onLeaveClick: () => void;
+  /** Кол-во миплов, которые сейчас в полёте (ещё не «приземлились» в карточку) */
+  pendingMeeples?: Record<string, number>;
+  /** Регистрация DOM-узла карточки игрока для координат анимации полёта */
+  registerPlayerCardRef?: (actorId: string, el: HTMLDivElement | null) => void;
 }
 
 export const GameRoomSidebar = ({
@@ -21,6 +25,8 @@ export const GameRoomSidebar = ({
   currentTurnId,
   timeLeft,
   onLeaveClick,
+  pendingMeeples,
+  registerPlayerCardRef,
 }: GameRoomSidebarProps) => {
   const sortedPlayers = [...players].sort((a, b) => {
     if (a.actorId === currentUserId) {
@@ -47,20 +53,25 @@ export const GameRoomSidebar = ({
       </div>
 
       <div className={styles.playersList}>
-        {sortedPlayers.map((player, index) => (
-          <React.Fragment key={player.actorId}>
-            <MatchPlayerCard
-              displayName={player.displayName}
-              isRoomOwner={player.actorId === ownerId}
-              isTurn={player.actorId === currentTurnId}
-              score={player.score}
-              meeplesLeft={player.meeplesLeft}
-              seat={player.seat}
-            />
+        {sortedPlayers.map((player, index) => {
+          const pending = pendingMeeples?.[player.actorId] ?? 0;
+          const displayedMeeples = Math.max(0, player.meeplesLeft - pending);
+          return (
+            <React.Fragment key={player.actorId}>
+              <MatchPlayerCard
+                ref={(el) => registerPlayerCardRef?.(player.actorId, el)}
+                displayName={player.displayName}
+                isRoomOwner={player.actorId === ownerId}
+                isTurn={player.actorId === currentTurnId}
+                score={player.score}
+                meeplesLeft={displayedMeeples}
+                seat={player.seat}
+              />
 
-            {index === 0 && <div className={styles.playersList__divider} />}
-          </React.Fragment>
-        ))}
+              {index === 0 && <div className={styles.playersList__divider} />}
+            </React.Fragment>
+          );
+        })}
       </div>
 
       <button onClick={onLeaveClick} className={styles.leftGameButton}>
