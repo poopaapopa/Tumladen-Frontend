@@ -382,6 +382,13 @@ const GameRoom = () => {
   const players = match?.gameState?.players || [];
   const drawnTile = gameState?.currentTurn?.drawnTile;
   const remainingTiles = gameState?.deck?.remainingCount;
+  const boardTilesCount = gameState?.board?.tiles?.length ?? 0;
+  const totalTiles =
+    remainingTiles !== undefined ? boardTilesCount + remainingTiles - 1 : undefined;
+  const deckPercent =
+    remainingTiles !== undefined && totalTiles && totalTiles > 0
+      ? Math.max(0, Math.min(100, (remainingTiles / totalTiles) * 100))
+      : undefined;
   const currentTileId = drawnTile?.tileId || '1';
 
   const currentPlayer = players.find((player) => player.actorId === currentTurnId);
@@ -396,7 +403,6 @@ const GameRoom = () => {
         currentUserId={currentUser?.id}
         ownerId={ownerId}
         currentTurnId={currentTurnId}
-        timeLeft={timeLeft}
         onLeaveClick={() => setIsExitModalOpen(true)}
         pendingMeeples={pendingMeeples}
         registerPlayerCardRef={registerPlayerCardRef}
@@ -425,7 +431,10 @@ const GameRoom = () => {
           phase={phase}
           currentTileId={currentTileId}
           remainingTiles={remainingTiles}
+          deckPercent={deckPercent}
           currentColor={currentColor}
+          timeLeft={timeLeft}
+          turnDuration={gameState?.settings?.turnTimeSeconds}
         />
 
         {phase === 'place_meeple' && privateState?.isYourTurn && (

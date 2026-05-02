@@ -1,5 +1,4 @@
 import React from 'react';
-import { AlarmClock } from 'lucide-react';
 import sidebarstyles from '../mainPage/MainPage.module.scss';
 import styles from './gameRoom.module.scss';
 import type { MatchPlayer } from '@/types/match';
@@ -10,7 +9,6 @@ interface GameRoomSidebarProps {
   currentUserId?: string;
   ownerId?: string;
   currentTurnId?: string;
-  timeLeft: number | null;
   onLeaveClick: () => void;
   /** Кол-во миплов, которые сейчас в полёте (ещё не «приземлились» в карточку) */
   pendingMeeples?: Record<string, number>;
@@ -23,7 +21,6 @@ export const GameRoomSidebar = ({
   currentUserId,
   ownerId,
   currentTurnId,
-  timeLeft,
   onLeaveClick,
   pendingMeeples,
   registerPlayerCardRef,
@@ -44,12 +41,6 @@ export const GameRoomSidebar = ({
     <div className={sidebarstyles.sidebar}>
       <div className={sidebarstyles.sidebar__gameInfo}>
         <div className={sidebarstyles.sidebar__title}>Игроки</div>
-        {timeLeft !== null && (
-          <div className={sidebarstyles.sidebar__timer}>
-            {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
-            <AlarmClock className={sidebarstyles.sidebar__timerIcon} />
-          </div>
-        )}
       </div>
 
       <div className={styles.playersList}>
