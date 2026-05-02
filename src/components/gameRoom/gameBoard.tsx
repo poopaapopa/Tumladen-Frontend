@@ -32,7 +32,6 @@ interface GameBoardProps {
   lastPlacedTile?: Tile | null;
   lastPlacedByPlayer?: Record<string, { x: number; y: number; color: string }>;
   placedMeeples?: Array<{ tileInstanceId: string, zoneId: string, actorId: string, seat?: number, featureType: string }>;
-  currentPlayerColor?: string;
   players?: Player[];
 }
 
@@ -49,7 +48,6 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
   lastPlacedTile,
   lastPlacedByPlayer = {},
   placedMeeples = [],
-  currentPlayerColor,
   players = [],
 }, ref) => {
   const centerX = (window.innerWidth - 450) / 2;
@@ -178,7 +176,7 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
                   key={`slot-${i}`}
                   x={offset.x}
                   y={offset.y}
-                  color={currentPlayerColor || 'white'}
+                  color={'black'}
                   onClick={() => onPlaceMeeple?.(slot.zoneId)}
                   onMouseEnter={() => setCursor('pointer')}
                   onMouseLeave={() => setCursor('default')}

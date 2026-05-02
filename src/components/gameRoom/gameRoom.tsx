@@ -414,7 +414,6 @@ const GameRoom = () => {
           validMeeplePlacements={privateState?.validMeeplePlacements || []}
           onPlaceMeeple={handlePlaceMeeple}
           lastPlacedTile={lastPlacedTile}
-          currentPlayerColor={currentColor}
           lastPlacedByPlayer={lastPlacedByPlayer}
           players={players}
           placedMeeples={gameState?.meeples || []}
