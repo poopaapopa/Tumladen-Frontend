@@ -9,6 +9,15 @@ export class UnauthorizedError extends Error {
   }
 }
 
+async function handleResponse(res: Response, errorMessage: string): Promise<Response> {
+  if (res.status === 401) {
+    useUserStore.getState().logout();
+    throw new UnauthorizedError('Сессия истекла. Пожалуйста, войдите снова.');
+  }
+  if (!res.ok) throw new Error(errorMessage);
+  return res;
+}
+
 export const roomService = {
   getHeaders(): HeadersInit {
     const token = useUserStore.getState().token;
@@ -30,8 +39,7 @@ export const roomService = {
       headers: this.getHeaders(),
       body: JSON.stringify({ name }),
     });
-    if (!res.ok) throw new Error('Ошибка при создании комнаты');
-    return res.json();
+    return (await handleResponse(res, 'Ошибка при создании комнаты')).json();
   },
 
   async getPublicRooms(): Promise<ListPublicRoomsResponse> {
@@ -39,8 +47,7 @@ export const roomService = {
       method: 'GET',
       headers: this.getHeaders(),
     });
-    if (!res.ok) throw new Error('Ошибка при получении списка комнат');
-    return res.json();
+    return (await handleResponse(res, 'Ошибка при получении списка комнат')).json();
   },
 
   async getRoomById(id: string): Promise<GetRoomByInviteCodeResponse> {
@@ -48,8 +55,7 @@ export const roomService = {
       method: 'GET',
       headers: this.getHeaders(),
     });
-    if (!res.ok) throw new Error('Ошибка при получении данных комнаты');
-    return res.json();
+    return (await handleResponse(res, 'Ошибка при получении данных комнаты')).json();
   },
 
   async getWsTicket(): Promise<{ ticket: string }> {
@@ -57,13 +63,6 @@ export const roomService = {
       method: 'POST',
       headers: this.getHeaders(),
     });
-
-    if (res.status === 401) {
-      useUserStore.getState().logout();
-      throw new UnauthorizedError('Сессия истекла. Пожалуйста, войдите снова.');
-    }
-
-    if (!res.ok) throw new Error('Не удалось получить тикет');
-    return res.json();
-  }
+    return (await handleResponse(res, 'Не удалось получить тикет')).json();
+  },
 };

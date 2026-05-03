@@ -426,16 +426,18 @@ const GameRoom = () => {
           pendingPlacement={pendingPlacement}
         />
 
-        <CurrentTurnPanel
-          currentPlayerName={currentPlayer?.displayName || 'Ожидание...'}
-          phase={phase}
-          currentTileId={currentTileId}
-          remainingTiles={remainingTiles}
-          deckPercent={deckPercent}
-          currentColor={currentColor}
-          timeLeft={timeLeft}
-          turnDuration={gameState?.settings?.turnTimeSeconds}
-        />
+        {matchResult === null && (
+          <CurrentTurnPanel
+            currentPlayerName={currentPlayer?.displayName || 'Ожидание...'}
+            phase={phase}
+            currentTileId={currentTileId}
+            remainingTiles={remainingTiles}
+            deckPercent={deckPercent}
+            currentColor={currentColor}
+            timeLeft={timeLeft}
+            turnDuration={gameState?.settings?.turnTimeSeconds}
+          />
+        )}
 
         {phase === 'place_meeple' && privateState?.isYourTurn && (
           <button className={styles.skipButton} onClick={handleSkipMeeple}>
@@ -452,7 +454,9 @@ const GameRoom = () => {
           </button>
         )}
 
-        <GameActionLog entries={actionLog} />
+        {actionLog.length !== 0 && (
+          <GameActionLog entries={actionLog} />
+        )}
       </div>
 
       <MeepleFlightLayer flights={flights} />
@@ -491,6 +495,7 @@ const GameRoom = () => {
           <MatchResultModal
             result={matchResult}
             players={players}
+            currentUserId={currentUser?.id}
             onConfirm={() => {
               setMatchResult(null);
               room?.inviteCode ? navigate(`/room/${room.inviteCode}`) : navigate('/');

@@ -1,4 +1,5 @@
 import { Fragment, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { Award } from 'lucide-react';
 
@@ -10,6 +11,8 @@ const CONFETTI_COLORS = [
   '#AC92EC',
   '#FC6E51',
   '#FFCE54',
+  '#FF6B6B',
+  '#5D9CEC',
 ];
 
 interface ConfettiPiece {
@@ -31,16 +34,16 @@ const buildPieces = (
 ): ConfettiPiece[] => {
   const dir = side === 'left' ? 1 : -1;
   return Array.from({ length: count }, (_, i) => {
-    const horizontalSpread = 220 + Math.random() * 360;
-    const verticalLift = 180 + Math.random() * 220;
+    const horizontalSpread = 350 + Math.random() * 490;
+    const verticalLift = 610 + Math.random() * 550;
     return {
       id: i,
       color: CONFETTI_COLORS[Math.floor(Math.random() * CONFETTI_COLORS.length)],
       dx: dir * horizontalSpread,
       dy: -verticalLift,
       rotate: (Math.random() * 720 - 360) * dir,
-      delay: Math.random() * 120,
-      duration: 1400 + Math.random() * 900,
+      delay: Math.random() * 160,
+      duration: 1900 + Math.random() * 1300,
       width: 6 + Math.random() * 6,
       height: 8 + Math.random() * 10,
       shape: Math.random() > 0.7 ? 'circle' : 'rect',
@@ -57,6 +60,7 @@ import elfGameImage from '@/assets/elf-game.png';
 interface MatchResultModalProps {
   result: MatchFinishedPayload;
   players: MatchPlayer[];
+  currentUserId?: string;
   onConfirm: () => void;
   confirmText?: string;
 }
@@ -73,6 +77,7 @@ interface RankedRow {
 export const MatchResultModal = ({
   result,
   players,
+  currentUserId,
   onConfirm,
   confirmText = 'Вернуться в комнату',
 }: MatchResultModalProps) => {
@@ -103,14 +108,17 @@ export const MatchResultModal = ({
   });
 
   const winners = ranked.filter((r) => r.isWinner);
+  const isCurrentUserWinner = !!(
+    currentUserId && winners.some((w) => w.actorId === currentUserId)
+  );
 
   const leftPieces = useMemo(
-    () => (winners.length > 0 ? buildPieces('left', 28) : []),
-    [winners.length]
+    () => (isCurrentUserWinner ? buildPieces('left', 60) : []),
+    [isCurrentUserWinner]
   );
   const rightPieces = useMemo(
-    () => (winners.length > 0 ? buildPieces('right', 28) : []),
-    [winners.length]
+    () => (isCurrentUserWinner ? buildPieces('right', 60) : []),
+    [isCurrentUserWinner]
   );
 
   const renderColoredName = (row: RankedRow) => (
@@ -182,23 +190,27 @@ export const MatchResultModal = ({
     </div>
   );
 
+  const confettiOverlay =
+    isCurrentUserWinner && typeof document !== 'undefined'
+      ? createPortal(
+          <div className={styles.matchResult__confettiOverlay} aria-hidden="true">
+            {renderEmitter('left', leftPieces)}
+            {renderEmitter('right', rightPieces)}
+          </div>,
+          document.body
+        )
+      : null;
+
   return (
     <div className={styles.matchResult}>
-      {winners.length > 0 && (
-        <>
-          {renderEmitter('left', leftPieces)}
-          {renderEmitter('right', rightPieces)}
-        </>
-      )}
+      {confettiOverlay}
       <h2 className={styles.matchResult__title}>Партия окончена</h2>
-      <p className={styles.matchResult__subtitle}>{renderSubtitle()}</p>
-
       <img
         src={elfGameImage}
         alt=""
         className={styles.matchResult__image}
       />
-
+      <p className={styles.matchResult__subtitle}>{renderSubtitle()}</p>
       <ul className={styles.matchResult__list}>
         {ranked.map((row) => (
           <li

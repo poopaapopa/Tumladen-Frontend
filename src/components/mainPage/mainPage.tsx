@@ -4,11 +4,12 @@ import RoomCard from "../roomCard/roomCard.tsx";
 import RoomCardSkeleton from '../roomCard/roomCardSkeleton'
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { roomService } from "@/api/room.ts";
+import { roomService, UnauthorizedError } from "@/api/room.ts";
 import type { RoomResponse } from '@/types/room.ts';
 import { useUserStore } from "@/store/useUserStore.ts";
 import sadElfImg from '@/assets/sad-elf.png';
 import { AlertTriangle, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface MainPageProps {
   isSelecting: boolean;
@@ -57,11 +58,16 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
       setIsSelecting(false);
       navigate(`/room/${newRoom.inviteCode}`);
     } catch (err) {
-      const message = err instanceof Error && err.message
-        ? err.message
-        : 'Не удалось создать комнату. Попробуйте ещё раз.';
-      setCreateError(message);
-      setLastFailedGameId(gameId);
+      if (err instanceof UnauthorizedError) {
+        setIsSelecting(false);
+        setPendingGameId(gameId);
+      } else {
+        const message = err instanceof Error && err.message
+          ? err.message
+          : 'Не удалось создать комнату. Попробуйте ещё раз.';
+        setCreateError(message);
+        setLastFailedGameId(gameId);
+      }
     } finally {
       setCreatingGameId(null);
     }
@@ -173,31 +179,6 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
           </div>
         )}
 
-        {createError && (
-          <div className={styles.errorBanner} role="alert">
-            <AlertTriangle size={20} strokeWidth={2.5} />
-            <span className={styles.errorBanner__text}>{createError}</span>
-            {lastFailedGameId !== null && (
-              <button
-                type="button"
-                className={styles.errorBanner__retry}
-                onClick={() => createRoomForGame(lastFailedGameId)}
-                disabled={isCreating}
-              >
-                Повторить
-              </button>
-            )}
-            <button
-              type="button"
-              className={styles.errorBanner__close}
-              onClick={() => { setCreateError(null); setLastFailedGameId(null); }}
-              aria-label="Закрыть сообщение об ошибке"
-            >
-              <X size={16} strokeWidth={2.5} />
-            </button>
-          </div>
-        )}
-
         <h2 className={styles.mainPage__title}>Игры</h2>
 
         <div className={styles.mainPage__grid}>
@@ -213,6 +194,40 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
           ))}
         </div>
       </div>
+
+      <AnimatePresence>
+        {createError && (
+          <motion.div
+            key="create-error-toast"
+            className={styles.errorToast}
+            role="alert"
+            initial={{ opacity: 0, y: 50, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, x: '-50%' }}
+            exit={{ opacity: 0, y: 20, x: '-50%' }}
+          >
+            <AlertTriangle size={20} className={styles.errorToast__icon} strokeWidth={2.5} />
+            <span className={styles.errorToast__text}>{createError}</span>
+            {lastFailedGameId !== null && (
+              <button
+                type="button"
+                className={styles.errorToast__retry}
+                onClick={() => createRoomForGame(lastFailedGameId)}
+                disabled={isCreating}
+              >
+                Повторить
+              </button>
+            )}
+            <button
+              type="button"
+              className={styles.errorToast__close}
+              onClick={() => { setCreateError(null); setLastFailedGameId(null); }}
+              aria-label="Закрыть сообщение об ошибке"
+            >
+              <X size={16} strokeWidth={2.5} />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

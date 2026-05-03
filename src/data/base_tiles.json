@@ -111,14 +111,14 @@
     "tileId": "city_curve_shield",
     "zones": [
       { "zoneId": "city_1", "segment": "center_t_left" },
-      { "zoneId": "field_1", "segment": "bottom_right" }
+      { "zoneId": "field_1", "segment": "center_b_right" }
     ]
   },
   {
     "tileId": "city_curve",
     "zones": [
       { "zoneId": "city_1", "segment": "center_t_left" },
-      { "zoneId": "field_1", "segment": "bottom_right" }
+      { "zoneId": "field_1", "segment": "center_b_right" }
     ]
   },
   {
@@ -183,7 +183,7 @@
     "tileId": "road_curve",
     "zones": [
       { "zoneId": "road_1", "segment": "center_b_left" },
-      { "zoneId": "field_1", "segment": "top_right" },
+      { "zoneId": "field_1", "segment": "center_t_right" },
       { "zoneId": "field_2", "segment": "bottom_left" }
     ]
   },
