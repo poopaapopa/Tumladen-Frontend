@@ -1,0 +1,165 @@
+@use "sass:color";
+
+.authModal {
+  background-color: $beige-light;
+  border: 6px solid $forest-mid;
+  border-radius: 20px;
+  padding: 30px 40px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+
+  &__tabs {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 30px;
+    border-bottom: 2px solid rgba($forest-mid, 0.2);
+  }
+
+  &__tab {
+    background: none;
+    border: none;
+    padding: 10px 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: $metal-gray;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+
+    &_active {
+      color: $forest-dark;
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background-color: $forest-mid;
+        border-radius: 2px;
+      }
+    }
+    
+    &:hover:not(&_active) {
+      color: $forest-mid;
+    }
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  &__inputGroup {
+    position: relative;
+    margin-bottom: 5px;
+    text-align: left;
+    display: flex;
+    align-items: center;
+  }
+
+  &__label {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: $font-main;
+    font-size: 18px;
+    color: $metal-gray;
+    pointer-events: none;
+    transition: all 0.2s ease;
+    background-color: $beige-light;
+    padding: 0 5px;
+    border-radius: 5px;
+  }
+
+  &__input {
+    font-family: $font-main;
+    width: 100%;
+    background-color: transparent;
+    border: 2px solid $forest-mid;
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-size: 18px;
+    color: #1e1e1e;
+    outline: none;
+    transition: all 0.2s ease;
+    padding-right: 50px;
+
+    &:focus {
+      box-shadow: 0 0 0 3px rgba($forest-mid, 0.2);
+      border-color: $forest-dark;
+    }
+
+    // Логика перемещения label вверх
+    &:focus + .authModal__label,
+    &:not(:placeholder-shown) + .authModal__label {
+      top: 0;
+      font-size: 13px;
+      color: $forest-dark;
+      font-weight: 700;
+      transform: translateY(-50%) scale(0.9);
+      opacity: 1;
+    }
+  }
+
+  &__eyeBtn {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: $metal-gray;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    transition: color 0.2s;
+    z-index: 10; // Чтобы был поверх инпута
+
+    &:hover {
+      color: $forest-mid;
+    }
+  }
+
+  &__error {
+    color: $decline;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px;
+    background: rgba($decline, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba($decline, 0.2);
+  }
+
+  &__actions {
+    margin-top: 10px;
+  }
+
+  &__btnPrimary {
+    all: unset;
+    cursor: pointer;
+    width: 100%;
+    padding: 14px 0;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 20px;
+    background-color: $forest-mid;
+    color: $beige-light;
+    transition: background-color 0.3s;
+    text-align: center;
+
+    &:hover:not(:disabled) {
+      background-color: color.adjust($forest-mid, $lightness: -5%);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
