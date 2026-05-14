@@ -2,7 +2,7 @@ import styles from './MainPage.module.scss';
 import GameCard from "../gameCard/gameCard.tsx";
 import RoomCard from "../roomCard/roomCard.tsx";
 import RoomCardSkeleton from '../roomCard/roomCardSkeleton'
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { roomService, UnauthorizedError } from "@/api/room.ts";
 import type { RoomResponse } from '@/types/room.ts';
@@ -10,23 +10,43 @@ import { useUserStore } from "@/store/useUserStore.ts";
 import sadElfImg from '@/assets/sad-elf.png';
 import { AlertTriangle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import clsx from 'clsx';
+import RangeSlider from '../rangeSlider/rangeSlider.tsx';
 
 interface MainPageProps {
-  isSelecting: boolean;
-  setIsSelecting: (val: boolean) => void;
   onPlayClick: () => void;
 }
 
+type PendingAction = { type: 'create' | 'quick'; gameId: number };
+
 interface Game {
-  id: number,
-  title: string,
-  description: string,
-  imageUrl?: string,
-  minPlayers: number,
-  maxPlayers: number,
+  id: number;
+  title: string;
+  description: string;
+  imageUrl?: string;
+  minPlayers: number;
+  maxPlayers: number;
+  duration: string;
+  gameType: string;
 }
 
-function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
+const ALL_GAMES_FILTER = 'all';
+
+const PLAYERS_MIN = 2;
+const PLAYERS_MAX = 8;
+
+// Дискретные точки на оси «время на ход». Последний слот (null) соответствует
+// бесконечному ходу (turnTimeSeconds === 0 в данных комнаты).
+const TURN_TIME_POINTS: ReadonlyArray<number | null> = [30, 60, 90, 120, 180, null];
+const TURN_TIME_MIN_INDEX = 0;
+const TURN_TIME_MAX_INDEX = TURN_TIME_POINTS.length - 1;
+
+const formatTurnTime = (index: number) => {
+  const point = TURN_TIME_POINTS[index];
+  return point === null ? '∞' : `${point}с`;
+};
+
+function MainPage({ onPlayClick }: MainPageProps) {
   const navigate = useNavigate();
 
   const { isAuthenticated, actor } = useUserStore();
@@ -34,59 +54,108 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
   const [rooms, setRooms] = useState<RoomResponse[]>([]);
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
 
-  const [pendingGameId, setPendingGameId] = useState<number | null>(null);
-  const [creatingGameId, setCreatingGameId] = useState<number | null>(null);
+  const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [busyGameId, setBusyGameId] = useState<number | null>(null);
   const [createError, setCreateError] = useState<string | null>(null);
-  const [lastFailedGameId, setLastFailedGameId] = useState<number | null>(null);
+  const [lastFailedAction, setLastFailedAction] = useState<PendingAction | null>(null);
 
-  useEffect(() => {
-    if (isAuthenticated && isSelecting && pendingGameId) {
-      handleGameAction(pendingGameId);
-      setPendingGameId(null);
-    }
-  }, [isAuthenticated, isSelecting, pendingGameId]);
+  const [gameFilter, setGameFilter] = useState<string>(ALL_GAMES_FILTER);
+  const [playersRange, setPlayersRange] = useState<[number, number]>([PLAYERS_MIN, PLAYERS_MAX]);
+  const [turnTimeRange, setTurnTimeRange] = useState<[number, number]>([
+    TURN_TIME_MIN_INDEX,
+    TURN_TIME_MAX_INDEX,
+  ]);
+
+  const games: Game[] = [
+    {
+      id: 1,
+      title: 'Каркассон',
+      description: 'Игроки выступают в роли средневековых феодалов, осваивающих земли вокруг одноименной французской крепости, по очереди выкладывая тайлы местности (города, дороги, монастыри) и размещая на них подданных («миплов») для набора очков.',
+      minPlayers: 2,
+      maxPlayers: 5,
+      duration: '20 мин',
+      gameType: 'carcassonne',
+    },
+  ];
+
+  const findGameById = (id: number) => games.find((g) => g.id === id);
 
   const createRoomForGame = async (gameId: number) => {
-    if (creatingGameId !== null) return;
+    if (busyGameId !== null) return;
+
+    if (!isAuthenticated) {
+      setPendingAction({ type: 'create', gameId });
+      onPlayClick();
+      return;
+    }
 
     setCreateError(null);
-    setLastFailedGameId(null);
-    setCreatingGameId(gameId);
+    setLastFailedAction(null);
+    setBusyGameId(gameId);
 
     try {
       const newRoom = await roomService.createRoom(`Комната «${actor?.displayName}»`);
-      setIsSelecting(false);
       navigate(`/room/${newRoom.inviteCode}`);
     } catch (err) {
       if (err instanceof UnauthorizedError) {
-        setIsSelecting(false);
-        setPendingGameId(gameId);
+        // токен протух между проверкой и запросом — повторим после повторной авторизации
+        setPendingAction({ type: 'create', gameId });
+        onPlayClick();
       } else {
         const message = err instanceof Error && err.message
           ? err.message
           : 'Не удалось создать комнату. Попробуйте ещё раз.';
         setCreateError(message);
-        setLastFailedGameId(gameId);
+        setLastFailedAction({ type: 'create', gameId });
       }
     } finally {
-      setCreatingGameId(null);
+      setBusyGameId(null);
     }
   };
 
-  const handleGameAction = async (gameId: number) => {
-    if (!isSelecting) {
-      onPlayClick();
-      return;
-    }
+  const quickPlayForGame = async (gameId: number) => {
+    if (busyGameId !== null) return;
 
     if (!isAuthenticated) {
-      setPendingGameId(gameId);
+      setPendingAction({ type: 'quick', gameId });
       onPlayClick();
       return;
     }
 
+    const game = findGameById(gameId);
+    const targetType = game?.gameType;
+    const availableRoom = rooms.find(
+      (r) =>
+        r.status === 'waiting' &&
+        r.playersCount < r.maxPlayers &&
+        (!targetType || r.gameType === targetType),
+    );
+
+    if (availableRoom) {
+      navigate(`/room/${availableRoom.inviteCode}`);
+      return;
+    }
+
+    // нет подходящей комнаты — создаём новую
     await createRoomForGame(gameId);
   };
+
+  const runAction = (action: PendingAction) => {
+    if (action.type === 'create') {
+      void createRoomForGame(action.gameId);
+    } else {
+      void quickPlayForGame(action.gameId);
+    }
+  };
+
+  useEffect(() => {
+    if (isAuthenticated && pendingAction) {
+      const action = pendingAction;
+      setPendingAction(null);
+      runAction(action);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthenticated, pendingAction]);
 
   const fetchRooms = async () => {
     try {
@@ -110,23 +179,95 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
     navigate(`/room/${roomId}`);
   };
 
-  const handleCancelSelection = () => {
-    setIsSelecting(false);
-    setCreateError(null);
-    setLastFailedGameId(null);
-    setPendingGameId(null);
-  };
+  const filteredRooms = useMemo(() => {
+    const [pMin, pMax] = playersRange;
+    const [tMinIdx, tMaxIdx] = turnTimeRange;
 
-  const games: Game[] = [
-    { id: 1, title: 'Каркассон', description: 'Классическая битва за территории с эльфийской магией.', minPlayers: 2, maxPlayers: 5 },
-  ];
+    // Конечные пределы по числовым точкам в выбранном диапазоне (null-слот исключаем).
+    const numericIndices: number[] = [];
+    for (let i = tMinIdx; i <= tMaxIdx; i++) {
+      if (TURN_TIME_POINTS[i] !== null) numericIndices.push(i);
+    }
+    const finiteMin = numericIndices.length > 0 ? (TURN_TIME_POINTS[numericIndices[0]] as number) : null;
+    const finiteMax = numericIndices.length > 0
+      ? (TURN_TIME_POINTS[numericIndices[numericIndices.length - 1]] as number)
+      : null;
 
-  const isCreating = creatingGameId !== null;
+    // Бесконечный ход (turnTimeSeconds === 0) проходит, если в диапазон попал слот ∞.
+    const allowUnlimited =
+      TURN_TIME_POINTS[tMinIdx] === null || TURN_TIME_POINTS[tMaxIdx] === null;
+
+    return rooms.filter((r) => {
+      if (gameFilter !== ALL_GAMES_FILTER && r.gameType !== gameFilter) return false;
+      if (r.maxPlayers < pMin || r.maxPlayers > pMax) return false;
+
+      const turnTimeRaw = r.settings?.['turnTimeSeconds'];
+      const turnTime = typeof turnTimeRaw === 'number' ? turnTimeRaw : null;
+      if (turnTime === null) return true; // нет данных — не отсеиваем
+
+      if (turnTime === 0) return allowUnlimited;
+      if (finiteMin === null || finiteMax === null) return false;
+      return turnTime >= finiteMin && turnTime <= finiteMax;
+    });
+  }, [rooms, gameFilter, playersRange, turnTimeRange]);
+
+  const isBusy = busyGameId !== null;
 
   return (
     <main className={styles.pageWrapper}>
       <div className={styles.sidebar}>
         <div className={styles.sidebar__title}>Комнаты</div>
+
+        <div className={styles.sidebar__filters} role="tablist" aria-label="Фильтр комнат по игре">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={gameFilter === ALL_GAMES_FILTER}
+            className={clsx(
+              styles.sidebar__filterChip,
+              gameFilter === ALL_GAMES_FILTER && styles.sidebar__filterChip_active,
+            )}
+            onClick={() => setGameFilter(ALL_GAMES_FILTER)}
+          >
+            Все
+          </button>
+          {games.map((game) => (
+            <button
+              key={game.gameType}
+              type="button"
+              role="tab"
+              aria-selected={gameFilter === game.gameType}
+              className={clsx(
+                styles.sidebar__filterChip,
+                gameFilter === game.gameType && styles.sidebar__filterChip_active,
+              )}
+              onClick={() => setGameFilter(game.gameType)}
+            >
+              {game.title}
+            </button>
+          ))}
+        </div>
+
+        <div className={styles.sidebar__rangeFilters}>
+          <RangeSlider
+            label="Игроков в комнате"
+            min={PLAYERS_MIN}
+            max={PLAYERS_MAX}
+            step={1}
+            value={playersRange}
+            onChange={setPlayersRange}
+          />
+          <RangeSlider
+            label="Время на ход"
+            min={TURN_TIME_MIN_INDEX}
+            max={TURN_TIME_MAX_INDEX}
+            step={1}
+            value={turnTimeRange}
+            onChange={setTurnTimeRange}
+            formatValue={formatTurnTime}
+          />
+        </div>
+
         <div className={styles.sidebar__list}>
           {isLoadingRooms ? (
             <>
@@ -136,8 +277,8 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
               <RoomCardSkeleton />
               <RoomCardSkeleton />
             </>
-          ) : rooms.length > 0 ? (
-            rooms.map(room => (
+          ) : filteredRooms.length > 0 ? (
+            filteredRooms.map((room) => (
               <RoomCard
                 key={room.id}
                 room={room}
@@ -147,34 +288,15 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
           ) : (
             <div className={styles.sidebar__statusContainer}>
               <img src={sadElfImg} alt="Одинокий эльф" className={styles.sidebar__emptyImg} />
-              <div className={styles.sidebar__info}>В долине пока ни души...</div>
+              <div className={styles.sidebar__info}>
+                В долине пока ни души...
+              </div>
             </div>
           )}
         </div>
-
-        <button className={styles.sidebar__createButton} onClick={() => setIsSelecting(true)}>Создать</button>
       </div>
 
       <div className={styles.mainPage}>
-        {isSelecting && (
-          <div className={styles.selectionModal} role="status" aria-live="polite">
-            <p>
-              {isCreating
-                ? 'Создаём комнату…'
-                : 'Выберите игру для создания комнаты'}
-            </p>
-            <button
-              type="button"
-              onClick={handleCancelSelection}
-              disabled={isCreating}
-              className={styles.cancelBtn}
-              aria-label="Отменить создание комнаты"
-            >
-              Отмена
-            </button>
-          </div>
-        )}
-
         <h2 className={styles.mainPage__title}>Игры</h2>
 
         <div className={styles.mainPage__grid}>
@@ -182,10 +304,10 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
             <GameCard
               {...game}
               key={game.id}
-              isHighlight={isSelecting}
-              isLoading={creatingGameId === game.id}
-              disabled={isCreating && creatingGameId !== game.id}
-              onJoin={() => handleGameAction(game.id)}
+              isLoading={busyGameId === game.id}
+              disabled={isBusy && busyGameId !== game.id}
+              onQuickPlay={() => quickPlayForGame(game.id)}
+              onCreateRoom={() => createRoomForGame(game.id)}
             />
           ))}
         </div>
@@ -203,12 +325,12 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
           >
             <AlertTriangle size={20} className={styles.errorToast__icon} strokeWidth={2.5} />
             <span className={styles.errorToast__text}>{createError}</span>
-            {lastFailedGameId !== null && (
+            {lastFailedAction !== null && (
               <button
                 type="button"
                 className={styles.errorToast__retry}
-                onClick={() => createRoomForGame(lastFailedGameId)}
-                disabled={isCreating}
+                onClick={() => runAction(lastFailedAction)}
+                disabled={isBusy}
               >
                 Повторить
               </button>
@@ -216,7 +338,7 @@ function MainPage({ isSelecting, setIsSelecting, onPlayClick }: MainPageProps) {
             <button
               type="button"
               className={styles.errorToast__close}
-              onClick={() => { setCreateError(null); setLastFailedGameId(null); }}
+              onClick={() => { setCreateError(null); setLastFailedAction(null); }}
               aria-label="Закрыть сообщение об ошибке"
             >
               <X size={16} strokeWidth={2.5} />

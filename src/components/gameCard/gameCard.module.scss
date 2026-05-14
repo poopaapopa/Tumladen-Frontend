@@ -18,16 +18,6 @@
   box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.25);
   overflow: hidden;
 
-  &_highlighted {
-    animation: pulseGlow 1.5s infinite ease-in-out;
-    transform: scale(1.02);
-    z-index: 120;
-
-    &:hover {
-      transform: scale(1.05);
-    }
-  }
-
   &__borderSvg {
     position: absolute;
     top: 0;
@@ -105,7 +95,6 @@
     font-size: 14px;
     line-height: 1.4;
     margin: 0 0 20px 0;
-    height: 100px;
     overflow: hidden;
   }
 
@@ -113,11 +102,31 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: 16px;
     padding-top: 15px;
     border-top: 1px solid rgba($metal-gray, 0.3);
   }
 
+  &__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__stats {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    align-items: flex-end;
+  }
+
   &__playBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     background-color: $forest-mid;
     color: $beige-light;
     letter-spacing: 1px;
@@ -125,7 +134,7 @@
     border-radius: 10px;
     font-weight: 500;
     font-size: 18px;
-    transition: background-color 0.2s, opacity 0.2s;
+    transition: background-color 0.2s, opacity 0.2s, color 0.2s, border-color 0.2s;
     border: 1px solid transparent;
 
     &:hover:not(:disabled) {
@@ -139,6 +148,19 @@
     }
   }
 
+  &__createBtn {
+    background-color: transparent;
+    color: $forest-mid;
+    border-color: $forest-mid;
+    font-size: 16px;
+
+    &:hover:not(:disabled) {
+      background-color: rgba($forest-mid, 0.1);
+      color: $forest-dark;
+      border-color: $forest-dark;
+    }
+  }
+
   &__spinner {
     animation: gameCardSpin 0.9s linear infinite;
   }
@@ -148,10 +170,10 @@
     pointer-events: none;
   }
 
-  &__stats {
+  &__statItem {
+    font-size: 18px;
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 18px;
   }
 }

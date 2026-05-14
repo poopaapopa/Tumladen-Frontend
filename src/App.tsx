@@ -10,7 +10,6 @@ import { useUserStore } from './store/useUserStore';
 import GameRoom from "./components/gameRoom/gameRoom.tsx";
 
 function App() {
-  const [isSelecting, setIsSelecting] = useState(false);
   const [activeModal, setActiveModal] = useState<boolean>(false);
 
   const openModal = () => setActiveModal(true);
@@ -46,11 +45,7 @@ function App() {
         <Header />
           <Routes>
             <Route path="/" element={
-              <MainPage
-                isSelecting={isSelecting}
-                setIsSelecting={setIsSelecting}
-                onPlayClick={openModal}
-              />
+              <MainPage onPlayClick={openModal} />
             } />
             <Route path="/room/:id" element={<RoomPage />} />
             <Route path="/room/game/:id" element={<GameRoom />} />
@@ -62,8 +57,6 @@ function App() {
             onCancel={handleCancelAuth}
           />
         </Modal>
-
-        {isSelecting && <div className={styles.globalOverlay} onClick={() => setIsSelecting(false)} />}
       </div>
   )
 }
