@@ -52,12 +52,58 @@
     gap: 20px;
   }
 
-  &__inputGroup {
-    position: relative;
-    margin-bottom: 5px;
-    text-align: left;
+  &__inputWrapper {
+    position: relative; 
+    width: 100%;
+  }
+
+  &__fieldError {
+    position: absolute;
+    right: calc(100% + 10px);
+    top: calc(100% - 45px);
+    transform: translateY(-50%);
+    background-color: $decline;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    white-space: nowrap; // Чтобы текст не переносился
     display: flex;
     align-items: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    z-index: 100;
+    pointer-events: none;
+
+    // Стрелочка-указатель
+    &::after {
+      content: '';
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      border-width: 6px;
+      border-style: solid;
+      border-color: transparent transparent transparent $decline;
+    }
+  }
+
+  &__inputGroup {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+
+    &_error {
+      .authModal__input {
+        border-color: $decline;
+        background-color: rgba($decline, 0.02);
+      }
+      .authModal__label {
+        color: $decline !important;
+      }
+    }
   }
 
   &__label {

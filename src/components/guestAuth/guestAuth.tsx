@@ -14,9 +14,18 @@ function GuestAuth({ onConfirm, onCancel }: GuestAuthProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const setAuth = useUserStore((state) => state.setAuth);
+  const [authCloseAttempt, setAuthCloseAttempt] = useState(0);
+
+  const handleFinalClose = () => {
+    setShowAuth(false);
+    setAuthCloseAttempt(0);
+  };
 
   if (showAuth) {
-    return <AuthModal onSuccess={onConfirm} />;
+    return <AuthModal 
+        onSuccess={handleFinalClose} 
+        closeAttemptTrigger={authCloseAttempt}
+        onConfirmClose={handleFinalClose} />;
   }
 
   const handleLogin = async () => {

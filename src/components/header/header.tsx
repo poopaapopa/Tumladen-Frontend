@@ -11,6 +11,21 @@ function Header() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isLogOutOpen, setIsLogOutOpen] = useState(false);
   const { isAuthenticated, actor } = useUserStore();
+  const [authCloseAttempt, setAuthCloseAttempt] = useState(0);
+
+  const handleOpenAuth = () => {
+    setAuthCloseAttempt(0); 
+    setIsAuthOpen(true);
+  };
+
+  const handleBackdropClick = () => {
+    setAuthCloseAttempt(prev => prev + 1);
+  };
+
+  const handleFinalClose = () => {
+    setIsAuthOpen(false);
+    setAuthCloseAttempt(0);
+  };
 
   return (
     <header className={styles.header}>
@@ -37,15 +52,18 @@ function Header() {
         ) : (
           <button 
             className={styles.header__loginBtn} 
-            onClick={() => setIsAuthOpen(true)}
+            onClick={handleOpenAuth}
           >
             Войти
           </button>
         )}
       </div>
 
-      <Modal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)}>
-        <AuthModal onSuccess={() => setIsAuthOpen(false)} />
+      <Modal isOpen={isAuthOpen} onClose={handleBackdropClick}>
+        <AuthModal 
+          onSuccess={handleFinalClose} 
+          closeAttemptTrigger={authCloseAttempt}
+          onConfirmClose={handleFinalClose} />
       </Modal>
       
       <Modal isOpen={isLogOutOpen} onClose={() => setIsLogOutOpen(false)}>
