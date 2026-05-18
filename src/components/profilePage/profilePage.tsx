@@ -14,8 +14,10 @@ import styles from './profilePage.module.scss';
 import { userService } from '@/api/user.ts';
 import { useUserStore } from '@/store/useUserStore.ts';
 import Modal from '../modal/modal.tsx';
+import { EditProfileModal } from '../editProfileModal/editProfileModal.tsx';
 import type {
   UserProfile,
+  OwnUserProfile,
   MatchHistoryEntry,
   OverallStats,
   MatchPlayer,
@@ -24,6 +26,7 @@ import { isOwnProfile, GAME_TYPE_LABELS } from '@/types/user.ts';
 import { MINIO_URL } from '@/api/config.ts';
 import elfAvatar from '@/assets/elf-avatar.svg';
 import elfMountains from '@/assets/elf-mountains.png';
+import editModalStyles from '../editProfileModal/editProfileModal.module.scss';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -183,6 +186,10 @@ export default function ProfilePage() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [matchFilter, setMatchFilter] = useState<string>(ALL_GAMES);
 
+  // Edit profile modal
+  const [editOpen, setEditOpen] = useState(false);
+  const [editCloseTrigger, setEditCloseTrigger] = useState(0);
+
   const isOwn = !!actor && actor.id === id;
 
   // Fetch profile
@@ -236,25 +243,30 @@ export default function ProfilePage() {
   // ── Derived data ───────────────────────────────────────────────────────────
 
   const src = avatarSrc(profile.avatarUrl);
-  const gameTypes = profile.stats.byGame.map((g) => g.gameType);
+  const stats = profile.stats ?? {
+    overall: { matches: 0, wins: 0, draws: 0, losses: 0, winRate: 0, totalScore: 0, averageScore: 0, bestScore: 0 },
+    byGame: [],
+  };
+  const matchHistory = profile.matchHistory ?? [];
+  const gameTypes = stats.byGame.map((g) => g.gameType);
 
   // All unique game types present in match history
   const matchGameTypes = Array.from(
-    new Set(profile.matchHistory.map((m) => m.gameType)),
+    new Set(matchHistory.map((m) => m.gameType)),
   );
 
   const filteredMatches =
     matchFilter === ALL_GAMES
-      ? profile.matchHistory
-      : profile.matchHistory.filter((m) => m.gameType === matchFilter);
+      ? matchHistory
+      : matchHistory.filter((m) => m.gameType === matchFilter);
 
   const recentMatches = filteredMatches.slice(0, 5);
 
   const activeStats =
     statsTab === 'overall'
-      ? profile.stats.overall
-      : profile.stats.byGame.find((g) => g.gameType === statsTab) ??
-        profile.stats.overall;
+      ? stats.overall
+      : stats.byGame.find((g) => g.gameType === statsTab) ??
+        stats.overall;
 
   // Placeholder achievements (8 slots)
   const achievements = Array.from({ length: 8 }, (_, i) => ({
@@ -321,7 +333,10 @@ export default function ProfilePage() {
               )}
             </div>
             {isOwn && (
-              <button className={styles.editBtn} disabled title="Редактирование — скоро">
+              <button
+                className={styles.editBtn}
+                onClick={() => setEditOpen(true)}
+              >
                 <Pencil size={14} />
                 Редактировать
               </button>
@@ -432,6 +447,34 @@ export default function ProfilePage() {
           </div>
         </div>
       </Modal>
+
+      {/* ── Edit profile modal ─────────────────────────────────────────────── */}
+      {isOwn && isOwnProfile(profile) && (
+        <Modal
+          isOpen={editOpen}
+          onClose={() => setEditCloseTrigger((n) => n + 1)}
+          className={editModalStyles.wideModal}
+        >
+          <EditProfileModal
+            profile={profile as OwnUserProfile}
+            closeAttemptTrigger={editCloseTrigger}
+            onConfirmClose={() => {
+              setEditOpen(false);
+              setEditCloseTrigger(0);
+            }}
+            onSuccess={(updated) => {
+              setProfile((current) => ({
+                ...(current ?? profile),
+                ...updated,
+                stats: updated.stats ?? (current ?? profile).stats,
+                matchHistory: updated.matchHistory ?? (current ?? profile).matchHistory,
+              }));
+              setEditOpen(false);
+              setEditCloseTrigger(0);
+            }}
+          />
+        </Modal>
+      )}
     </div>
   );
 }

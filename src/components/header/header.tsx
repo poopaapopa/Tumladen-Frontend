@@ -1,12 +1,20 @@
 import { useState } from 'react';
 import styles from './header.module.scss';
 import logo from '@/assets/logo_168x92.png';
+import defaultAvatar from '@/assets/elf-avatar.svg';
+import { MINIO_URL } from '@/api/config';
 import Modal from '../modal/modal';
 import { AuthModal } from '../authModal/authModal';
-import {LogoutModal} from '../logoutModal/logoutModal'
+import { LogoutModal } from '../logoutModal/logoutModal'
 import { useUserStore } from '@/store/useUserStore';
-import { LogOut, User } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+function avatarSrc(url?: string | null): string {
+  if (!url) return defaultAvatar;
+  if (url.startsWith('http')) return url;
+  return `${MINIO_URL}${url}`;
+}
 
 function Header() {
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -37,14 +45,17 @@ function Header() {
 
       <div className={styles.header__right}>
         {isAuthenticated && actor ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div className={styles.header__profile}>
             <Link
               to={`/profile/${actor.id}`}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#F5F5DC', textDecoration: 'none' }}
               className={styles.header__profileLink}
             >
-              <User size={20} />
               <span style={{ fontWeight: 600 }}>{actor.displayName}</span>
+              <img
+                src={avatarSrc(actor.avatarUrl)}
+                alt={actor.displayName}
+                className={styles.header__avatar}
+              />
             </Link>
             <button
               className={styles.header__loginBtn}

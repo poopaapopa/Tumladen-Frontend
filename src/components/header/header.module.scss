@@ -34,7 +34,18 @@
     align-items: center;
   }
 
+  &__profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
   &__profileLink {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    color: #F5F5DC;
+    text-decoration: none;
     border-radius: 8px;
     padding: 6px 10px;
     transition: background-color 0.2s;
@@ -42,6 +53,15 @@
     &:hover {
       background-color: rgba($beige-light, 0.1);
     }
+  }
+
+  &__avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    object-fit: cover;
+    background-color: white;
+    flex-shrink: 0;
   }
 
   &__loginBtn {

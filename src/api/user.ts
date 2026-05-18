@@ -19,20 +19,73 @@ async function handleResponse<T>(response: Response): Promise<T> {
   throw new Error(errorMessage);
 }
 
-function authHeaders(token: string) {
+function authHeaders(token: string, csrfToken?: string) {
   return {
     Authorization: `Bearer ${token}`,
     'Content-Type': 'application/json',
+    ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
   };
 }
 
+const csrfTokenCache = new Map<string, string>();
+const csrfTokenRequestCache = new Map<string, Promise<string>>();
+
+async function fetchCsrfToken(token: string): Promise<string> {
+  const response = await fetch(`${API_BASE_URL}/users/csrf-token`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+  });
+
+  const data = await handleResponse<string | { csrf_token: string; }>(response);
+  const csrfToken = typeof data === 'string' ? data : data.csrf_token;
+
+  if (!csrfToken) {
+    throw new Error('CSRF-токен не получен');
+  }
+
+  return csrfToken;
+}
+
+async function getCsrfToken(token: string): Promise<string> {
+  const cachedToken = csrfTokenCache.get(token);
+
+  if (cachedToken) {
+    return cachedToken;
+  }
+
+  const cachedRequest = csrfTokenRequestCache.get(token);
+
+  if (cachedRequest) {
+    return cachedRequest;
+  }
+
+  const request = fetchCsrfToken(token)
+    .then((csrfToken) => {
+      csrfTokenCache.set(token, csrfToken);
+      return csrfToken;
+    })
+    .finally(() => {
+      csrfTokenRequestCache.delete(token);
+    });
+
+  csrfTokenRequestCache.set(token, request);
+
+  return request;
+}
+
 export interface UpdateProfilePayload {
-  nickname?: string;
-  email?: string;
+  nickname: string;
+  email: string;
   /** Optional — only send when changing password */
   password?: string;
   /** Required when `password` is provided */
   passwordConfirm?: string;
+}
+
+export interface AvatarResponse {
+  avatarUrl: string | null;
 }
 
 export const userService = {
@@ -61,36 +114,42 @@ export const userService = {
     token: string,
     payload: UpdateProfilePayload,
   ): Promise<OwnUserProfile> {
+    const csrfToken = await getCsrfToken(token);
     const response = await fetch(`${API_BASE_URL}/users/profile`, {
       method: 'PUT',
-      headers: authHeaders(token),
+      headers: authHeaders(token, csrfToken),
       body: JSON.stringify(payload),
     });
     return handleResponse<OwnUserProfile>(response);
   },
 
   /** POST /users/avatar — upload or replace avatar (multipart/form-data) */
-  async uploadAvatar(token: string, file: File): Promise<OwnUserProfile> {
+  async uploadAvatar(token: string, file: File): Promise<AvatarResponse> {
     const formData = new FormData();
     formData.append('avatar', file);
 
+    const csrfToken = await getCsrfToken(token);
     const response = await fetch(`${API_BASE_URL}/users/avatar`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${token}`,
-        // NOTE: do NOT set Content-Type here — browser sets it with boundary automatically
+        'X-CSRF-Token': csrfToken,
       },
       body: formData,
     });
-    return handleResponse<OwnUserProfile>(response);
+    return handleResponse<AvatarResponse>(response);
   },
 
   /** DELETE /users/avatar — remove current avatar */
-  async deleteAvatar(token: string): Promise<OwnUserProfile> {
+  async deleteAvatar(token: string): Promise<AvatarResponse> {
+    const csrfToken = await getCsrfToken(token);
     const response = await fetch(`${API_BASE_URL}/users/avatar`, {
       method: 'DELETE',
-      headers: authHeaders(token),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-CSRF-Token': csrfToken,
+      },
     });
-    return handleResponse<OwnUserProfile>(response);
+    return handleResponse<AvatarResponse>(response);
   },
 };

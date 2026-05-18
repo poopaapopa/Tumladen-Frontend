@@ -1,0 +1,167 @@
+@use "sass:color";
+
+.editProfileModal {
+  background-color: $beige-light;
+  border: 6px solid $forest-mid;
+  border-radius: 20px;
+  padding: 30px 36px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+
+  &__title {
+    font-size: 32px;
+    font-weight: 600;
+    color: $forest-dark;
+    margin-bottom: 30px;
+    text-align: center;
+  }
+
+  // ── Two-column layout ──────────────────────────────────────────────────────
+  &__layout {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+  }
+
+  // ── Left: avatar column ────────────────────────────────────────────────────
+  &__avatarCol {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    flex-shrink: 0;
+    width: 175px;
+  }
+
+  &__avatarCard {
+    background-color: white;
+    border: 4px solid $forest-mid;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  // Square wrapper with 1:1 aspect ratio — matches profile page avatarWrapper
+  &__avatarWrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  &__avatarImg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  &__avatarPlaceholder {
+    width: 100%;
+    height: 100%;
+    background-image: var(--avatar-url);
+    background-size: cover;
+    background-position: center;
+    border-radius: 16px;
+  }
+
+  &__avatarBtns {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  &__avatarBtn {
+    all: unset;
+    cursor: pointer;
+    width: 155px;
+    box-sizing: border-box;
+    padding: 7px;
+    border-radius: 15px;
+    font-family: $font-main;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: center;
+    background-color: $sage-gray;
+    color: $forest-dark;
+    transition: background-color 0.2s, color 0.2s;
+
+    &:hover {
+      background-color: color.adjust($sage-gray, $lightness: -5%);
+    }
+  }
+
+  // ── Right: form column ─────────────────────────────────────────────────────
+  &__formCol {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 35px;
+    min-width: 0;
+  }
+
+  // ── Bottom area ────────────────────────────────────────────────────────────
+  &__bottom {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+  }
+
+  // Blue unsaved-changes banner
+  &__unsavedBanner {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a6fa8;
+    background: rgba(#3498db, 0.1);
+    border: 1px solid rgba(#3498db, 0.35);
+    font-family: $font-main;
+  }
+
+  // Error banner
+  &__errorBanner {
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: $decline;
+    background: rgba($decline, 0.08);
+    border: 1px solid rgba($decline, 0.2);
+    font-family: $font-main;
+  }
+
+  &__footer {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  &__saveBtn {
+    all: unset;
+    cursor: pointer;
+    padding: 12px 28px;
+    border-radius: 12px;
+    font-family: $font-main;
+    font-weight: 700;
+    font-size: 16px;
+    background-color: $forest-mid;
+    color: $beige-light;
+    transition: background-color 0.3s;
+
+    &:hover:not(:disabled) {
+      background-color: color.adjust($forest-mid, $lightness: -5%);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}
+
+// Wide modal override — applied via Modal's className prop
+.wideModal {
+  max-width: 700px;
+}

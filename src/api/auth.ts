@@ -4,6 +4,7 @@ export interface Actor {
   id: string;
   displayName: string;
   type: 'guest' | 'user';
+  avatarUrl?: string | null;
 }
 
 interface AuthResponse {
