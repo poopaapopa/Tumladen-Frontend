@@ -4,6 +4,7 @@ import MainPage from "./components/mainPage/mainPage.tsx";
 import Modal from "./components/modal/modal.tsx";
 import GuestAuth from './components/guestAuth/guestAuth.tsx';
 import RoomPage from "./components/roomPage/roomPage.tsx";
+import ProfilePage from "./components/profilePage/profilePage.tsx";
 import { useState, useEffect } from "react";
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useUserStore } from './store/useUserStore';
@@ -49,6 +50,7 @@ function App() {
             } />
             <Route path="/room/:id" element={<RoomPage />} />
             <Route path="/room/game/:id" element={<GameRoom />} />
+            <Route path="/profile/:id" element={<ProfilePage />} />
           </Routes>
 
         <Modal isOpen={activeModal} onClose={handleCancelAuth}>

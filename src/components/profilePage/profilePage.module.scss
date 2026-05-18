@@ -1,0 +1,575 @@
+@use "sass:color";
+
+// ─── Page wrapper ────────────────────────────────────────────────────────────
+.page {
+  display: flex;
+  flex: 1;
+  background-color: $beige-light;
+  overflow: hidden;
+  height: 100%;
+}
+
+.container {
+  flex: 1;
+  padding: 32px 40px;
+  overflow-y: auto;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 325px 1fr;
+  gap: 32px;
+  align-items: start;
+  box-sizing: border-box;
+}
+
+// ─── Loading / Error states ───────────────────────────────────────────────────
+.stateCenter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 16px;
+  color: $forest-dark;
+  font-size: 18px;
+  font-weight: 500;
+  padding: 60px 20px;
+}
+
+// ─── Left column ─────────────────────────────────────────────────────────────
+.leftCol {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  position: sticky;
+  top: 0;
+}
+
+// Avatar card
+.avatarCard {
+  background-color: white;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+}
+
+.avatarWrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 16px;
+  flex-shrink: 0;
+  overflow: hidden;
+
+  &:hover .avatarOverlay {
+    opacity: 1;
+  }
+}
+
+.avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  object-fit: cover;
+  display: block;
+}
+
+.avatarPlaceholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  display: block;
+  background-color: $metal-gray;
+  mask-image: var(--avatar-url);
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: cover;
+  -webkit-mask-image: var(--avatar-url);
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: cover;
+}
+
+// Achievements card
+.achievementsCard {
+  background-color: $sage-gray;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.sectionTitle {
+  font-family: $font-main;
+  font-size: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: $forest-dark;
+  margin-bottom: 16px;
+}
+
+.achievementsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.achievementBadge {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  background-color: rgba($forest-dark, 0.12);
+  border: 2px dashed rgba($forest-dark, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba($forest-dark, 0.3);
+  transition: background-color 0.2s;
+
+  &_unlocked {
+    background-color: $forest-mid;
+    border: 2px solid $forest-dark;
+    color: $beige-light;
+  }
+}
+
+// ─── Right column ─────────────────────────────────────────────────────────────
+.rightCol {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+// Profile name header (above cards in right column)
+.profileNameHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.profileNameLeft {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.profileNickname {
+  font-family: $font-main;
+  font-size: 28px;
+  font-weight: 800;
+  color: $forest-dark;
+  line-height: 1.1;
+  word-break: break-word;
+}
+
+.profileEmail {
+  font-family: $font-main;
+  font-size: 14px;
+  font-weight: 500;
+  color: $metal-gray;
+  white-space: nowrap;
+}
+
+// Generic card
+.card {
+  background-color: white;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.cardTitle {
+  font-family: $font-main;
+  font-size: 20px;
+  font-weight: 600;
+  color: $forest-dark;
+}
+
+.editBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: $forest-mid;
+  color: $beige-light;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 16px;
+  font-family: $font-main;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover:not(:disabled) {
+    background-color: $forest-dark;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// ─── Match history ────────────────────────────────────────────────────────────
+
+// Game filter tabs above match list
+.matchFilterTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.matchFilterTab {
+  padding: 5px 14px;
+  border-radius: 999px;
+  border: 1.5px solid rgba($forest-mid, 0.35);
+  background-color: transparent;
+  color: $forest-dark;
+  font-family: $font-main;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+
+  &:hover {
+    border-color: $forest-mid;
+    background-color: rgba($forest-mid, 0.08);
+  }
+
+  &_active {
+    background-color: $forest-mid;
+    color: $beige-light;
+    border-color: $forest-mid;
+
+    &:hover {
+      background-color: $forest-dark;
+      border-color: $forest-dark;
+    }
+  }
+}
+
+.matchList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+// Expandable match card
+.matchCard {
+  border-radius: 12px;
+  background-color: $beige-light;
+  border: 1px solid rgba($sage-gray, 0.6);
+  overflow: hidden;
+}
+
+.matchCardHeader {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: rgba($sage-gray, 0.25);
+  }
+}
+
+.matchCardBody {
+  padding: 0 16px 14px;
+  border-top: 1px solid rgba($sage-gray, 0.5);
+}
+
+.matchResult {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &_win  { background-color: $accept; }
+  &_loss { background-color: $decline; }
+  &_draw { background-color: $metal-gray; }
+}
+
+.matchGame {
+  font-family: $font-main;
+  font-size: 17px;
+  font-weight: 700;
+  color: $forest-dark;
+}
+
+.matchDate {
+  font-family: $font-main;
+  font-size: 15px;
+  color: $metal-gray;
+  white-space: nowrap;
+}
+
+.matchScore {
+  font-family: $font-main;
+  font-size: 16px;
+  font-weight: 700;
+  color: $forest-dark;
+  white-space: nowrap;
+}
+
+.matchExpandIcon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: $forest-mid;
+}
+
+// Results table inside expanded match
+.matchResultsTable {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 12px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba($sage-gray, 0.5);
+}
+
+.matchResultsHeader {
+  display: grid;
+  grid-template-columns: 32px 1fr 60px;
+  padding: 6px 12px;
+  background-color: rgba($sage-gray, 0.4);
+  font-family: $font-main;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: $metal-gray;
+}
+
+.matchResultsRow {
+  display: grid;
+  grid-template-columns: 32px 1fr 60px;
+  padding: 9px 12px;
+  font-family: $font-main;
+  font-size: 16px;
+  font-weight: 500;
+  color: $forest-dark;
+  border-top: 1px solid rgba($sage-gray, 0.35);
+  align-items: center;
+
+  &_winner {
+    background-color: rgba($accept, 0.08);
+  }
+}
+
+.matchResultsCell_rank {
+  font-weight: 700;
+  color: $metal-gray;
+  font-size: 15px;
+}
+
+.matchResultsCell_name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.matchResultsCell_score {
+  font-weight: 700;
+  text-align: right;
+}
+
+.playerLink {
+  color: $forest-mid;
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.15s;
+
+  &:hover {
+    color: $forest-dark;
+    text-decoration: underline;
+  }
+}
+
+.guestName {
+  color: $metal-gray;
+  font-style: italic;
+}
+
+.winnerIcon {
+  flex-shrink: 0;
+  color: #F5C518;
+  animation: matchResultAwardShimmer 4s ease-in-out infinite;
+}
+
+.viewAllBtn {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 10px;
+  background-color: transparent;
+  border: 1.5px solid $forest-mid;
+  border-radius: 10px;
+  color: $forest-mid;
+  font-family: $font-main;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+  text-align: center;
+
+  &:hover {
+    background-color: $forest-mid;
+    color: $beige-light;
+  }
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  padding: 0 0 10px;
+}
+
+.emptyStateImg {
+  width: 180px;
+  height: auto;
+  opacity: 0.55;
+  user-select: none;
+  pointer-events: none;
+  filter: grayscale(100%);
+}
+
+.emptyStateText {
+  color: #8B898A;
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 500;
+  font-family: $font-main;
+  margin: 0;
+}
+
+@keyframes matchResultAwardShimmer {
+  0%   { color: #E94E77; }
+  16%  { color: #FF6B6B; }
+  33%  { color: #FF8C42; }
+  50%  { color: #4FC1E9; }
+  66%  { color: #48CFAD; }
+  83%  { color: #AC92EC; }
+  100% { color: #E94E77; }
+}
+
+// ─── Stats section ────────────────────────────────────────────────────────────
+.statsTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.statsTab {
+  padding: 6px 16px;
+  border-radius: 999px;
+  border: 1.5px solid rgba($forest-mid, 0.4);
+  background-color: transparent;
+  color: $forest-dark;
+  font-family: $font-main;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+
+  &:hover {
+    border-color: $forest-mid;
+    background-color: rgba($forest-mid, 0.08);
+  }
+
+  &_active {
+    background-color: $forest-mid;
+    color: $beige-light;
+    border-color: $forest-mid;
+
+    &:hover {
+      background-color: $forest-dark;
+      border-color: $forest-dark;
+    }
+  }
+}
+
+.statsCards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.statCard {
+  background-color: $beige-light;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid rgba($sage-gray, 0.5);
+}
+
+.statCardLabel {
+  font-family: $font-main;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: $metal-gray;
+}
+
+.statCardValue {
+  font-family: $font-main;
+  font-size: 22px;
+  font-weight: 700;
+  color: $forest-dark;
+}
+
+.statCardSub {
+  font-family: $font-main;
+  font-size: 12px;
+  color: $metal-gray;
+}
+
+// ─── History modal ────────────────────────────────────────────────────────────
+.historyModal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.historyModalTitle {
+  font-family: $font-main;
+  font-size: 20px;
+  font-weight: 700;
+  color: $forest-dark;
+  margin-bottom: 4px;
+}
