@@ -2,14 +2,17 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createPortal } from 'react-dom';
 import styles from './modal.module.scss';
 import React from 'react';
+import clsx from 'clsx';
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;
+  /** Optional class applied to the modal content wrapper — use to override max-width etc. */
+  className?: string;
 }
 
-function Modal({ isOpen, onClose, children }: ModalProps) {
+function Modal({ isOpen, onClose, children, className }: ModalProps) {
   return createPortal(
     <AnimatePresence>
       {isOpen && (
@@ -23,7 +26,7 @@ function Modal({ isOpen, onClose, children }: ModalProps) {
           />
 
           <motion.div
-            className={styles.modalContent}
+            className={clsx(styles.modalContent, className)}
             initial={{ opacity: 0, x: '-50%', y: '-100%', scale: 0.9 }}
             animate={{ opacity: 1, x: '-50%', y: '-50%', scale: 1 }}
             exit={{ opacity: 0, x: '-50%', y: '-100%', scale: 0.9 }}
@@ -38,4 +41,4 @@ function Modal({ isOpen, onClose, children }: ModalProps) {
   );
 }
 
-export default Modal
+export default Modal;

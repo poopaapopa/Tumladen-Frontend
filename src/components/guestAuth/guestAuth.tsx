@@ -2,6 +2,7 @@ import styles from "./guestAuth.module.scss"
 import { useState } from "react";
 import { useUserStore } from '@/store/useUserStore.ts';
 import { authService } from "@/api/auth.ts";
+import { AuthModal } from "../authModal/authModal";
 
 interface GuestAuthProps {
   onConfirm: () => void;
@@ -11,7 +12,21 @@ interface GuestAuthProps {
 function GuestAuth({ onConfirm, onCancel }: GuestAuthProps) {
   const [name, setName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
   const setAuth = useUserStore((state) => state.setAuth);
+  const [authCloseAttempt, setAuthCloseAttempt] = useState(0);
+
+  const handleFinalClose = () => {
+    setShowAuth(false);
+    setAuthCloseAttempt(0);
+  };
+
+  if (showAuth) {
+    return <AuthModal 
+        onSuccess={handleFinalClose} 
+        closeAttemptTrigger={authCloseAttempt}
+        onConfirmClose={handleFinalClose} />;
+  }
 
   const handleLogin = async () => {
     const trimmedName = name.trim();
@@ -59,7 +74,7 @@ function GuestAuth({ onConfirm, onCancel }: GuestAuthProps) {
 
       <div className={styles.guestLogin__authInfo}>
         <p>Хотите сохранять свои победы для истории?</p>
-        <button className={styles.guestLogin__authBtn}>Авторизоваться</button>
+        <button className={styles.guestLogin__authBtn} onClick={() => setShowAuth(true)}>Авторизоваться</button>
       </div>
 
       <div className={styles.guestLogin__actions}>

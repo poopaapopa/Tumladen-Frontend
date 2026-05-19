@@ -8,6 +8,7 @@ interface UserState {
   isAuthenticated: boolean;
 
   setAuth: (actor: Actor, token: string) => void;
+  updateActor: (actor: Actor) => void;
   logout: () => void;
 }
 
@@ -23,6 +24,8 @@ export const useUserStore = create<UserState>()(
         token,
         isAuthenticated: true
       }),
+
+      updateActor: (actor) => set({ actor }),
 
       logout: () => set({
         actor: null,

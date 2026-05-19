@@ -1,0 +1,110 @@
+@use "sass:color";
+
+.authModal {
+  background-color: $beige-light;
+  border: 6px solid $forest-mid;
+  border-radius: 20px;
+  padding: 30px 40px;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+
+  &__title {
+    font-size: 28px;
+    color: $forest-dark;
+    margin-bottom: 15px;
+    font-weight: 600;
+  }
+
+  &__tabs {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 30px;
+    border-bottom: 2px solid rgba($forest-mid, 0.2);
+  }
+
+  &__tab {
+    background: none;
+    border: none;
+    padding: 10px 0;
+    font-size: 22px;
+    font-weight: 600;
+    color: $metal-gray;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+
+    &_active {
+      color: $forest-dark;
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background-color: $forest-mid;
+        border-radius: 2px;
+      }
+    }
+
+    &:hover:not(&_active) {
+      color: $forest-mid;
+    }
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  // Global message — shared base
+  &__globalMessage {
+    font-size: 14px;
+    font-weight: 700;
+    padding: 10px 14px;
+    border-radius: 8px;
+    text-align: left;
+
+    &_error {
+      color: $decline;
+      background: rgba($decline, 0.1);
+      border: 1px solid rgba($decline, 0.2);
+    }
+
+    &_info {
+      color: #1a6fa8;
+      background: rgba(#3498db, 0.1);
+      border: 1px solid rgba(#3498db, 0.35);
+    }
+  }
+
+  &__actions {
+    margin-top: 10px;
+  }
+
+  &__btnPrimary {
+    all: unset;
+    cursor: pointer;
+    width: 100%;
+    padding: 14px 0;
+    border-radius: 12px;
+    font-weight: 700;
+    font-size: 20px;
+    background-color: $forest-mid;
+    color: $beige-light;
+    transition: background-color 0.3s;
+    text-align: center;
+    margin-top: 5px;
+
+    &:hover:not(:disabled) {
+      background-color: color.adjust($forest-mid, $lightness: -5%);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+}

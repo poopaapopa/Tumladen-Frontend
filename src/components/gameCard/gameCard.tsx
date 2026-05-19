@@ -1,5 +1,5 @@
 import styles from './gameCard.module.scss';
-import { Users, Loader2 } from 'lucide-react';
+import { Users, Loader2, Clock3 } from 'lucide-react';
 import clsx from 'clsx';
 import image from '@/assets/castle.png';
 
@@ -9,10 +9,11 @@ interface GameCardProps {
   imageUrl?: string;
   maxPlayers: number;
   minPlayers: number;
-  isHighlight?: boolean;
+  duration: string;
   isLoading?: boolean;
   disabled?: boolean;
-  onJoin: () => void;
+  onQuickPlay: () => void;
+  onCreateRoom: () => void;
 }
 
 function GameCard({
@@ -21,29 +22,18 @@ function GameCard({
   imageUrl,
   minPlayers,
   maxPlayers,
-  isHighlight,
+  duration,
   isLoading,
   disabled,
-  onJoin,
+  onQuickPlay,
+  onCreateRoom,
 }: GameCardProps) {
-  const isCreateMode = !!isHighlight;
   const isDisabled = disabled || isLoading;
-
-  const buttonLabel = isLoading
-    ? 'Создаём…'
-    : isCreateMode
-      ? 'Создать'
-      : 'Играть';
-
-  const buttonAriaLabel = isCreateMode
-    ? `Создать комнату для игры «${title}»`
-    : `Открыть игру «${title}»`;
 
   return (
     <div
       className={clsx(
         styles.gameCard,
-        isHighlight && styles.gameCard_highlighted,
         isDisabled && styles.gameCard_disabled,
       )}
     >
@@ -68,23 +58,41 @@ function GameCard({
         <p className={styles.gameCard__description}>{description}</p>
 
         <div className={styles.gameCard__footer}>
-          <button
-            type="button"
-            onClick={onJoin}
-            disabled={isDisabled}
-            aria-label={buttonAriaLabel}
-            aria-busy={isLoading || undefined}
-            className={styles.gameCard__playBtn}
-          >
-            {isLoading ? (
-              <Loader2 size={18} strokeWidth={2.5} className={styles.gameCard__spinner} />
-            ) : null}
-            <span>{buttonLabel}</span>
-          </button>
+          <div className={styles.gameCard__actions}>
+            <button
+              type="button"
+              onClick={onQuickPlay}
+              disabled={isDisabled}
+              aria-label={`Найти быструю игру для «${title}»`}
+              className={styles.gameCard__playBtn}
+            >
+              <span>Быстрая игра</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onCreateRoom}
+              disabled={isDisabled}
+              aria-label={`Создать комнату для игры «${title}»`}
+              aria-busy={isLoading || undefined}
+              className={clsx(styles.gameCard__playBtn, styles.gameCard__createBtn)}
+            >
+              {isLoading ? (
+                <Loader2 size={18} strokeWidth={2.5} className={styles.gameCard__spinner} />
+              ) : null}
+              <span>{isLoading ? 'Создаём…' : 'Создать комнату'}</span>
+            </button>
+          </div>
 
           <div className={styles.gameCard__stats}>
-            {minPlayers === maxPlayers ? <span>{maxPlayers}</span> : <span>{minPlayers}-{maxPlayers}</span>}
-            <Users size={18} strokeWidth={2.5} />
+            <div className={styles.gameCard__statItem}>
+              <span>{duration}</span>
+              <Clock3 size={18} strokeWidth={2.5} />
+            </div>
+            <div className={styles.gameCard__statItem}>
+              {minPlayers === maxPlayers ? <span>{maxPlayers}</span> : <span>{minPlayers}-{maxPlayers}</span>}
+              <Users size={18} strokeWidth={2.5} />
+            </div>
           </div>
         </div>
       </div>

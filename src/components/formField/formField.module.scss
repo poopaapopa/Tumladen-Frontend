@@ -1,0 +1,157 @@
+@use "sass:color";
+
+.formField {
+  position: relative;
+  width: 100%;
+
+  &__inputGroup {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-top: 20px;
+
+    // Error state: red border + red glow — persists even on focus
+    &_error {
+      .formField__input {
+        border-color: $decline !important;
+        background: linear-gradient(
+          to right,
+          rgba($decline, 0.06) 0%,
+          transparent 30%,
+          transparent 70%,
+          rgba($decline, 0.06) 100%
+        ) !important;
+
+        &:focus {
+          box-shadow: 0 0 0 3px rgba($decline, 0.2) !important;
+          border-color: $decline !important;
+        }
+      }
+      .formField__label {
+        color: $decline !important;
+      }
+    }
+  }
+
+  &__input {
+    font-family: $font-main;
+    width: 100%;
+    background-color: transparent;
+    border: 2px solid $forest-mid;
+    border-radius: 10px;
+    padding: 14px 20px;
+    font-size: 18px;
+    color: #1e1e1e;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    padding-right: 50px;
+    box-sizing: border-box;
+
+    &:focus {
+      box-shadow: 0 0 0 3px rgba($forest-mid, 0.2);
+      border-color: $forest-dark;
+    }
+
+    // Floating label logic
+    &:focus + .formField__label,
+    &:not(:placeholder-shown) + .formField__label {
+      top: 0;
+      font-size: 13px;
+      color: $forest-dark;
+      font-weight: 700;
+      transform: translateY(-50%) scale(0.9);
+      opacity: 1;
+    }
+  }
+
+  &__label {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: $font-main;
+    font-size: 18px;
+    color: $metal-gray;
+    pointer-events: none;
+    transition: all 0.2s ease;
+    background-color: $beige-light;
+    padding: 0 5px;
+    border-radius: 5px;
+  }
+
+  &__eyeBtn {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: $metal-gray;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    transition: color 0.2s;
+    z-index: 10;
+
+    &:hover {
+      color: $forest-mid;
+    }
+  }
+
+  // Hint tooltip bubble — positioned relative to inputGroup, centered vertically on the input
+  // Shown on focus when there is no error
+  &__hintBubble {
+    position: absolute;
+    // Place it to the left of the inputGroup
+    right: calc(100% + 12px);
+    // Center vertically on the input (input height ~52px, bubble centered)
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: $metal-gray;
+    color: white;
+    padding: 9px 13px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    width: max-content;
+    max-width: 230px;
+    white-space: normal;
+    line-height: 1.35;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 100;
+    pointer-events: none;
+
+    // Arrow pointing right toward the field
+    &::after {
+      content: '';
+      position: absolute;
+      left: 100%;
+      top: 50%;
+      transform: translateY(-50%);
+      border-width: 6px;
+      border-style: solid;
+      border-color: transparent transparent transparent $metal-gray;
+    }
+  }
+
+  // Error text shown below the field, without affecting the layout height.
+  // It visually appears in the gap between inputs and does not push neighbours down.
+  &__errorText {
+    position: absolute;
+    left: 4px;
+    top: calc(100% + 4px);
+    z-index: 20;
+    font-size: 12px;
+    font-weight: 600;
+    color: $decline;
+    font-family: $font-main;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    max-width: calc(100% - 8px);
+    pointer-events: none;
+  }
+}

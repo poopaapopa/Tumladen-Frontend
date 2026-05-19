@@ -4,13 +4,13 @@ import MainPage from "./components/mainPage/mainPage.tsx";
 import Modal from "./components/modal/modal.tsx";
 import GuestAuth from './components/guestAuth/guestAuth.tsx';
 import RoomPage from "./components/roomPage/roomPage.tsx";
+import ProfilePage from "./components/profilePage/profilePage.tsx";
 import { useState, useEffect } from "react";
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useUserStore } from './store/useUserStore';
 import GameRoom from "./components/gameRoom/gameRoom.tsx";
 
 function App() {
-  const [isSelecting, setIsSelecting] = useState(false);
   const [activeModal, setActiveModal] = useState<boolean>(false);
 
   const openModal = () => setActiveModal(true);
@@ -46,14 +46,11 @@ function App() {
         <Header />
           <Routes>
             <Route path="/" element={
-              <MainPage
-                isSelecting={isSelecting}
-                setIsSelecting={setIsSelecting}
-                onPlayClick={openModal}
-              />
+              <MainPage onPlayClick={openModal} />
             } />
             <Route path="/room/:id" element={<RoomPage />} />
             <Route path="/room/game/:id" element={<GameRoom />} />
+            <Route path="/profile/:id" element={<ProfilePage />} />
           </Routes>
 
         <Modal isOpen={activeModal} onClose={handleCancelAuth}>
@@ -62,8 +59,6 @@ function App() {
             onCancel={handleCancelAuth}
           />
         </Modal>
-
-        {isSelecting && <div className={styles.globalOverlay} onClick={() => setIsSelecting(false)} />}
       </div>
   )
 }

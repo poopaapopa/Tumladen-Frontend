@@ -1,0 +1,153 @@
+$thumb-size: 18px;
+$track-height: 4px;
+
+.rangeSlider {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+
+  &__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: $font-main;
+  }
+
+  &__label {
+    font-size: 14px;
+    font-weight: 500;
+    color: #1e1e1e;
+  }
+
+  &__value {
+    font-size: 13px;
+    font-weight: 600;
+    color: $forest-dark;
+  }
+
+  &__track {
+    position: relative;
+    height: $thumb-size;
+    display: flex;
+    align-items: center;
+  }
+
+  &__trackBg {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: $track-height;
+    background-color: rgba($metal-gray, 0.4);
+    border-radius: $track-height;
+  }
+
+  &__trackFill {
+    position: absolute;
+    height: $track-height;
+    background-color: $forest-mid;
+    border-radius: $track-height;
+  }
+
+  &__input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: $thumb-size;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    appearance: none;
+    -webkit-appearance: none;
+    pointer-events: none; // track is non-interactive
+    outline: none;
+
+    // Webkit thumb
+    &::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: $thumb-size;
+      height: $thumb-size;
+      background-color: $beige-light;
+      border: 2px solid $forest-mid;
+      border-radius: 50%;
+      cursor: grab;
+      pointer-events: auto;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+
+      &:hover {
+        border-color: $forest-dark;
+        transform: scale(1.1);
+      }
+
+      &:active {
+        cursor: grabbing;
+        transform: scale(1.15);
+      }
+    }
+
+    // Firefox thumb
+    &::-moz-range-thumb {
+      width: $thumb-size - 4px;
+      height: $thumb-size - 4px;
+      background-color: $beige-light;
+      border: 2px solid $forest-mid;
+      border-radius: 50%;
+      cursor: grab;
+      pointer-events: auto;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      transition: transform 0.15s ease, border-color 0.15s ease;
+
+      &:hover {
+        border-color: $forest-dark;
+        transform: scale(1.1);
+      }
+
+      &:active {
+        cursor: grabbing;
+        transform: scale(1.15);
+      }
+    }
+
+    // Hide native track styling
+    &::-webkit-slider-runnable-track {
+      background: transparent;
+      border: none;
+    }
+
+    &::-moz-range-track {
+      background: transparent;
+      border: none;
+    }
+
+    &:focus-visible {
+      &::-webkit-slider-thumb {
+        outline: 2px solid $forest-dark;
+        outline-offset: 2px;
+      }
+
+      &::-moz-range-thumb {
+        outline: 2px solid $forest-dark;
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  // The max thumb sits on top, so when both thumbs overlap at the maximum,
+  // the user can still grab the min thumb by clicking left of it.
+  &__input_a,
+  &__input_b {
+    z-index: 2;
+  }
+
+  // Когда ползунок активно тащат, поднимаем его над соседом, иначе наоборот.
+  &__input_a:active {
+    z-index: 4;
+  }
+
+  &__input_b:active {
+    z-index: 3;
+  }
+}
