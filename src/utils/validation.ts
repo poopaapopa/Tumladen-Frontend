@@ -43,7 +43,6 @@ export function validateField(
     }
     if (name === 'email') {
       if (!EMAIL_REGEX.test(value)) return 'Неверный формат почты';
-      if (!LATIN_ONLY_REGEX.test(value)) return 'Email должен быть на латинице';
     } 
     if (name === 'password') {
       if (!PASS_REGEX.test(value)) return '8+ символов: мин. по 1 большой и маленькой букве';
@@ -62,18 +61,19 @@ export function validateField(
     }
     if (name === 'email' && !EMAIL_REGEX.test(value)) return 'Неверный формат почты';
     // Password is optional in profile — only validate if non-empty
-    if (name === 'password') {
-      if (value.length > 0 && !PASS_REGEX.test(value)) {
+    if (name === 'password' && value.length > 0 ) {
+      if (!PASS_REGEX.test(value)) {
         return '8+ символов: мин. по 1 большой и маленькой букве';
       }
       if (!LATIN_ONLY_REGEX.test(value)) return 'Пароль должен быть на латинице';
     } 
     
-    if (name === 'passwordConfirm')
+    if (name === 'passwordConfirm') {
       if((password ?? '').length > 0 && value !== password) {
         return 'Пароли не совпадают';
       }
       if (!LATIN_ONLY_REGEX.test(value)) return 'Пароль должен быть на латинице';
+    }
   }
 
   return '';
