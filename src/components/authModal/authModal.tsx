@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import styles from './authModal.module.scss';
 import { authService } from '@/api/auth';
 import { useUserStore } from '@/store/useUserStore';
-import modalStyles from '../guestAuth/guestAuth.module.scss';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { FormField } from '@/components/formField/formField';
@@ -63,7 +62,24 @@ export const AuthModal = ({ onSuccess, closeAttemptTrigger, onConfirmClose }: Au
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.name as FormDataKeys;
     const value = e.target.value;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const newData = { ...prev, [name]: value };
+      if (name === 'password') {
+        if (touched.passwordConfirm || newData.passwordConfirm.length > 0) {
+          const confirmError = validateField('passwordConfirm', newData.passwordConfirm, { 
+            mode, 
+            password: value 
+          });
+          setFieldErrors((prev) => {
+            const next = {...prev};
+            if (confirmError) next.passwordConfirm = confirmError;
+            else delete next.passwordConfirm;
+            return next;
+          })
+        }
+      }
+      return newData;
+    });
 
     if (isConfirmingClose) {
       setIsConfirmingClose(false);
@@ -114,7 +130,8 @@ export const AuthModal = ({ onSuccess, closeAttemptTrigger, onConfirmClose }: Au
       if (
         !EMAIL_REGEX.test(formData.email) ||
         !PASS_REGEX.test(formData.password) ||
-        formData.password !== formData.passwordConfirm
+        formData.password !== formData.passwordConfirm ||
+        formData.passwordConfirm !== formData.password
       ) {
         setGlobalError('Пожалуйста, исправьте ошибки в полях');
         return;
@@ -198,9 +215,9 @@ export const AuthModal = ({ onSuccess, closeAttemptTrigger, onConfirmClose }: Au
       </div>
 
       {mode === 'login' ? (
-        <h2 className={modalStyles.guestLogin__title}>Войдите в свои владения!</h2>
+        <h2 className={styles.authModal__title}>Войдите в свои владения!</h2>
       ) : (
-        <h2 className={modalStyles.guestLogin__title}>Создайте свой аккаунт!</h2>
+        <h2 className={styles.authModal__title}>Создайте свой аккаунт!</h2>
       )}
 
       <form className={styles.authModal__form} onSubmit={handleSubmit} noValidate>

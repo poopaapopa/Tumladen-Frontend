@@ -9,6 +9,7 @@
     display: flex;
     align-items: center;
     width: 100%;
+    margin-top: 20px;
 
     // Error state: red border + red glow — persists even on focus
     &_error {

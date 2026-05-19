@@ -116,7 +116,24 @@ export function EditProfileModal({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.name as ProfileFields;
     const value = e.target.value;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    setFormData((prev) => {
+      const nextData = { ...prev, [name]: value };
+      if (name === 'password') {
+        const confirmError = validateField('passwordConfirm', nextData.passwordConfirm, {
+          mode: 'profile',
+          password: value
+        });
+        setFieldErrors(errs => {
+          const nextErrs = {...errs};
+          if (confirmError && nextData.passwordConfirm.length > 0) nextErrs.passwordConfirm = confirmError;
+          else delete nextErrs.passwordConfirm;
+          return nextErrs;
+        })
+      }
+      return nextData
+    });
+    
     setGlobalError(null);
 
     if (isConfirmingClose) {

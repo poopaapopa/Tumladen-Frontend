@@ -8,6 +8,13 @@
   text-align: center;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 
+  &__title {
+    font-size: 28px;
+    color: $forest-dark;
+    margin-bottom: 15px;
+    font-weight: 600;
+  }
+
   &__tabs {
     display: flex;
     justify-content: center;
@@ -89,6 +96,7 @@
     color: $beige-light;
     transition: background-color 0.3s;
     text-align: center;
+    margin-top: 5px;
 
     &:hover:not(:disabled) {
       background-color: color.adjust($forest-mid, $lightness: -5%);
