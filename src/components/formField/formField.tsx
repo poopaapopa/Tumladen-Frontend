@@ -1,9 +1,9 @@
-import { useState } from 'react';
-import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Eye, EyeOff, AlertCircle, Check, X, ShieldCheck, ShieldAlert, ShieldX } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import styles from './formField.module.scss';
-import { FIELD_HINTS } from '@/utils/validation';
+import { FIELD_HINTS, getPasswordChecks } from '@/utils/validation';
 
 interface FormFieldProps {
   name: string;
@@ -16,6 +16,7 @@ interface FormFieldProps {
   error?: string;
   /** Override the default hint from FIELD_HINTS (shown in tooltip bubble on focus, left of field) */
   hint?: string;
+  showHint?: boolean;
   autoComplete?: string;
   /** Background colour of the parent container — used for floating label bg */
   bgColor?: string;
@@ -30,6 +31,7 @@ export function FormField({
   type = 'text',
   error,
   hint,
+  showHint = true,
   autoComplete,
   bgColor,
 }: FormFieldProps) {
@@ -39,12 +41,107 @@ export function FormField({
   const isPassword = type === 'password';
   const inputType = isPassword ? (showPass ? 'text' : 'password') : type;
   const hasError = !!error;
+  const showError = hasError && !focused;
 
-  // Hint shown in the tooltip bubble on focus (only when no error)
+  // Hint shown in the tooltip bubble on focus, regardless of current validation state.
   const resolvedHint = hint ?? FIELD_HINTS[name];
-  const showHintBubble = focused && !hasError && !!resolvedHint;
+  const showHintBubble = showHint && focused && !!resolvedHint;
 
   const labelStyle = bgColor ? { backgroundColor: bgColor } : undefined;
+
+  const isPasswordField = name === 'password';
+  const passwordChecks = getPasswordChecks(value);
+
+  const passwordStrength = useMemo(() => {
+    if (!isPasswordField) return { score: 0, label: '', level: '' as const };
+    const checks = [
+      passwordChecks.hasUppercase,
+      passwordChecks.hasLowercase,
+      passwordChecks.hasDigit,
+      passwordChecks.hasMinLength,
+    ];
+    const score = checks.filter(Boolean).length;
+    if (score === 0) return { score, label: '', level: 'none' as const };
+    if (score <= 1) return { score, label: 'Слабый', level: 'weak' as const };
+    if (score <= 2) return { score, label: 'Слабый', level: 'weak' as const };
+    if (score <= 3) return { score, label: 'Средний', level: 'medium' as const };
+    return { score, label: 'Надёжный', level: 'strong' as const };
+  }, [isPasswordField, passwordChecks]);
+
+  const renderHint = () => {
+    if (!isPasswordField) return resolvedHint;
+
+    const items = [
+      { valid: passwordChecks.hasMinLength, label: 'Минимум 8 символов' },
+      { valid: passwordChecks.hasUppercase, label: 'Заглавная буква (A-Z)' },
+      { valid: passwordChecks.hasLowercase, label: 'Строчная буква (a-z)' },
+      { valid: passwordChecks.hasDigit, label: 'Цифра (0-9)' },
+    ];
+
+    const StrengthIcon = passwordStrength.level === 'strong'
+      ? ShieldCheck
+      : passwordStrength.level === 'medium'
+        ? ShieldAlert
+        : ShieldX;
+
+    return (
+      <div className={styles.formField__passwordChecks}>
+        {/* Strength bar */}
+        {value.length > 0 && (
+          <div className={styles.formField__strengthSection}>
+            <div className={styles.formField__strengthHeader}>
+              <StrengthIcon size={14} />
+              <span
+                className={clsx(
+                  styles.formField__strengthLabel,
+                  styles[`formField__strengthLabel_${passwordStrength.level}`],
+                )}
+              >
+                {passwordStrength.label}
+              </span>
+            </div>
+            <div className={styles.formField__strengthTrack}>
+              {[1, 2, 3, 4].map((segment) => (
+                <motion.div
+                  key={segment}
+                  className={clsx(
+                    styles.formField__strengthSegment,
+                    segment <= passwordStrength.score &&
+                      styles[`formField__strengthSegment_${passwordStrength.level}`],
+                  )}
+                  initial={{ scaleX: 0 }}
+                  animate={{ scaleX: segment <= passwordStrength.score ? 1 : 0 }}
+                  transition={{ duration: 0.3, delay: segment * 0.05 }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Divider */}
+        {value.length > 0 && <div className={styles.formField__checksDivider} />}
+
+        {/* Check items */}
+        {items.map((item, i) => (
+          <motion.div
+            key={item.label}
+            initial={{ opacity: 0, x: -6 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.2, delay: i * 0.04 }}
+            className={clsx(
+              styles.formField__passwordCheck,
+              item.valid && styles.formField__passwordCheck_valid,
+            )}
+          >
+            <span className={styles.formField__checkIcon}>
+              {item.valid ? <Check size={12} strokeWidth={3} /> : <X size={12} strokeWidth={2.5} />}
+            </span>
+            <span>{item.label}</span>
+          </motion.div>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className={styles.formField}>
@@ -53,7 +150,7 @@ export function FormField({
       <div
         className={clsx(
           styles.formField__inputGroup,
-          hasError && styles.formField__inputGroup_error,
+          showError && styles.formField__inputGroup_error,
         )}
       >
         {/* Hint tooltip bubble — to the left, vertically centered on the input */}
@@ -65,7 +162,7 @@ export function FormField({
               exit={{ opacity: 0 }}
               className={styles.formField__hintBubble}
             >
-              {resolvedHint}
+              {renderHint()}
             </motion.div>
           )}
         </AnimatePresence>
@@ -107,7 +204,7 @@ export function FormField({
 
       {/* Error text below the field — only rendered after blur (caller controls `error` prop) */}
       <AnimatePresence>
-        {hasError && (
+        {showError && (
           <motion.div
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}

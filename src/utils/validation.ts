@@ -1,13 +1,86 @@
 export const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
-export const PASS_REGEX = /^(?=.*[a-z])(?=.*[A-Z]).{8,}$/;
-export const LATIN_ONLY_REGEX = /^[a-zA-Z0-9_]*$/; 
+export const NICKNAME_REGEX = /^[\p{L}\p{Nd}_-]*$/u;
+
+const MIN_NICKNAME_LENGTH = 3;
+const MAX_NICKNAME_LENGTH = 32;
+const MIN_PASSWORD_LENGTH = 8;
+
+export const VALIDATION_ERRORS = {
+  required: 'Поле обязательно для заполнения',
+  nickname: {
+    tooShort: `Никнейм должен быть не короче ${MIN_NICKNAME_LENGTH} символов`,
+    tooLong: `Никнейм должен быть не длиннее ${MAX_NICKNAME_LENGTH} символов`,
+    invalidChars: 'Никнейм может содержать только буквы, цифры, _ и -',
+  },
+  identifier: {
+    tooShort: `Никнейм или Email должен быть не короче ${MIN_NICKNAME_LENGTH} символов`,
+    tooLong: `Никнейм должен быть не длиннее ${MAX_NICKNAME_LENGTH} символов`,
+    invalidChars: 'Никнейм может содержать только буквы, цифры, _ и -',
+  },
+  email: {
+    invalidFormat: 'Неверный формат почты',
+  },
+  password: {
+    tooShort: `Пароль должен быть не короче ${MIN_PASSWORD_LENGTH} символов`,
+    missingUppercase: 'Пароль должен содержать хотя бы одну заглавную букву',
+    missingLowercase: 'Пароль должен содержать хотя бы одну строчную букву',
+    missingDigit: 'Пароль должен содержать хотя бы одну цифру',
+    mismatch: 'Пароли не совпадают',
+  },
+} as const;
+
+export function getPasswordChecks(value: string) {
+  return {
+    hasUppercase: /\p{Lu}/u.test(value),
+    hasLowercase: /\p{Ll}/u.test(value),
+    hasDigit: /\p{Nd}/u.test(value),
+    hasMinLength: value.length >= MIN_PASSWORD_LENGTH,
+  };
+}
+
+type NicknameValidationErrors = {
+  tooShort: string;
+  tooLong: string;
+  invalidChars: string;
+};
+
+function validateNickname(
+  value: string,
+  errors: NicknameValidationErrors = VALIDATION_ERRORS.nickname,
+): string {
+  if (value.length === 0) return VALIDATION_ERRORS.required;
+  if (value.length < MIN_NICKNAME_LENGTH) return errors.tooShort;
+  if (value.length > MAX_NICKNAME_LENGTH) return errors.tooLong;
+  if (!NICKNAME_REGEX.test(value)) return errors.invalidChars;
+
+  return '';
+}
+
+function validateEmail(value: string): string {
+  if (value.length === 0) return VALIDATION_ERRORS.required;
+  if (!EMAIL_REGEX.test(value)) return VALIDATION_ERRORS.email.invalidFormat;
+
+  return '';
+}
+
+function validatePassword(value: string): string {
+  const checks = getPasswordChecks(value);
+
+  if (value.length === 0) return VALIDATION_ERRORS.required;
+  if (!checks.hasMinLength) return VALIDATION_ERRORS.password.tooShort;
+  if (!checks.hasUppercase) return VALIDATION_ERRORS.password.missingUppercase;
+  if (!checks.hasLowercase) return VALIDATION_ERRORS.password.missingLowercase;
+  if (!checks.hasDigit) return VALIDATION_ERRORS.password.missingDigit;
+
+  return '';
+}
 
 /** Light-grey informational hints shown on focus (not errors) */
 export const FIELD_HINTS: Record<string, string> = {
-  identifier:      'Введите никнейм или Email',
-  nickname:        'Минимум 2 символа',
-  email:           'Формат: name@example.com',
-  password:        '8+ символов латиницей: хотя бы одна большая и одна маленькая буква',
+  identifier: 'Введите никнейм или Email',
+  nickname: 'От 3 до 32 символов: буквы, цифры, _ и -',
+  email: 'Формат: name@example.com',
+  password: 'Минимум 8 символов: заглавная буква, строчная буква и цифра',
   passwordConfirm: 'Должен совпадать с паролем выше',
 };
 
@@ -26,53 +99,69 @@ export function validateField(
 
   if (mode === 'login') {
     if (name === 'identifier') {
-      if (value.length < 2) return 'Никнейм слишком короткий';
-      if (!LATIN_ONLY_REGEX.test(value)) return 'Только латинские буквы и цифры';
-    } 
+      if (value.length === 0) return VALIDATION_ERRORS.required;
+
+      if (value.includes('@')) {
+        const emailError = validateEmail(value);
+        if (emailError) return emailError;
+      } else {
+        const nicknameError = validateNickname(value, VALIDATION_ERRORS.identifier);
+        if (nicknameError) return nicknameError;
+      }
+    }
+
     if (name === 'password') {
-      if (!PASS_REGEX.test(value)) return '8+ символов: мин. по 1 большой и маленькой букве';
-      if (!LATIN_ONLY_REGEX.test(value)) return 'Пароль должен быть на латинице';
-    } 
-      
+      const passwordError = validatePassword(value);
+      if (passwordError) return passwordError;
+    }
   }
 
   if (mode === 'register') {
-    if (name === 'nickname') { 
-      if ( value.length < 2) return 'Никнейм слишком короткий';
-      if (!LATIN_ONLY_REGEX.test(value)) return 'Только латинские буквы и цифры';
+    if (name === 'nickname') {
+      const nicknameError = validateNickname(value);
+      if (nicknameError) return nicknameError;
     }
+
     if (name === 'email') {
-      if (!EMAIL_REGEX.test(value)) return 'Неверный формат почты';
-    } 
+      const emailError = validateEmail(value);
+      if (emailError) return emailError;
+    }
+
     if (name === 'password') {
-      if (!PASS_REGEX.test(value)) return '8+ символов: мин. по 1 большой и маленькой букве';
-      if (!LATIN_ONLY_REGEX.test(value)) return 'Пароль должен быть на латинице';
-    } 
+      const passwordError = validatePassword(value);
+      if (passwordError) return passwordError;
+    }
+
     if (name === 'passwordConfirm') {
-      if (value !== password) return 'Пароли не совпадают';
-      if (!LATIN_ONLY_REGEX.test(value)) return 'Пароль должен быть на латинице';
+      if (value.length === 0) return VALIDATION_ERRORS.required;
+      if (value !== password) return VALIDATION_ERRORS.password.mismatch;
     }
   }
 
   if (mode === 'profile') {
-    if (name === 'nickname') { 
-      if ( value.length < 2) return 'Никнейм слишком короткий';
-      if (!LATIN_ONLY_REGEX.test(value)) return 'Только латинские буквы и цифры';
+    if (name === 'nickname') {
+      const nicknameError = validateNickname(value);
+      if (nicknameError) return nicknameError;
     }
-    if (name === 'email' && !EMAIL_REGEX.test(value)) return 'Неверный формат почты';
+
+    if (name === 'email') {
+      const emailError = validateEmail(value);
+      if (emailError) return emailError;
+    }
+
     // Password is optional in profile — only validate if non-empty
-    if (name === 'password' && value.length > 0 ) {
-      if (!PASS_REGEX.test(value)) {
-        return '8+ символов: мин. по 1 большой и маленькой букве';
-      }
-      if (!LATIN_ONLY_REGEX.test(value)) return 'Пароль должен быть на латинице';
-    } 
-    
+    if (name === 'password' && value.length > 0) {
+      const passwordError = validatePassword(value);
+      if (passwordError) return passwordError;
+    }
+
     if (name === 'passwordConfirm') {
-      if((password ?? '').length > 0 && value !== password) {
-        return 'Пароли не совпадают';
+      if ((password ?? '').length > 0 && value.length === 0) {
+        return VALIDATION_ERRORS.required;
       }
-      if (!LATIN_ONLY_REGEX.test(value)) return 'Пароль должен быть на латинице';
+      if ((password ?? '').length > 0 && value !== password) {
+        return VALIDATION_ERRORS.password.mismatch;
+      }
     }
   }
 

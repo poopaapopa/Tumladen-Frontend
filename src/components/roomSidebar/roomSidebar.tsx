@@ -146,7 +146,7 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
         </button>
       ) : (
         <div className={styles.roomSidebar__waitMessage}>
-          Организатор шепчется с ветром о стратегии грядущей партии
+          Ожидаем, пока организатор завершит подготовку
         </div>
       )}
       <Modal isOpen={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)}>

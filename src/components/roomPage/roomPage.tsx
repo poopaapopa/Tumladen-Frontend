@@ -45,7 +45,7 @@ const RoomPage = () => {
       setRoom(data.room);
       setError(null);
     } catch (e) {
-      setError("Не удалось войти в чертоги комнаты...");
+      setError("Не удалось войти в комнату");
       console.error(e);
     } finally {
       setIsLoading(false);

@@ -5,7 +5,7 @@ import { useUserStore } from '@/store/useUserStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { FormField } from '@/components/formField/formField';
-import { EMAIL_REGEX, PASS_REGEX, validateField } from '@/utils/validation';
+import { validateField } from '@/utils/validation';
 
 interface AuthModalProps {
   onSuccess: () => void;
@@ -126,17 +126,25 @@ export const AuthModal = ({ onSuccess, closeAttemptTrigger, onConfirmClose }: Au
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (mode === 'register') {
-      if (
-        !EMAIL_REGEX.test(formData.email) ||
-        !PASS_REGEX.test(formData.password) ||
-        formData.password !== formData.passwordConfirm ||
-        formData.passwordConfirm !== formData.password
-      ) {
-        setGlobalError('Пожалуйста, исправьте ошибки в полях');
-        return;
-      }
-    }
+    const fieldsToValidate: FormDataKeys[] = mode === 'login'
+      ? ['identifier', 'password']
+      : ['nickname', 'email', 'password', 'passwordConfirm'];
+    const nextTouched = fieldsToValidate.reduce<Partial<Record<FormDataKeys, boolean>>>(
+      (acc, field) => ({ ...acc, [field]: true }),
+      {},
+    );
+    const nextErrors = fieldsToValidate.reduce<Partial<Record<FormDataKeys, string>>>(
+      (acc, field) => {
+        const error = validateField(field, formData[field], { mode, password: formData.password });
+        return error ? { ...acc, [field]: error } : acc;
+      },
+      {},
+    );
+
+    setTouched((prev) => ({ ...prev, ...nextTouched }));
+    setFieldErrors(nextErrors);
+
+    if (Object.keys(nextErrors).length > 0) return;
 
     setLoading(true);
     setGlobalError(null);
@@ -163,9 +171,9 @@ export const AuthModal = ({ onSuccess, closeAttemptTrigger, onConfirmClose }: Au
       const msg = errorMessage.toLowerCase();
       if (mode === 'login') {
         if (msg.includes('not found')) {
-          setFieldErrors((p) => ({ ...p, identifier: 'Пользователь не найден' }));
+          setGlobalError('Пользователь не найден');
         } else if (msg.includes('invalid')) {
-          setFieldErrors((p) => ({ ...p, password: 'Неверный пароль' }));
+          setGlobalError('Неверный логин или пароль');
         } else {
           setGlobalError('Ошибка входа. Проверьте данные.');
         }
@@ -173,10 +181,10 @@ export const AuthModal = ({ onSuccess, closeAttemptTrigger, onConfirmClose }: Au
 
       if (mode === 'register') {
         if (msg.includes('conflict') || msg.includes('409') || msg.includes('exists')) {
-          if (msg.toLowerCase().includes('email')) {
-            setFieldErrors((p) => ({ ...p, email: 'Этот Email уже занят' }));
-          } else if (msg.toLowerCase().includes('nickname')) {
-            setFieldErrors((p) => ({ ...p, nickname: 'Этот никнейм уже занят' }));
+          if (msg.includes('email')) {
+            setGlobalError('Этот Email уже занят');
+          } else if (msg.includes('nickname')) {
+            setGlobalError('Этот никнейм уже занят');
           } else {
             setGlobalError('Такой пользователь уже существует');
           }
@@ -215,9 +223,9 @@ export const AuthModal = ({ onSuccess, closeAttemptTrigger, onConfirmClose }: Au
       </div>
 
       {mode === 'login' ? (
-        <h2 className={styles.authModal__title}>Войдите в свои владения!</h2>
+        <h2 className={styles.authModal__title}>Войдите в аккаунт</h2>
       ) : (
-        <h2 className={styles.authModal__title}>Создайте свой аккаунт!</h2>
+        <h2 className={styles.authModal__title}>Создайте свой аккаунт</h2>
       )}
 
       <form className={styles.authModal__form} onSubmit={handleSubmit} noValidate>
@@ -229,6 +237,7 @@ export const AuthModal = ({ onSuccess, closeAttemptTrigger, onConfirmClose }: Au
             onChange={handleChange}
             onBlur={handleBlur}
             error={touched.identifier ? fieldErrors.identifier : undefined}
+            showHint={false}
           />
         ) : (
           <>
@@ -261,6 +270,7 @@ export const AuthModal = ({ onSuccess, closeAttemptTrigger, onConfirmClose }: Au
           onBlur={handleBlur}
           error={touched.password ? fieldErrors.password : undefined}
           autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+          showHint={mode !== 'login'}
         />
 
         {mode === 'register' && (
@@ -300,7 +310,7 @@ export const AuthModal = ({ onSuccess, closeAttemptTrigger, onConfirmClose }: Au
             className={styles.authModal__btnPrimary}
             disabled={loading || Object.keys(fieldErrors).length > 0}
           >
-            {loading ? 'Загрузка...' : mode === 'login' ? 'Войти в чертоги' : 'Создать аккаунт'}
+            {loading ? 'Загрузка...' : mode === 'login' ? 'Войти' : 'Создать аккаунт'}
           </button>
         </div>
       </form>
