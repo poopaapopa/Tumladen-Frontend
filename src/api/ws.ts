@@ -117,7 +117,6 @@ export const useRoomSocket = (
                 }
               } else if (envelope.push?.message?.data) {
                 const data = envelope.push.message.data;
-                console.log('WS message:', data);
                 onMessageRef.current(data);
               }
             } catch (err) {

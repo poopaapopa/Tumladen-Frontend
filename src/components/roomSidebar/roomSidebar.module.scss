@@ -101,8 +101,28 @@
   &__configGrid {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
     gap: 15px;
     margin-bottom: 20px;
+
+    &__Item {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 15px;
+      // justify-content: space-between;
+      
+      &__title {
+         font-family: $font-main;
+        font-size: 16px;
+        font-weight: 600;
+        min-width: 120px;
+      }
+    }
+
+    // & > div { 
+    //   flex: 1 1 120px; // Позволяет растягиваться, но просит минимум 120px ширины
+    // }
   }
 
   &__configBox {

@@ -5,16 +5,17 @@ import styles from './editableSelector.module.scss';
 import clsx from 'clsx';
 
 interface Option {
-  value: number | string;
+  value: number | string | boolean;
   label: string;
   disabled?: boolean;
+  icon?: LucideIcon;
 }
 
 interface Props {
   value: number | string | boolean;
   icon: LucideIcon;
   options: Option[];
-  onSelect: (val: string | number) => void;
+  onSelect: (val: string | number | boolean) => void;
   isOwner: boolean;
   suffix?: string;
 }
@@ -22,8 +23,18 @@ interface Props {
 export const EditableSelector = ({ value, icon: Icon, options, onSelect, isOwner, suffix }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const stringValue = value === 0 ? '∞' : value.toString();
+  // const stringValue = value === 0 ? '∞' : value.toString();
   const stringSuffix = suffix && value !== 0 ? ` ${suffix}` : '';
+
+  const getDisplayValue = () => {
+    if (typeof value === 'boolean') {
+      // Ищем этикетку (label) для текущего булевого значения в массиве опций
+      return options.find(opt => opt.value === value)?.label || (value ? 'Да' : 'Нет');
+    }
+    if (value === 0) return '∞';
+    return value.toString();
+  };
+
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -50,7 +61,7 @@ export const EditableSelector = ({ value, icon: Icon, options, onSelect, isOwner
         onClick={() => isOwner && setIsOpen(!isOpen)}
       >
         <Icon size={20} />
-        <span>{stringValue + stringSuffix}</span>
+        <span>{getDisplayValue() + stringSuffix}</span>
         {isOwner && (
           <ChevronDown
             size={26}
@@ -68,20 +79,23 @@ export const EditableSelector = ({ value, icon: Icon, options, onSelect, isOwner
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.15 }}
           >
-            {options.map((opt) => (
-              <div
-                key={opt.value}
-                className={clsx(
-                  styles.option,
-                  opt.value === value && styles.option_active,
-                  opt.disabled && styles.option_disabled
-                )}
-                onClick={() => handlePick(opt)}
-              >
-                <Icon size={20} />
-                {opt.label}
-              </div>
-            ))}
+            {options.map((opt) => {
+              const ItemIcon = opt.icon || Icon;
+              return (
+                  <div
+                  key={opt.value.toString()}
+                  className={clsx(
+                    styles.option,
+                    opt.value === value && styles.option_active,
+                    opt.disabled && styles.option_disabled
+                  )}
+                  onClick={() => handlePick(opt)}
+                >
+                  <ItemIcon size={20} />
+                  {opt.label}
+                </div>
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>

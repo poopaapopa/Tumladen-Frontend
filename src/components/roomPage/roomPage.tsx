@@ -80,12 +80,10 @@ const RoomPage = () => {
 
     let hasChanged: boolean;
 
-    if (key === 'name')
-      hasChanged = room.name !== String(newValue);
-    else if (key === 'maxPlayers')
-      hasChanged = room.maxPlayers !== Number(newValue);
-    else
-      hasChanged = currentSettings[key] !== newValue;
+    if (key === 'name') hasChanged = room.name !== String(newValue);
+    else if (key === 'maxPlayers') hasChanged = room.maxPlayers !== Number(newValue);
+    else if (key === 'isPrivate') hasChanged = room.isPrivate !== Boolean(newValue);
+    else hasChanged = currentSettings[key] !== newValue;
 
     if (!hasChanged) return;
 
@@ -96,7 +94,8 @@ const RoomPage = () => {
       maxPlayers: key === 'maxPlayers' ? Number(newValue) : room.maxPlayers,
       settings: (key !== 'name' && key !== 'maxPlayers')
         ? { ...currentSettings, [key]: newValue }
-        : currentSettings
+        : currentSettings,
+      isPrivate: key === 'isPrivate' ? Boolean(newValue) : room.isPrivate
     };
 
     sendMessage('update_room_settings', payload as unknown as Record<string, unknown>);

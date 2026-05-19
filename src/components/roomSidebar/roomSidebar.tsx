@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Clock, Pencil, Check, X, Trash2 } from 'lucide-react';
+import { Users, Clock, Pencil, Check, X, Trash2, Globe2, LockKeyhole } from 'lucide-react';
 import type { RoomResponse } from '../../types/room.ts';
 import { EditableSelector } from '../editableSelector/editableSelector.tsx';
 import Modal from '../modal/modal.tsx';
@@ -26,6 +26,11 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const currentSettings = room?.settings || {};
+
+  const accessOptions = [
+    { value: false, label: 'Общая', icon: Globe2 },
+    { value: true, label: 'Приватная', icon: LockKeyhole }
+  ];
 
   const handleDeleteRoom = () => {
     if (room?.id) {
@@ -119,21 +124,39 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
       </div>
 
       <div className={styles.roomSidebar__configGrid}>
-        <EditableSelector
-          value={room.maxPlayers}
-          icon={Users}
-          options={maxPlayersOptions}
-          isOwner={isOwner}
-          onSelect={(val) => onSaveSetting('maxPlayers', val)}
-        />
-        <EditableSelector
-          value={currentSettings['turnTimeSeconds']}
-          icon={Clock}
-          options={timerOptions}
-          isOwner={isOwner}
-          suffix="с."
-          onSelect={(val) => onSaveSetting('turnTimeSeconds', val)}
-        />
+        <div className={styles.roomSidebar__configGrid__Item}>
+          <div className={styles.roomSidebar__configGrid__Item__title}>Игроки:</div>
+            <EditableSelector
+              value={room.maxPlayers}
+              icon={Users}
+              options={maxPlayersOptions}
+              isOwner={isOwner}
+              onSelect={(val) => onSaveSetting('maxPlayers', val)}
+            />
+        </div>
+
+        <div className={styles.roomSidebar__configGrid__Item}>
+          <div className={styles.roomSidebar__configGrid__Item__title}>Время на ход:</div>
+            <EditableSelector
+              value={currentSettings['turnTimeSeconds']}
+              icon={Clock}
+              options={timerOptions}
+              isOwner={isOwner}
+              suffix="с."
+              onSelect={(val) => onSaveSetting('turnTimeSeconds', val)}
+            />
+        </div>
+
+        <div className={styles.roomSidebar__configGrid__Item}>
+          <div className={styles.roomSidebar__configGrid__Item__title}>Приватность:</div>
+            <EditableSelector
+              value={room.isPrivate}
+              icon={room.isPrivate ? LockKeyhole : Globe2}
+              options={accessOptions}
+              isOwner={isOwner}
+              onSelect={(val) => onSaveSetting('isPrivate', val)}
+            />
+        </div>
       </div>
 
       {isOwner ? (
