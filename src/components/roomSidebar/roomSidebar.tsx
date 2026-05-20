@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Clock, Pencil, Check, X, Trash2 } from 'lucide-react';
+import { Users, Clock, Pencil, Check, X, Trash2, Lock, LockOpen } from 'lucide-react';
 import type { RoomResponse } from '../../types/room.ts';
+import clsx from 'clsx';
 import { EditableSelector } from '../editableSelector/editableSelector.tsx';
 import Modal from '../modal/modal.tsx';
 import styles from './roomSidebar.module.scss';
@@ -85,6 +86,7 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
                 value={tempName}
                 onChange={(e) => setTempName(e.target.value)}
                 autoFocus
+                onFocus={(e) => e.target.select()}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleUpdateName();
                   if (e.key === 'Escape') setIsEditingName(false);
@@ -134,6 +136,18 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
           suffix="с."
           onSelect={(val) => onSaveSetting('turnTimeSeconds', val)}
         />
+      </div>
+
+      <div
+        className={clsx(
+          styles.roomSidebar__privacyBox,
+          room.isPrivate && styles.roomSidebar__privacyBox_active,
+          isOwner && styles.roomSidebar__privacyBox_editable
+        )}
+        onClick={() => isOwner && onSaveSetting('isPrivate', !room.isPrivate)}
+      >
+        {room.isPrivate ? <Lock size={20} /> : <LockOpen size={20} />}
+        <span>{room.isPrivate ? 'Закрытая' : 'Открытая'}</span>
       </div>
 
       {isOwner ? (

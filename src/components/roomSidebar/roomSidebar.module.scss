@@ -105,6 +105,38 @@
     margin-bottom: 20px;
   }
 
+  &__privacyBox {
+    background: $beige-light;
+    border: 2px solid $forest-mid;
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    color: $forest-dark;
+    transition: all 0.2s ease;
+    user-select: none;
+    margin-bottom: 20px;
+
+    &_active {
+      background-color: $forest-mid;
+      color: $beige-light;
+      border-color: $forest-dark;
+    }
+
+    &_editable {
+      cursor: pointer;
+
+      &:hover {
+        border-color: $forest-dark;
+        box-shadow: 0 0 0 3px rgba($forest-mid, 0.2);
+      }
+    }
+  }
+
   &__configBox {
     background: $beige-light;
     border: 2px solid $forest-dark;

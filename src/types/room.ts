@@ -43,4 +43,5 @@ export interface UpdateRoomSettingsPayload {
   gameType: string;
   maxPlayers: number;
   settings: Settings;
+  isPrivate: boolean;
 }
