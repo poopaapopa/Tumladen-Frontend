@@ -7,7 +7,7 @@ import Modal from '../modal/modal';
 import { AuthModal } from '../authModal/authModal';
 import { LogoutModal } from '../logoutModal/logoutModal'
 import { useUserStore } from '@/store/useUserStore';
-import { LogOut } from 'lucide-react';
+import { LogOut, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 function avatarSrc(url?: string | null): string {
@@ -21,6 +21,9 @@ function Header() {
   const [isLogOutOpen, setIsLogOutOpen] = useState(false);
   const { isAuthenticated, actor } = useUserStore();
   const [authCloseAttempt, setAuthCloseAttempt] = useState(0);
+
+  const isGuest = isAuthenticated && actor?.type === 'guest';
+  const isFullUser = isAuthenticated && actor?.type === 'user';
 
   const handleOpenAuth = () => {
     setAuthCloseAttempt(0); 
@@ -44,7 +47,7 @@ function Header() {
       </div>
 
       <div className={styles.header__right}>
-        {isAuthenticated && actor ? (
+        {isFullUser && actor ? (
           <div className={styles.header__profile}>
             <Link
               to={`/profile/${actor.id}`}
@@ -65,9 +68,28 @@ function Header() {
               <LogOut size={18} />
             </button>
           </div>
+        ) : isGuest && actor ? (
+          <div className={styles.header__profile}>
+            <div className={styles.header__guestInfo}>
+              <span className={styles.header__guestName}>{actor.displayName}</span>
+              <span className={styles.header__guestBadge}>Гость</span>
+            </div>
+            <img
+              src={avatarSrc(actor.avatarUrl)}
+              alt={actor.displayName}
+              className={styles.header__avatar}
+            />
+            <button
+              className={styles.header__loginBtn}
+              onClick={handleOpenAuth}
+            >
+              <UserPlus size={16} style={{ marginRight: 6 }} />
+              Войти
+            </button>
+          </div>
         ) : (
-          <button 
-            className={styles.header__loginBtn} 
+          <button
+            className={styles.header__loginBtn}
             onClick={handleOpenAuth}
           >
             Войти

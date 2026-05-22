@@ -37,7 +37,6 @@
   &__profile {
     display: flex;
     align-items: center;
-    gap: 10px;
   }
 
   &__profileLink {
@@ -64,7 +63,36 @@
     flex-shrink: 0;
   }
 
+  &__guestInfo {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    margin-right: 15px;
+  }
+
+  &__guestName {
+    color: $beige-light;
+    font-size: 16px;
+    font-weight: 500;
+  }
+
+  &__guestBadge {
+    font-size: 11px;
+    font-weight: 500;
+    color: $forest-mid;
+    background-color: rgba($beige-light, 0.85);
+    padding: 1px 8px;
+    border-radius: 6px;
+    line-height: 1.4;
+    letter-spacing: 0.3px;
+  }
+
   &__loginBtn {
+    display: flex;
+    align-items: center;
+    margin-left: 15px;
+    gap: 5px;
     background-color: $forest-dark;
     color: $beige-light;
     padding: 10px 24px;
