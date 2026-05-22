@@ -9,9 +9,13 @@ import { useState, useEffect } from "react";
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useUserStore } from './store/useUserStore';
 import GameRoom from "./components/gameRoom/gameRoom.tsx";
+import { roomService } from './api/room.ts';
+import { ConfirmModal } from './components/confirmKick/confirmKick.tsx';
+import elfCampfireImg from './assets/elf-campfire.png';
 
 function App() {
   const [activeModal, setActiveModal] = useState<boolean>(false);
+  const [isRoomFullModal, setIsRoomFullModal] = useState<boolean>(false);
 
   const openModal = () => setActiveModal(true);
   const closeModal = () => setActiveModal(false);
@@ -21,12 +25,29 @@ function App() {
   const { isAuthenticated } = useUserStore();
 
   useEffect(() => {
-    const isRoomPage = location.pathname.startsWith('/room/');
-    
+    const isRoomPage = location.pathname.startsWith('/room/') && !location.pathname.startsWith('/room/game/');
+
     if (isRoomPage && !isAuthenticated) {
-      setActiveModal(true);
+      const inviteCode = location.pathname.split('/room/')[1];
+      if (inviteCode) {
+        roomService.getRoomById(inviteCode)
+          .then((data) => {
+            if (data.room.playersCount >= data.room.maxPlayers) {
+              setIsRoomFullModal(true);
+              setActiveModal(false);
+            } else {
+              setActiveModal(true);
+            }
+          })
+          .catch(() => {
+            setActiveModal(true);
+          });
+      } else {
+        setActiveModal(true);
+      }
     } else {
       setActiveModal(false);
+      setIsRoomFullModal(false);
     }
   }, [location.pathname, isAuthenticated]);
 
@@ -39,6 +60,11 @@ function App() {
 
   const handleGuestConfirm = () => {
     closeModal();
+  };
+
+  const handleRoomFullClose = () => {
+    setIsRoomFullModal(false);
+    navigate('/');
   };
 
   return (
@@ -57,6 +83,16 @@ function App() {
           <GuestAuth
             onConfirm={handleGuestConfirm}
             onCancel={handleCancelAuth}
+          />
+        </Modal>
+
+        <Modal isOpen={isRoomFullModal} onClose={handleRoomFullClose}>
+          <ConfirmModal
+            title="Комната заполнена"
+            text="К сожалению, в этой комнате уже нет свободных мест. Все слоты заняты другими игроками. Попробуйте присоединиться к другой комнате или создайте свою."
+            onConfirm={handleRoomFullClose}
+            onConfirmText="На главную"
+            image={elfCampfireImg}
           />
         </Modal>
       </div>

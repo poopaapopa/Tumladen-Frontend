@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Clock, Pencil, Check, X, Trash2, Lock, LockOpen } from 'lucide-react';
-import type { RoomResponse } from '../../types/room.ts';
+import type { RoomResponse } from '@/types/room.ts';
 import clsx from 'clsx';
 import { EditableSelector } from '../editableSelector/editableSelector.tsx';
 import Modal from '../modal/modal.tsx';
 import styles from './roomSidebar.module.scss';
 
-import deleteRoomImg from '../../assets/deleteRoom.png';
-import deleteRoomOwnerImg from '../../assets/deleteRoomOwner.png';
+import deleteRoomImg from '@/assets/elves-delete-room.png';
 import { ConfirmModal } from '../confirmKick/confirmKick.tsx';
 
 interface RoomSidebarProps {
@@ -112,12 +111,24 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
                   <button onClick={() => setIsDeleteConfirmOpen(true)}>
                     <Trash2 className={styles.delete_icon} size={20} />
                   </button>
-                </> 
+                </>
               )}
             </div>
           )}
         </div>
         <span className={styles.roomSidebar__status}>{room.status}</span>
+      </div>
+
+      <div
+        className={clsx(
+          styles.roomSidebar__privacyBox,
+          room.isPrivate && styles.roomSidebar__privacyBox_active,
+          isOwner && styles.roomSidebar__privacyBox_editable
+        )}
+        onClick={() => isOwner && onSaveSetting('isPrivate', !room.isPrivate)}
+      >
+        {room.isPrivate ? <Lock size={20} /> : <LockOpen size={20} />}
+        <span>{room.isPrivate ? 'Закрытая' : 'Открытая'}</span>
       </div>
 
       <div className={styles.roomSidebar__configGrid}>
@@ -138,18 +149,6 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
         />
       </div>
 
-      <div
-        className={clsx(
-          styles.roomSidebar__privacyBox,
-          room.isPrivate && styles.roomSidebar__privacyBox_active,
-          isOwner && styles.roomSidebar__privacyBox_editable
-        )}
-        onClick={() => isOwner && onSaveSetting('isPrivate', !room.isPrivate)}
-      >
-        {room.isPrivate ? <Lock size={20} /> : <LockOpen size={20} />}
-        <span>{room.isPrivate ? 'Закрытая' : 'Открытая'}</span>
-      </div>
-
       {isOwner ? (
         <button
           className={styles.roomSidebar__btnStart}
@@ -166,13 +165,13 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
       <Modal isOpen={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)}>
         <ConfirmModal
           title="Удаление комнаты"
-          text={<>Как владелец, вы в праве распустить игроков и <strong>безвозвратно уничтожить комнату</strong>.<br/>
+          text={<>Как владелец, вы в праве распустить игроков и <strong>удалить комнату</strong>.<br/>
             Действительно ли вы принимаете это необратимое решение?</>}
           onConfirm={handleDeleteRoom}
           onConfirmText="Да, удалить"
           onCancel={() => setIsDeleteConfirmOpen(false)}
           onCancelText="Отмена"
-          image={deleteRoomOwnerImg}
+          image={deleteRoomImg}
         />
       </Modal>
 

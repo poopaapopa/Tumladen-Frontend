@@ -198,6 +198,7 @@ function MainPage({ onPlayClick }: MainPageProps) {
       TURN_TIME_POINTS[tMinIdx] === null || TURN_TIME_POINTS[tMaxIdx] === null;
 
     return rooms.filter((r) => {
+      if (r.playersCount >= r.maxPlayers) return false;
       if (gameFilter !== ALL_GAMES_FILTER && r.gameType !== gameFilter) return false;
       if (r.maxPlayers < pMin || r.maxPlayers > pMax) return false;
 
