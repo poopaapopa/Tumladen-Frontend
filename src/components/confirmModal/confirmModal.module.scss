@@ -1,6 +1,6 @@
 @use "sass:color";
 
-.logoutModal {
+.confirmKick {
   background-color: $beige-light;
   border: 6px solid $forest-mid;
   border-radius: 20px;
@@ -10,28 +10,38 @@
 
   &__title {
     font-size: 28px;
-    font-weight: 700;
+    font-weight: 600;
     color: $forest-dark;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
   }
 
-  &__image {
-    width: 240px;
+  &__exiledElfImg {
+    width: 260px;
     height: auto;
-    margin-bottom: 20px;
-    opacity: 0.9;
+    opacity: 0.5;
+    filter: grayscale(100%);
+    margin-bottom: 15px;
   }
 
   &__text {
     font-size: 16px;
     color: $forest-dark;
     line-height: 1.5;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
+
+    strong {
+      font-weight: 800;
+    }
   }
 
   &__actions {
     display: flex;
     gap: 15px;
+  }
+
+  &__oneButton {
+    display: flex;
+    justify-content: right;
   }
 
   &__btnConfirm, &__btnCancel {
@@ -40,25 +50,20 @@
     flex: 1;
     padding: 14px;
     border-radius: 12px;
-    font-weight: 700;
-    font-size: 18px;
+    font-weight: 600;
+    font-size: 20px;
     transition: background-color 0.3s;
-    text-align: center;
   }
 
   &__btnConfirm {
     background-color: $forest-mid;
     color: $beige-light;
-    &:hover { 
-      background-color: color.adjust($forest-mid, $lightness: -5%); 
-    }
+    &:hover { background-color: color.adjust($forest-mid, $lightness: -5%); }
   }
 
   &__btnCancel {
     background-color: $sage-gray;
     color: $forest-dark;
-    &:hover { 
-      background-color: color.adjust($sage-gray, $lightness: -5%); 
-    }
+    &:hover { background-color: color.adjust($sage-gray, $lightness: -5%); }
   }
 }

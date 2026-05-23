@@ -7,7 +7,7 @@ import styles from './roomPlayers.module.scss';
 import type { RoomResponse } from '@/types/room.ts';
 import { PlayerSlot } from "../playerSlot/playerSlot.tsx";
 import Modal from "../modal/modal.tsx";
-import { ConfirmModal } from "../confirmKick/confirmKick.tsx";
+import { ConfirmModal } from "../confirmModal/confirmModal.tsx";
 import elfExileImg from "@/assets/elf-exile.png";
 import ElfClosingDoorImg from '@/assets/elf-closing-door.png';
 
@@ -85,9 +85,11 @@ export const RoomPlayers = ({
 
   const handleLeftGame = () => {
     if (room?.id) {
-      sendMessage('leave_room', {
-        roomId: room.id
-      });
+      if (isOwner) {
+        sendMessage('delete_room', { roomId: room.id });
+      } else {
+        sendMessage('leave_room', { roomId: room.id });
+      }
       navigate('/');
     }
   };

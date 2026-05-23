@@ -10,7 +10,7 @@ import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useUserStore } from './store/useUserStore';
 import GameRoom from "./components/gameRoom/gameRoom.tsx";
 import { roomService } from './api/room.ts';
-import { ConfirmModal } from './components/confirmKick/confirmKick.tsx';
+import { ConfirmModal } from './components/confirmModal/confirmModal.tsx';
 import elfCampfireImg from './assets/elf-campfire.png';
 
 function App() {

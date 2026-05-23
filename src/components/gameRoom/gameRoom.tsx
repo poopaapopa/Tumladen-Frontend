@@ -17,7 +17,7 @@ import { getPlayerColorBySeat } from '@/utils/playerColor.ts';
 import Modal from '../modal/modal';
 import gameExitImage from '@/assets/gameExit.png';
 import GameBoard, { type GameBoardHandle } from './gameBoard.tsx';
-import { ConfirmModal } from '../confirmKick/confirmKick.tsx';
+import { ConfirmModal } from '../confirmModal/confirmModal.tsx';
 import { MatchResultModal } from '../matchResult/matchResult.tsx';
 import { GameRoomSidebar } from './gameRoomSidebar.tsx';
 import { CurrentTurnPanel } from '../turnPanel/currentTurnPanel.tsx';

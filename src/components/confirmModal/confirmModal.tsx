@@ -1,4 +1,4 @@
-import styles from './confirmKick.module.scss';
+import styles from './confirmModal.module.scss';
 import type React from 'react';
 import clsx from 'clsx';
 

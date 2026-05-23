@@ -8,7 +8,7 @@ import Modal from '../modal/modal.tsx';
 import styles from './roomSidebar.module.scss';
 
 import deleteRoomImg from '@/assets/elves-delete-room.png';
-import { ConfirmModal } from '../confirmKick/confirmKick.tsx';
+import { ConfirmModal } from '../confirmModal/confirmModal.tsx';
 
 interface RoomSidebarProps {
   room: RoomResponse;
