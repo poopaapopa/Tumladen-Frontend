@@ -2,9 +2,16 @@ import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
 import { Star, Crown } from "lucide-react";
 import clsx from 'clsx';
 import styles from './matchPlayerCard.module.scss';
-import castleImage from '../../assets/castle.png';
+import defaultAvatar from '@/assets/elf-avatar.svg';
+import { MINIO_URL } from '@/api/config';
 import { getPlayerColorBySeat } from "../../utils/playerColor.ts";
 import { Meeple3D } from "./meeple.tsx";
+
+function avatarSrc(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith('http')) return url;
+  return `${MINIO_URL}${url}`;
+}
 
 interface MatchPlayerCardProps {
   displayName: string;
@@ -13,6 +20,7 @@ interface MatchPlayerCardProps {
   score: number;
   meeplesLeft: number;
   seat: number;
+  avatarUrl?: string | null;
 }
 
 export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(({
@@ -21,7 +29,8 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
   isTurn,
   score,
   meeplesLeft,
-  seat
+  seat,
+  avatarUrl,
 }, ref) => {
   const playerColor = getPlayerColorBySeat(seat);
   const [displayScore, setDisplayScore] = useState(score);
@@ -93,6 +102,8 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
     isScoreAnimating && styles.playerCard__count_animating
   ), [isScoreAnimating]);
 
+  const hasAvatar = Boolean(avatarUrl);
+
   return (
     <div
       ref={ref}
@@ -104,7 +115,16 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
         ['--player-color' as string]: playerColor
       }}
     >
-      <img src={castleImage} alt="Avatar" className={styles.playerCard__image} />
+      {hasAvatar ? (
+        <img src={avatarSrc(avatarUrl)} alt={displayName} className={styles.playerCard__image} />
+      ) : (
+        <span
+          className={styles.playerCard__imageFallback}
+          aria-label={displayName}
+          role="img"
+          style={{ ['--avatar-url' as string]: `url(${defaultAvatar})` }}
+        />
+      )}
 
       <div className={styles.playerCard__body}>
         <div className={styles.playerCard__header}>

@@ -73,7 +73,7 @@ function GuestAuth({ onConfirm, onCancel }: GuestAuthProps) {
       </div>
 
       <div className={styles.guestLogin__authInfo}>
-        <p>Создайте аккаунт, чтобы сохранять историю партий и достижения</p>
+        <p>Создайте аккаунт, чтобы сохранять историю партий и получать достижения</p>
         <button className={styles.guestLogin__authBtn} onClick={() => setShowAuth(true)}>Авторизоваться</button>
       </div>
 

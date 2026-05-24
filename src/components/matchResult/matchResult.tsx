@@ -54,8 +54,15 @@ import styles from './matchResult.module.scss';
 import type { MatchFinishedPayload } from '@/types/ws';
 import type { MatchPlayer } from '@/types/match';
 import { getPlayerColorBySeat } from '@/utils/playerColor';
-import castleImage from '@/assets/castle.png';
+import { MINIO_URL } from '@/api/config';
+import defaultAvatar from '@/assets/elf-avatar.svg';
 import elfGameImage from '@/assets/elf-game.png';
+
+function avatarSrc(url?: string | null): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith('http')) return url;
+  return `${MINIO_URL}${url}`;
+}
 
 interface MatchResultModalProps {
   result: MatchFinishedPayload;
@@ -72,6 +79,7 @@ interface RankedRow {
   score: number;
   isWinner: boolean;
   place: number;
+  avatarUrl?: string | null;
 }
 
 export const MatchResultModal = ({
@@ -90,6 +98,7 @@ export const MatchResultModal = ({
     return {
       actorId: entry.actorId,
       displayName: player?.displayName ?? 'Игрок',
+      avatarUrl: player?.avatarUrl,
       color: getPlayerColorBySeat(player?.seat),
       score: entry.score,
       isWinner: winnersSet.has(entry.actorId),
@@ -139,8 +148,9 @@ export const MatchResultModal = ({
     if (winners.length === 1) {
       return (
         <>
-          Браво, {renderColoredName(winners[0])}! Ваша стратегия оказалась самой
-          мудрой в этой партии. Славься победитель!
+          Браво, {renderColoredName(winners[0])}!{' '}
+          {isCurrentUserWinner ? 'Ваша' : 'Его'} стратегия
+          оказалась самой мудрой в этой партии. Славься победитель!
         </>
       );
     }
@@ -154,7 +164,8 @@ export const MatchResultModal = ({
             {renderColoredName(w)}
           </Fragment>
         ))}{' '}
-        набрали одинаковое количество очков. Ваша стратегия была зеркально
+        набрали одинаковое количество очков.{' '}
+        {isCurrentUserWinner ? 'Ваша' : 'Их'} стратегия была зеркально
         безупречной!
       </>
     );
@@ -226,11 +237,20 @@ export const MatchResultModal = ({
                 className={styles.matchResult__avatar}
                 style={{ ['--player-color' as string]: row.color }}
               >
-                <img
-                  src={castleImage}
-                  alt=""
-                  className={styles.matchResult__avatarImg}
-                />
+                {row.avatarUrl ? (
+                  <img
+                    src={avatarSrc(row.avatarUrl)}
+                    alt={row.displayName}
+                    className={styles.matchResult__avatarImg}
+                  />
+                ) : (
+                  <span
+                    className={styles.matchResult__avatarFallback}
+                    aria-label={row.displayName}
+                    role="img"
+                    style={{ ['--avatar-url' as string]: `url(${defaultAvatar})` }}
+                  />
+                )}
               </span>
               <span
                 className={styles.matchResult__name}

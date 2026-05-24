@@ -11,11 +11,29 @@
   transition: all 0.3s ease;
   border: 2px solid transparent;
 
-  &__image {
+  &__image,
+  &__imageFallback {
     width: 60px;
     height: 60px;
     border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  &__image {
     object-fit: cover;
+  }
+
+  &__imageFallback {
+    display: inline-block;
+    background-color: var(--player-color);
+    -webkit-mask-image: var(--avatar-url);
+    mask-image: var(--avatar-url);
+    -webkit-mask-size: cover;
+    mask-size: cover;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
   }
 
   &__body {

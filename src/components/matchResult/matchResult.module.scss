@@ -132,11 +132,28 @@
     overflow: hidden;
   }
 
-  &__avatarImg {
+  &__avatarImg,
+  &__avatarFallback {
     width: 100%;
     height: 100%;
-    object-fit: cover;
     border-radius: 50%;
+  }
+
+  &__avatarImg {
+    object-fit: cover;
+  }
+
+  &__avatarFallback {
+    display: inline-block;
+    background-color: var(--player-color);
+    -webkit-mask-image: var(--avatar-url);
+    mask-image: var(--avatar-url);
+    -webkit-mask-size: cover;
+    mask-size: cover;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
   }
 
   &__name {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { Hourglass } from 'lucide-react';
 import { preloadTileImages } from '@/utils/tiles.config';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './gameRoom.module.scss';
@@ -9,6 +10,7 @@ import {
   type MatchStatePayload,
   type PlacedMeeple,
   type PrivateState,
+  type SidebarPlayer,
 } from '@/types/match';
 import type { RoomResponse } from '@/types/room';
 import { roomService } from '@/api/room';
@@ -48,7 +50,7 @@ const GameRoom = () => {
   const [privateState, setPrivateState] = useState<PrivateState | null>(null);
   const [currentRotation, setCurrentRotation] = useState(0);
   const [pendingPlacement, setPendingPlacement] = useState<{ x: number; y: number; rotation: number } | null>(null);
-  // Карта последних поставленных тайлов по каждому игроку: actorId -> { x, y, color }
+  // Карта последних поставленных квадратов по каждому игроку: actorId -> { x, y, color }
   const lastPlacedStorageKey = inviteCode ? `lastPlacedByPlayer:${inviteCode}` : null;
   const [lastPlacedByPlayer, setLastPlacedByPlayer] = useState<
     Record<string, { x: number; y: number; color: string }>
@@ -74,7 +76,7 @@ const GameRoom = () => {
   const { actionLog, recordMatchUpdate, clearLog } = useMatchActionLog(inviteCode);
   const { timeLeft, setTurnDeadline } = useTurnTimer(match?.status === 'active');
 
-  // Анимация возврата миплов
+  // Анимация возврата подданых
   const boardHandleRef = useRef<GameBoardHandle | null>(null);
   const playerCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [flights, setFlights] = useState<MeepleFlight[]>([]);
@@ -204,7 +206,7 @@ const GameRoom = () => {
 
       recordMatchUpdate(prevMatch, newMatch);
 
-      // Диффим миплы — какие исчезли с доски (вернулись игроку)
+      // Диффим подданных — какие исчезли с доски (вернулись игроку)
       if (prevMatch) {
         const prevMeeples = prevMatch.gameState?.meeples ?? [];
         const nextMeeples = newMatch.gameState?.meeples ?? [];
@@ -216,7 +218,7 @@ const GameRoom = () => {
         );
         if (removed.length > 0) {
           // запускаем после применения нового состояния — нужен актуальный board для tile lookup
-          // tiles на самом деле берём из prevMatch (тайл точно ещё там — у фичи только что сняли мипла)
+          // tiles на самом деле берём из prevMatch (квадрат точно ещё там — у фичи только что сняли подданного)
           const boardTiles = prevMatch.gameState?.board?.tiles ?? [];
           // обогащаем seat из prevPlayers, если не задан
           const seatById = new Map(
@@ -379,7 +381,15 @@ const GameRoom = () => {
   if (isLoading) return <div className={sidebarstyles.pageWrapper}>Загрузка...</div>;
 
   const ownerId = room?.ownerActorId;
-  const players = match?.gameState?.players || [];
+
+  // Merge GamePlayer (score, meeplesLeft) with MatchPlayer (avatarUrl)
+  const gamePlayers = match?.gameState?.players || [];
+  const matchPlayers = match?.players || [];
+  const avatarByActor = new Map(matchPlayers.map((p) => [p.actorId, p.avatarUrl]));
+  const players: SidebarPlayer[] = gamePlayers.map((gp) => ({
+    ...gp,
+    avatarUrl: avatarByActor.get(gp.actorId),
+  }));
   const drawnTile = gameState?.currentTurn?.drawnTile;
   const remainingTiles = gameState?.deck?.remainingCount;
   const boardTilesCount = gameState?.board?.tiles?.length ?? 0;
@@ -393,6 +403,7 @@ const GameRoom = () => {
 
   const currentPlayer = players.find((player) => player.actorId === currentTurnId);
   const currentColor = getPlayerColorBySeat(currentPlayer?.seat);
+  const isYourTurn = Boolean(privateState?.isYourTurn);
 
   const lastPlacedTile = gameState?.currentTurn?.placedTile;
 
@@ -427,21 +438,32 @@ const GameRoom = () => {
         />
 
         {matchResult === null && (
-          <CurrentTurnPanel
-            currentPlayerName={currentPlayer?.displayName || 'Ожидание...'}
-            phase={phase}
-            currentTileId={currentTileId}
-            remainingTiles={remainingTiles}
-            deckPercent={deckPercent}
-            currentColor={currentColor}
-            timeLeft={timeLeft}
-            turnDuration={gameState?.settings?.turnTimeSeconds}
-          />
+          <>
+            <CurrentTurnPanel
+              currentPlayerName={currentPlayer?.displayName || 'Ожидание...'}
+              phase={phase}
+              currentTileId={currentTileId}
+              remainingTiles={remainingTiles}
+              deckPercent={deckPercent}
+              currentColor={currentColor}
+              timeLeft={timeLeft}
+              turnDuration={gameState?.settings?.turnTimeSeconds}
+            />
+
+            {!isYourTurn && currentPlayer && (
+              <div className={styles.waitingBadge}>
+                <Hourglass size={18} className={styles.waitingBadge__hourglass} aria-hidden="true" />
+                <span className={styles.waitingBadge__text}>
+                  Ожидайте хода {currentPlayer.displayName}
+                </span>
+              </div>
+            )}
+          </>
         )}
 
         {phase === 'place_meeple' && privateState?.isYourTurn && (
           <button className={styles.skipButton} onClick={handleSkipMeeple}>
-            Не ставить мипла
+            Не ставить подданного
           </button>
         )}
 
@@ -450,7 +472,7 @@ const GameRoom = () => {
             className={styles.skipButton}
             onClick={handleConfirmPlaceTile}
           >
-            Поставить тайл
+            Поставить квадрат
           </button>
         )}
 

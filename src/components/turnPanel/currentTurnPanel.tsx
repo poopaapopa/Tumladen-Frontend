@@ -11,7 +11,7 @@ interface CurrentTurnPanelProps {
   phase?: Phase;
   currentTileId?: string;
   remainingTiles?: number;
-  /** Доля оставшейся колоды в процентах (0–100). Полоса уменьшается по мере убыли тайлов. */
+  /** Доля оставшейся колоды в процентах (0–100). Полоса уменьшается по мере убыли квадратов. */
   deckPercent?: number;
   timeLeft: number | null;
   turnDuration?: number;
@@ -74,7 +74,7 @@ export const CurrentTurnPanel = ({
   const isPlaceMeeple = phase === 'place_meeple';
   const remaining = remainingTiles ?? 0;
   const barPercent = Math.max(0, Math.min(100, deckPercent ?? 0));
-  const tilesWord = pluralizeRu(remaining, ['тайл', 'тайла', 'тайлов']);
+  const tilesWord = pluralizeRu(remaining, ['квадрат', 'квадрата', 'квадратов']);
 
   return (
     <div
@@ -103,7 +103,7 @@ export const CurrentTurnPanel = ({
                 !isPlaceMeeple ? styles['phaseStepper__pill--active'] : ''
               }`}
             >
-              Тайл
+              Квадрат
             </span>
             <span className={styles.phaseStepper__arrow}>→</span>
             <span
@@ -111,7 +111,7 @@ export const CurrentTurnPanel = ({
                 isPlaceMeeple ? styles['phaseStepper__pill--active'] : ''
               }`}
             >
-              Мипл
+              Подданный
             </span>
           </div>
 
@@ -119,7 +119,7 @@ export const CurrentTurnPanel = ({
             <img
               src={TILE_IMAGES[currentTileId]}
               className={styles.tileImage}
-              alt="Текущий тайл"
+              alt="Текущий квадрат"
             />
             <div className={styles.tileOverlay} />
           </div>

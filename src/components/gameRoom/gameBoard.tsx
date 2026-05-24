@@ -123,7 +123,7 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
       style={{ background: '#F5F5DC', cursor: 'default' }}
     >
       <Layer>
-        {/* 1. ТАЙЛЫ */}
+        {/* 1. КВАДРАТЫ */}
         <Group>
           {tilesToRender.map((tile, index) => {
             const highlight = Object.values(lastPlacedByPlayer).find(
@@ -144,29 +144,7 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
           })}
         </Group>
 
-        {/* 2. УСТАНОВЛЕННЫЕ МИПЛЫ */}
-        <Group>
-          {placedMeeples.map((meeple, index) => {
-            const tile = board.find(t => 'instanceId' in t && t.instanceId === meeple.tileInstanceId);
-            if (!tile) return null;
-            const offset = getZoneOffset(tile.tileId, meeple.zoneId, tile.rotation);
-            const color = meeple.seat !== undefined
-              ? getPlayerColorBySeat(meeple.seat)
-              : (playerColorMap[meeple.actorId] || '#989898');
-            return (
-              <KonvaMeeple
-                key={`m-${index}`}
-                x={tile.x * TILE_STEP + offset.x}
-                y={tile.y * TILE_STEP + offset.y}
-                color={color}
-                variant={meeple.featureType === 'field' ? 'lying' : 'standing'}
-                size={55}
-              />
-            );
-          })}
-        </Group>
-
-        {/* 3. СЛОТЫ ДЛЯ МИПЛОВ */}
+        {/* 2. СЛОТЫ ДЛЯ ПОДДАННЫХ */}
         {phase === 'place_meeple' && lastPlacedTile && (
           <Group x={lastPlacedTile.x * TILE_STEP} y={lastPlacedTile.y * TILE_STEP}>
             {validMeeplePlacements.map((slot, i) => {
@@ -186,7 +164,7 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
           </Group>
         )}
 
-        {/* 4. ПОДСВЕТКА ДЛЯ НОВЫХ ТАЙЛОВ */}
+        {/* 3. ПОДСВЕТКА ДЛЯ НОВЫХ КВАДРАТОВ */}
         <Group>
           {validPlacements.map((pos, i) => {
             const isPending = pendingPlacement?.x === pos.x && pendingPlacement?.y === pos.y;
@@ -203,6 +181,28 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
                 onPlaceTile={onPlaceTile}
                 onRotateTile={onRotateTile}
                 setCursor={setCursor}
+              />
+            );
+          })}
+        </Group>
+
+        {/* 4. УСТАНОВЛЕННЫЕ ПОДДАННЫЕ: последними, чтобы лежали поверх квадратов и подсветок */}
+        <Group listening={false}>
+          {placedMeeples.map((meeple, index) => {
+            const tile = board.find(t => 'instanceId' in t && t.instanceId === meeple.tileInstanceId);
+            if (!tile) return null;
+            const offset = getZoneOffset(tile.tileId, meeple.zoneId, tile.rotation);
+            const color = meeple.seat !== undefined
+              ? getPlayerColorBySeat(meeple.seat)
+              : (playerColorMap[meeple.actorId] || '#989898');
+            return (
+              <KonvaMeeple
+                key={`m-${index}`}
+                x={tile.x * TILE_STEP + offset.x}
+                y={tile.y * TILE_STEP + offset.y}
+                color={color}
+                variant={meeple.featureType === 'field' ? 'lying' : 'standing'}
+                size={55}
               />
             );
           })}

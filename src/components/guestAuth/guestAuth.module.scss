@@ -113,7 +113,7 @@
 
   &__btnSecondary {
     background-color: $sage-gray;
-    color: #1e1e1e;
+    color: $forest-dark;
     &:hover { background-color: color.adjust($sage-gray, $lightness: -5%); }
   }
 }
