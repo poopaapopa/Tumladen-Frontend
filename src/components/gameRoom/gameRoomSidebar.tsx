@@ -2,7 +2,7 @@ import React from 'react';
 import sidebarstyles from '../mainPage/MainPage.module.scss';
 import styles from './gameRoom.module.scss';
 import type { SidebarPlayer } from '@/types/match';
-import { MatchPlayerCard } from '../matchPlayerCard/matchPlayerCard.tsx';
+import { MatchPlayerCard } from './matchPlayerCard/matchPlayerCard.tsx';
 
 interface GameRoomSidebarProps {
   players: SidebarPlayer[];

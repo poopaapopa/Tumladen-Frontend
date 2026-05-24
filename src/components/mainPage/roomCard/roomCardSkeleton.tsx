@@ -1,4 +1,4 @@
-import { Skeleton } from '../skeleton/skeleton';
+import { Skeleton } from '@/components/skeleton/skeleton';
 import styles from './roomCard.module.scss';
 
 function RoomCardSkeleton() {

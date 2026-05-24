@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import styles from './roomPlayers.module.scss';
 import type { RoomResponse } from '@/types/room.ts';
-import { PlayerSlot } from "../playerSlot/playerSlot.tsx";
-import Modal from "../modal/modal.tsx";
-import { ConfirmModal } from "../confirmModal/confirmModal.tsx";
+import { PlayerSlot } from "./playerSlot/playerSlot.tsx";
+import Modal from "@/components/modal/modal.tsx";
+import { ConfirmModal } from "@/components/confirmModal/confirmModal.tsx";
 import elfExileImg from "@/assets/elf-exile.png";
 import ElfClosingDoorImg from '@/assets/elf-closing-door.png';
 

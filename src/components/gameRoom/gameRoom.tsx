@@ -20,17 +20,17 @@ import Modal from '../modal/modal';
 import gameExitImage from '@/assets/gameExit.png';
 import GameBoard, { type GameBoardHandle } from './gameBoard.tsx';
 import { ConfirmModal } from '../confirmModal/confirmModal.tsx';
-import { MatchResultModal } from '../matchResult/matchResult.tsx';
+import { MatchResultModal } from './matchResult/matchResult.tsx';
 import { GameRoomSidebar } from './gameRoomSidebar.tsx';
-import { CurrentTurnPanel } from '../turnPanel/currentTurnPanel.tsx';
-import { GameActionLog } from '../latestActions/gameActionLog.tsx';
+import { CurrentTurnPanel } from './turnPanel/currentTurnPanel.tsx';
+import { GameActionLog } from './latestActions/gameActionLog.tsx';
 import { useMatchActionLog } from './hooks/useMatchActionLog.ts';
 import { useTurnTimer } from './hooks/useTurnTimer.ts';
 import {
   MeepleFlightLayer,
   FLIGHT_DURATION_MS,
   type MeepleFlight,
-} from '../meepleFlight/meepleFlight.tsx';
+} from './meepleFlight/meepleFlight.tsx';
 import { getZoneOffset } from '@/utils/tileZones.ts';
 
 export type { Tile, MatchStatePayload, PrivateState } from '../../types/match';

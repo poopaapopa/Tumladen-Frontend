@@ -7,9 +7,9 @@ import { roomService } from '../../api/room.ts'
 import { useUserStore } from '../../store/useUserStore';
 import { useRoomSocket, type WebSocketMessage } from '../../api/ws.ts';
 
-import { RoomSidebar } from "../roomSidebar/roomSidebar.tsx";
+import { RoomSidebar } from "./roomSidebar/roomSidebar.tsx";
 import { RoomPageSkeleton } from "./roomPageSkeleton.tsx";
-import { RoomPlayers } from '../roomPlayers/roomPlayers.tsx';
+import { RoomPlayers } from './roomPlayers/roomPlayers.tsx';
 import type { RoomResponse, UpdateRoomSettingsPayload } from '../../types/room';
 
 const RoomPage = () => {

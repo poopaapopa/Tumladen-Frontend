@@ -1,7 +1,7 @@
 import styles from './MainPage.module.scss';
-import GameCard from "../gameCard/gameCard.tsx";
-import RoomCard from "../roomCard/roomCard.tsx";
-import RoomCardSkeleton from '../roomCard/roomCardSkeleton'
+import GameCard from "./gameCard/gameCard.tsx";
+import RoomCard from "./roomCard/roomCard.tsx";
+import RoomCardSkeleton from './roomCard/roomCardSkeleton'
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { roomService, UnauthorizedError } from "@/api/room.ts";

@@ -3,19 +3,13 @@ import styles from './header.module.scss';
 import logo from '@/assets/logo_168x92.png';
 import defaultAvatar from '@/assets/elf-avatar.svg';
 import elfLeavesImg from '@/assets/elf-leaves.png';
-import { MINIO_URL } from '@/api/config';
+import { avatarSrc } from '@/utils/avatar.ts';
 import Modal from '../modal/modal';
 import { AuthModal } from '../authModal/authModal';
 import { ConfirmModal } from '../confirmModal/confirmModal';
 import { useUserStore } from '@/store/useUserStore';
 import { LogOut, UserPlus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-
-function avatarSrc(url?: string | null): string {
-  if (!url) return defaultAvatar;
-  if (url.startsWith('http')) return url;
-  return `${MINIO_URL}${url}`;
-}
 
 function Header() {
   const navigate = useNavigate();
@@ -63,7 +57,7 @@ function Header() {
             >
               <span style={{ fontWeight: 600 }}>{actor.displayName}</span>
               <img
-                src={avatarSrc(actor.avatarUrl)}
+                src={avatarSrc(actor.avatarUrl) || defaultAvatar}
                 alt={actor.displayName}
                 className={styles.header__avatar}
               />
@@ -83,7 +77,7 @@ function Header() {
               <span className={styles.header__guestBadge}>Гость</span>
             </div>
             <img
-              src={avatarSrc(actor.avatarUrl)}
+              src={avatarSrc(actor.avatarUrl) || defaultAvatar}
               alt={actor.displayName}
               className={styles.header__avatar}
             />

@@ -6,12 +6,12 @@ export interface GameBoardHandle {
   getStage: () => Konva.Stage | null;
   getTileStep: () => number;
 }
-import { GameTile } from '../tile/tile';
+import { GameTile } from './tile.tsx';
 import type { Tile } from "./gameRoom.tsx";
 import { getPlayerColorBySeat } from "@/utils/playerColor.ts";
 import { PendingTileSlot } from './pendingTileSlot';
-import { KonvaMeeple } from '../matchPlayerCard/meeple.tsx';
-import { MeepleSlot } from '../meepleSlot/meepleSlot';
+import { KonvaMeeple } from './matchPlayerCard/meeple.tsx';
+import { MeepleSlot } from './meepleSlot.tsx';
 import { getZoneOffset } from '@/utils/tileZones.ts';
 
 interface Player {

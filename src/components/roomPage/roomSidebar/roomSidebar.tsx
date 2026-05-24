@@ -3,12 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { Users, Clock, Pencil, Check, X, Trash2, Lock, LockOpen } from 'lucide-react';
 import type { RoomResponse } from '@/types/room.ts';
 import clsx from 'clsx';
-import { EditableSelector } from '../editableSelector/editableSelector.tsx';
-import Modal from '../modal/modal.tsx';
+import { EditableSelector } from '@/components/editableSelector/editableSelector.tsx';
+import Modal from '@/components/modal/modal.tsx';
 import styles from './roomSidebar.module.scss';
 
 import deleteRoomImg from '@/assets/elves-delete-room.png';
-import { ConfirmModal } from '../confirmModal/confirmModal.tsx';
+import { ConfirmModal } from '@/components/confirmModal/confirmModal.tsx';
 
 interface RoomSidebarProps {
   room: RoomResponse;

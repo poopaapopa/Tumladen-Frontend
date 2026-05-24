@@ -3,15 +3,9 @@ import { Star, Crown } from "lucide-react";
 import clsx from 'clsx';
 import styles from './matchPlayerCard.module.scss';
 import defaultAvatar from '@/assets/elf-avatar.svg';
-import { MINIO_URL } from '@/api/config';
-import { getPlayerColorBySeat } from "../../utils/playerColor.ts";
+import { avatarSrc } from '@/utils/avatar.ts';
+import { getPlayerColorBySeat } from "@/utils/playerColor.ts";
 import { Meeple3D } from "./meeple.tsx";
-
-function avatarSrc(url?: string | null): string | undefined {
-  if (!url) return undefined;
-  if (url.startsWith('http')) return url;
-  return `${MINIO_URL}${url}`;
-}
 
 interface MatchPlayerCardProps {
   displayName: string;

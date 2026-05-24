@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Group, Rect, Text } from 'react-konva';
-import { GameTile } from '../tile/tile';
+import { GameTile } from './tile';
 
 const PLACEMENT_OUTLINE_COLOR = "#27AE60";
 const PLACEMENT_FILL_COLOR = "rgba(39, 174, 96, 0.1)";

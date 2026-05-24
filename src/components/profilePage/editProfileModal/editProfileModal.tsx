@@ -5,10 +5,10 @@ import { FormField } from '@/components/formField/formField';
 import { validateField } from '@/utils/validation';
 import { userService } from '@/api/user';
 import { useUserStore } from '@/store/useUserStore';
-import { MINIO_URL } from '@/api/config';
 import type { OwnUserProfile } from '@/types/user';
 import type { Actor } from '@/api/auth';
 import elfAvatar from '@/assets/elf-avatar.svg';
+import { avatarSrc } from '@/utils/avatar.ts';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -26,14 +26,6 @@ interface EditProfileModalProps {
   closeAttemptTrigger: number;
   onConfirmClose: () => void;
   onSuccess: (updated: OwnUserProfile) => void;
-}
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-function avatarSrc(url: string | null): string | null {
-  if (!url) return null;
-  if (url.startsWith('http')) return url;
-  return `${MINIO_URL}${url}`;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -60,7 +52,7 @@ export function EditProfileModal({
 
   // ── Avatar state ────────────────────────────────────────────────────────────
   const [pendingFile, setPendingFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(avatarSrc(profile.avatarUrl));
+  const [previewUrl, setPreviewUrl] = useState<string | null | undefined>(avatarSrc(profile.avatarUrl));
   const [pendingDelete, setPendingDelete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

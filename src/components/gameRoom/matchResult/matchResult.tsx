@@ -54,15 +54,9 @@ import styles from './matchResult.module.scss';
 import type { MatchFinishedPayload } from '@/types/ws';
 import type { MatchPlayer } from '@/types/match';
 import { getPlayerColorBySeat } from '@/utils/playerColor';
-import { MINIO_URL } from '@/api/config';
+import { avatarSrc } from '@/utils/avatar.ts';
 import defaultAvatar from '@/assets/elf-avatar.svg';
 import elfGameImage from '@/assets/elf-game.png';
-
-function avatarSrc(url?: string | null): string | undefined {
-  if (!url) return undefined;
-  if (url.startsWith('http')) return url;
-  return `${MINIO_URL}${url}`;
-}
 
 interface MatchResultModalProps {
   result: MatchFinishedPayload;
