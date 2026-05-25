@@ -1,5 +1,6 @@
 import styles from './App.module.scss';
 import Header from "./components/header/header.tsx";
+import ActiveSessionBanner from "./components/activeSessionBanner/activeSessionBanner.tsx";
 import MainPage from "./components/mainPage/mainPage.tsx";
 import Modal from "./components/modal/modal.tsx";
 import GuestAuth from './components/guestAuth/guestAuth.tsx';
@@ -10,6 +11,7 @@ import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useUserStore } from './store/useUserStore';
 import GameRoom from "./components/gameRoom/gameRoom.tsx";
 import { roomService } from './api/room.ts';
+import { authService } from './api/auth.ts';
 import { ConfirmModal } from './components/confirmModal/confirmModal.tsx';
 import elfCampfireImg from './assets/elf-campfire.png';
 
@@ -22,7 +24,16 @@ function App() {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated } = useUserStore();
+  const { isAuthenticated, token, setCurrentRoom, logout } = useUserStore();
+
+  // Fetch currentRoom from /me on mount / auth change
+  useEffect(() => {
+    if (!isAuthenticated || !token) return;
+
+    authService.getMe(token)
+      .then((data) => setCurrentRoom(data.currentRoom ?? null))
+      .catch(() => logout());
+  }, [isAuthenticated, token]);
 
   useEffect(() => {
     const isRoomPage = location.pathname.startsWith('/room/') && !location.pathname.startsWith('/room/game/');
@@ -70,6 +81,7 @@ function App() {
   return (
       <div className={styles.layoutWrapper}>
         <Header />
+        <ActiveSessionBanner />
           <Routes>
             <Route path="/" element={
               <MainPage onPlayClick={openModal} />

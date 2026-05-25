@@ -1,3 +1,12 @@
+export interface ActiveRoomSession {
+  id: string;
+  inviteCode: string;
+  name: string;
+  status: 'waiting' | 'playing' | 'finished';
+  gameType: string;
+  matchId?: string;
+}
+
 export interface MatchPlayer {
   actorId: string;
   actorType: 'user' | 'guest';

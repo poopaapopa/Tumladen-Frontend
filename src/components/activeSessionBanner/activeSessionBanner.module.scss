@@ -1,0 +1,114 @@
+@use "sass:color";
+
+@keyframes pillSlideIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.pill {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  z-index: 100;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px 10px 20px;
+
+  background: $forest-mid;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba($beige-light, 0.12);
+  border-radius: 16px;
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.25),
+    0 0 0 0.5px rgba(0, 0, 0, 0.1);
+
+  animation: pillSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+
+  &__closeBtn {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border: 1px solid rgba($beige-light, 0.2);
+    border-radius: 50%;
+    background: $sage-gray;
+    color: $forest-dark;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+
+    &:hover {
+      background: color.adjust($sage-gray, $lightness: -8%);
+    }
+  }
+
+  &__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $beige-light;
+    flex-shrink: 0;
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  &__label {
+    font-family: $font-main;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: rgba($beige-light, 0.55);
+    line-height: 1.2;
+  }
+
+  &__roomName {
+    font-family: $font-main;
+    font-size: 14px;
+    font-weight: 700;
+    color: $beige-light;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+  }
+
+  &__returnBtn {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    padding: 5px 14px;
+    border: none;
+    border-radius: 8px;
+    background-color: $accept;
+    color: #fff;
+    font-family: $font-main;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    white-space: nowrap;
+
+    &:hover {
+      background-color: color.adjust($accept, $lightness: -6%);
+    }
+  }
+}

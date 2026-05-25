@@ -1,10 +1,12 @@
 import { API_BASE_URL } from './config.ts';
+import type { ActiveRoomSession } from '../types/user.ts';
 
 export interface Actor {
   id: string;
   displayName: string;
   type: 'guest' | 'user';
   avatarUrl?: string | null;
+  currentRoom?: ActiveRoomSession | null;
 }
 
 interface AuthResponse {
