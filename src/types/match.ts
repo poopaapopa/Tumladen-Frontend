@@ -9,11 +9,18 @@ export interface Tile {
   instanceId?: string;
 }
 
-export interface MatchPlayer {
+export interface GamePlayer {
   actorId: string;
   displayName: string;
   score: number;
   meeplesLeft: number;
+  seat: number;
+}
+
+export interface MatchPlayer {
+  actorId: string;
+  displayName: string;
+  avatarUrl?: string | null;
   seat: number;
 }
 
@@ -38,7 +45,7 @@ export interface CurrentTurn {
 
 export interface GameState {
   currentPlayerId: string;
-  players: MatchPlayer[];
+  players: GamePlayer[];
   turnNumber: number;
   phase: Phase;
   board: {
@@ -58,8 +65,8 @@ export interface MatchStatePayload {
   id: string;
   roomId: string;
   status: MatchStatus;
+  players: MatchPlayer[];
   gameType: string;
-  isYourTurn: boolean;
   gameState: GameState;
 }
 
@@ -80,6 +87,9 @@ export interface PrivateState {
   validPlacements: ValidPlacement[];
   validMeeplePlacements: ValidMeeplePlacement[];
 }
+
+/** GamePlayer enriched with identity fields from MatchPlayer (avatarUrl). */
+export type SidebarPlayer = GamePlayer & Pick<MatchPlayer, 'avatarUrl'>;
 
 export interface LogEntry {
   id: string;

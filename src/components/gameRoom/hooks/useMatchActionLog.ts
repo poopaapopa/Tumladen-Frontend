@@ -21,9 +21,9 @@ const describeFeature = (featureType: string): string =>
 const buildText = (action: MatchAction): string => {
   switch (action.kind) {
     case 'tile_placed':
-      return 'поставил тайл';
+      return 'поставил квадрат';
     case 'meeple_placed':
-      return `поставил мипла ${describeFeature(action.featureType)}`;
+      return `поставил подданного ${describeFeature(action.featureType)}`;
     case 'score_gained':
       return `получил ${action.delta} ${pluralizePoints(action.delta)}`;
   }

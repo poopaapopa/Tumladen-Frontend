@@ -1,0 +1,365 @@
+@use "sass:color";
+
+.rules {
+  font-family: $font-main;
+  color: #1e1e1e;
+  line-height: 1.6;
+
+  &__section {
+    margin-bottom: 28px;
+
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  &__heading {
+    font-size: 22px;
+    font-weight: 400;
+    color: $forest-dark;
+    margin: 0 0 10px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid rgba($forest-mid, 0.2);
+  }
+
+  &__subheading {
+    font-family: $font-main;
+    font-size: 16px;
+    font-weight: 700;
+    color: $forest-mid;
+    margin: 16px 0 6px;
+  }
+
+  &__text {
+    font-size: 14px;
+    margin: 0 0 10px;
+    color: #333;
+  }
+
+  &__list {
+    font-size: 14px;
+    margin: 6px 0 12px 20px;
+    padding: 0;
+    color: #333;
+
+    li {
+      margin-bottom: 4px;
+    }
+  }
+
+  &__highlight {
+    display: inline-block;
+    background: rgba($forest-mid, 0.08);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-weight: 600;
+    color: $forest-dark;
+  }
+
+  &__tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: rgba($forest-mid, 0.06);
+    border-left: 3px solid $forest-mid;
+    border-radius: 0 6px 6px 0;
+    padding: 10px 14px;
+    margin: 12px 0;
+    font-size: 13px;
+    color: $forest-mid;
+  }
+
+  &__tipIcon {
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  &__divider {
+    border: none;
+    border-top: 1px solid rgba($sage-gray, 0.4);
+    margin: 24px 0;
+  }
+
+  // ─── Inline elements ───
+
+  &__inlineTile {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    border-radius: 5px;
+    border: 1.5px solid rgba($forest-mid, 0.25);
+    object-fit: cover;
+    vertical-align: middle;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  &__inlineMeeple {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 2px;
+  }
+
+  // ─── Tile Showcase (game entities) ───
+
+  &__tileShowcase {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin: 16px 0;
+  }
+
+  &__tileCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &__tileImg {
+    width: 90px;
+    height: 90px;
+    border-radius: 8px;
+    border: 2px solid rgba($forest-mid, 0.2);
+    object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  &__tileLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: $forest-mid;
+    text-align: center;
+  }
+
+  // ─── Turn Phases ───
+
+  &__phases {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin: 16px 0;
+    position: relative;
+  }
+
+  &__phase {
+    display: flex;
+    gap: 16px;
+    position: relative;
+
+    &:last-child {
+      .rules__phaseLine {
+        display: none;
+      }
+    }
+  }
+
+  // Timeline column: circle + connecting line
+  &__phaseTimeline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    width: 36px;
+  }
+
+  &__phaseNumber {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: $forest-dark;
+    color: $beige-light;
+    font-weight: 700;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  // Connecting line between phase circles
+  &__phaseLine {
+    width: 2px;
+    flex: 1;
+    background: rgba($forest-mid, 0.2);
+  }
+
+  // Phase body: text on left, image square on right
+  &__phaseBody {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    gap: 14px;
+    padding-bottom: 20px;
+  }
+
+  &__phaseContent {
+    flex: 1;
+    min-width: 0;
+    padding-bottom: 4px;
+  }
+
+  &__phaseTitle {
+    font-family: $font-main;
+    font-size: 16px;
+    font-weight: 700;
+    color: $forest-dark;
+    margin: 4px 0 6px;
+  }
+
+  &__phaseText {
+    font-size: 14px;
+    color: #333;
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  // Square image area to the right of phase text
+  &__phaseImage {
+    flex-shrink: 0;
+    width: 90px;
+    height: 90px;
+    border-radius: 10px;
+    border: 2px solid rgba($forest-mid, 0.15);
+    background: rgba($sage-gray, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    align-self: center;
+  }
+
+  &__phaseImgInner {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+
+  // ─── Meeple Sample (inside phase image square) ───
+
+  &__meepleSample {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  // ─── Score Counter Mock (phase 3) ───
+
+  $score-color: #E8302A;
+
+  &__scoreMock {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+  }
+
+  &__scoreMockValue {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 600;
+    font-size: 20px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    color: $score-color;
+    background-color: color.adjust(#ffffff, $alpha: -0.18);
+    box-shadow:
+      0 0 0 1px color.adjust(#ffffff, $alpha: -0.35),
+      0 0 14px color.adjust(#ffffff, $alpha: -0.2),
+      0 0 22px $score-color;
+    animation: scoreGlow 2s ease-in-out infinite alternate;
+  }
+
+  @keyframes scoreGlow {
+    0% {
+      box-shadow:
+        0 0 0 1px color.adjust(#ffffff, $alpha: -0.35),
+        0 0 10px color.adjust(#ffffff, $alpha: -0.3),
+        0 0 16px color.adjust($score-color, $alpha: -0.4);
+      transform: scale(1);
+    }
+    100% {
+      box-shadow:
+        0 0 0 1px color.adjust(#ffffff, $alpha: -0.35),
+        0 0 14px color.adjust(#ffffff, $alpha: -0.2),
+        0 0 26px $score-color;
+      transform: scale(1.06);
+    }
+  }
+
+  // ─── Illustrated Section (text + image side by side) ───
+
+  &__illustrated {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    margin: 10px 0 14px;
+  }
+
+  &__illustratedContent {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__illustrationFigure {
+    flex-shrink: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &__illustration {
+    width: 150px;
+    max-height: 150px;
+    border-radius: 10px;
+    border: 2px solid rgba($forest-mid, 0.15);
+    object-fit: cover;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  &__illustrationCaption {
+    font-size: 12px;
+    color: $metal-gray;
+    text-align: center;
+    font-style: italic;
+  }
+
+  // ─── Scoring Table ───
+
+  &__scoringTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin: 12px 0;
+
+    th, td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid rgba($sage-gray, 0.4);
+    }
+
+    th {
+      font-weight: 700;
+      color: $forest-dark;
+      background: rgba($forest-mid, 0.06);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      color: #333;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+  }
+}

@@ -1,7 +1,7 @@
 import styles from './MainPage.module.scss';
-import GameCard from "../gameCard/gameCard.tsx";
-import RoomCard from "../roomCard/roomCard.tsx";
-import RoomCardSkeleton from '../roomCard/roomCardSkeleton'
+import GameCard from "./gameCard/gameCard.tsx";
+import RoomCard from "./roomCard/roomCard.tsx";
+import RoomCardSkeleton from './roomCard/roomCardSkeleton'
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { roomService, UnauthorizedError } from "@/api/room.ts";
@@ -69,8 +69,8 @@ function MainPage({ onPlayClick }: MainPageProps) {
   const games: Game[] = [
     {
       id: 1,
-      title: 'Каркассон',
-      description: 'Игроки выступают в роли средневековых феодалов, осваивающих земли вокруг одноименной французской крепости, по очереди выкладывая тайлы местности (города, дороги, монастыри) и размещая на них подданных («миплов») для набора очков.',
+      title: 'Fortresses & Roads',
+      description: 'Игроки выступают в роли средневековых феодалов, осваивающих земли вокруг одноименной французской крепости, по очереди выкладывая квадраты местности (города, дороги, монастыри) и размещая на них подданных для набора очков.',
       minPlayers: 2,
       maxPlayers: 5,
       duration: '20 мин',
@@ -198,6 +198,7 @@ function MainPage({ onPlayClick }: MainPageProps) {
       TURN_TIME_POINTS[tMinIdx] === null || TURN_TIME_POINTS[tMaxIdx] === null;
 
     return rooms.filter((r) => {
+      if (r.playersCount >= r.maxPlayers) return false;
       if (gameFilter !== ALL_GAMES_FILTER && r.gameType !== gameFilter) return false;
       if (r.maxPlayers < pMin || r.maxPlayers > pMax) return false;
 

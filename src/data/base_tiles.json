@@ -91,7 +91,7 @@
     "zones": [
       { "zoneId": "city_1", "segment": "right_center" },
       { "zoneId": "road_1", "segment": "top_center" },
-      { "zoneId": "field_1", "segment": "bottom_left" },
+      { "zoneId": "field_1", "segment": "top_left" },
       { "zoneId": "field_2", "segment": "bottom_center" }
     ]
   },
@@ -207,8 +207,8 @@
       { "zoneId": "road_top", "segment": "top_center" },
       { "zoneId": "field_1", "segment": "top_left" },
       { "zoneId": "field_2", "segment": "bottom_right" },
-      { "zoneId": "field_3", "segment": "bottom_left" },
-      { "zoneId": "field_4", "segment": "top_right" }
+      { "zoneId": "field_3", "segment": "top_right" },
+      { "zoneId": "field_4", "segment": "bottom_left" }
     ]
   }
 ]

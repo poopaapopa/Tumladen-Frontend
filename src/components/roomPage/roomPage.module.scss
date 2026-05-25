@@ -12,12 +12,14 @@
     flex-direction: column;
     z-index: 1;
     align-items: center;
+    overflow: hidden;
   }
 
   &__visual {
     position: relative;
     width: 100%;
     height: 350px;
+    flex-shrink: 0;
   }
 
   &__image {
@@ -41,12 +43,34 @@
     position: relative;
     z-index: 2;
     text-shadow: 0 4px 10px rgba($beige-light, 0.5);
+    flex-shrink: 0;
   }
 
   &__rules {
-    font-size: 20px;
-    color: #1e1e1e;
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 40px 40px;
+    width: 100%;
+    max-width: 800px;
     margin-top: 5px;
+
+    // Custom scrollbar
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba($sage-gray, 0.5);
+      border-radius: 3px;
+
+      &:hover {
+        background: rgba($sage-gray, 0.8);
+      }
+    }
   }
 }
 

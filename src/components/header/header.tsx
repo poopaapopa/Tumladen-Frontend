@@ -2,25 +2,24 @@ import { useState } from 'react';
 import styles from './header.module.scss';
 import logo from '@/assets/logo_168x92.png';
 import defaultAvatar from '@/assets/elf-avatar.svg';
-import { MINIO_URL } from '@/api/config';
+import elfLeavesImg from '@/assets/elf-leaves.png';
+import { avatarSrc } from '@/utils/avatar.ts';
 import Modal from '../modal/modal';
 import { AuthModal } from '../authModal/authModal';
-import { LogoutModal } from '../logoutModal/logoutModal'
+import { ConfirmModal } from '../confirmModal/confirmModal';
 import { useUserStore } from '@/store/useUserStore';
-import { LogOut } from 'lucide-react';
-import { Link } from 'react-router-dom';
-
-function avatarSrc(url?: string | null): string {
-  if (!url) return defaultAvatar;
-  if (url.startsWith('http')) return url;
-  return `${MINIO_URL}${url}`;
-}
+import { LogOut, UserPlus } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 function Header() {
+  const navigate = useNavigate();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isLogOutOpen, setIsLogOutOpen] = useState(false);
-  const { isAuthenticated, actor } = useUserStore();
+  const { isAuthenticated, actor, logout } = useUserStore();
   const [authCloseAttempt, setAuthCloseAttempt] = useState(0);
+
+  const isGuest = isAuthenticated && actor?.type === 'guest';
+  const isFullUser = isAuthenticated && actor?.type === 'user';
 
   const handleOpenAuth = () => {
     setAuthCloseAttempt(0); 
@@ -36,6 +35,12 @@ function Header() {
     setAuthCloseAttempt(0);
   };
 
+  const handleLogout = () => {
+    logout();
+    setIsLogOutOpen(false);
+    navigate('/');
+  };
+
   return (
     <header className={styles.header}>
       <div className={styles.header__left} onClick={() => window.location.href = '/'}>
@@ -44,7 +49,7 @@ function Header() {
       </div>
 
       <div className={styles.header__right}>
-        {isAuthenticated && actor ? (
+        {isFullUser && actor ? (
           <div className={styles.header__profile}>
             <Link
               to={`/profile/${actor.id}`}
@@ -52,7 +57,7 @@ function Header() {
             >
               <span style={{ fontWeight: 600 }}>{actor.displayName}</span>
               <img
-                src={avatarSrc(actor.avatarUrl)}
+                src={avatarSrc(actor.avatarUrl) || defaultAvatar}
                 alt={actor.displayName}
                 className={styles.header__avatar}
               />
@@ -65,9 +70,28 @@ function Header() {
               <LogOut size={18} />
             </button>
           </div>
+        ) : isGuest && actor ? (
+          <div className={styles.header__profile}>
+            <div className={styles.header__guestInfo}>
+              <span className={styles.header__guestName}>{actor.displayName}</span>
+              <span className={styles.header__guestBadge}>Гость</span>
+            </div>
+            <img
+              src={avatarSrc(actor.avatarUrl) || defaultAvatar}
+              alt={actor.displayName}
+              className={styles.header__avatar}
+            />
+            <button
+              className={styles.header__loginBtn}
+              onClick={handleOpenAuth}
+            >
+              <UserPlus size={18} style={{ marginRight: 6 }} />
+              Войти
+            </button>
+          </div>
         ) : (
-          <button 
-            className={styles.header__loginBtn} 
+          <button
+            className={styles.header__loginBtn}
             onClick={handleOpenAuth}
           >
             Войти
@@ -81,9 +105,17 @@ function Header() {
           closeAttemptTrigger={authCloseAttempt}
           onConfirmClose={handleFinalClose} />
       </Modal>
-      
+
       <Modal isOpen={isLogOutOpen} onClose={() => setIsLogOutOpen(false)}>
-        <LogoutModal onClose={() => setIsLogOutOpen(false)} />
+        <ConfirmModal
+          title="Хотите выйти из аккаунта?"
+          text="Ваши достижения и текущие сессии будут сохранены, но для возвращения в игру потребуется снова войти в аккаунт."
+          onConfirm={handleLogout}
+          onCancel={() => setIsLogOutOpen(false)}
+          onConfirmText="Выйти"
+          onCancelText="Остаться"
+          image={elfLeavesImg}
+        />
       </Modal>
     </header>
   );

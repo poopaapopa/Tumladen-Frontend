@@ -1,16 +1,16 @@
 import React from 'react';
 import sidebarstyles from '../mainPage/MainPage.module.scss';
 import styles from './gameRoom.module.scss';
-import type { MatchPlayer } from '@/types/match';
-import { MatchPlayerCard } from '../matchPlayerCard/matchPlayerCard.tsx';
+import type { SidebarPlayer } from '@/types/match';
+import { MatchPlayerCard } from './matchPlayerCard/matchPlayerCard.tsx';
 
 interface GameRoomSidebarProps {
-  players: MatchPlayer[];
+  players: SidebarPlayer[];
   currentUserId?: string;
   ownerId?: string;
   currentTurnId?: string;
   onLeaveClick: () => void;
-  /** Кол-во миплов, которые сейчас в полёте (ещё не «приземлились» в карточку) */
+  /** Кол-во подданных, которые сейчас в полёте (ещё не «приземлились» в карточку) */
   pendingMeeples?: Record<string, number>;
   /** Регистрация DOM-узла карточки игрока для координат анимации полёта */
   registerPlayerCardRef?: (actorId: string, el: HTMLDivElement | null) => void;
@@ -52,6 +52,7 @@ export const GameRoomSidebar = ({
               <MatchPlayerCard
                 ref={(el) => registerPlayerCardRef?.(player.actorId, el)}
                 displayName={player.displayName}
+                avatarUrl={player.avatarUrl}
                 isRoomOwner={player.actorId === ownerId}
                 isTurn={player.actorId === currentTurnId}
                 score={player.score}

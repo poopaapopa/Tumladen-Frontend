@@ -1,7 +1,7 @@
-import { Skeleton } from '../skeleton/skeleton.tsx';
+import { Skeleton } from '@/components/skeleton/skeleton.tsx';
 import pageStyles from './roomPage.module.scss';
-import sidebarStyles from '../roomSidebar/roomSidebar.module.scss';
-import playerStyles from '../playerSlot/playerSlot.module.scss';
+import sidebarStyles from './roomSidebar/roomSidebar.module.scss';
+import playerStyles from './roomPlayers/playerSlot/playerSlot.module.scss';
 
 export const RoomPageSkeleton = () => {
   return (

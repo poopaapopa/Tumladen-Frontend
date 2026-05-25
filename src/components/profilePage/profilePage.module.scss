@@ -13,6 +13,7 @@
   flex: 1;
   padding: 32px 40px;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   height: 100%;
   display: grid;
   grid-template-columns: 325px 1fr;
@@ -268,158 +269,6 @@
   gap: 8px;
 }
 
-// Expandable match card
-.matchCard {
-  border-radius: 12px;
-  background-color: $beige-light;
-  border: 1px solid rgba($sage-gray, 0.6);
-  overflow: hidden;
-}
-
-.matchCardHeader {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto auto;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  width: 100%;
-  background: none;
-  border: none;
-  cursor: pointer;
-  text-align: left;
-  transition: background-color 0.15s;
-
-  &:hover {
-    background-color: rgba($sage-gray, 0.25);
-  }
-}
-
-.matchCardBody {
-  padding: 0 16px 14px;
-  border-top: 1px solid rgba($sage-gray, 0.5);
-}
-
-.matchResult {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-
-  &_win  { background-color: $accept; }
-  &_loss { background-color: $decline; }
-  &_draw { background-color: $metal-gray; }
-}
-
-.matchGame {
-  font-family: $font-main;
-  font-size: 17px;
-  font-weight: 700;
-  color: $forest-dark;
-}
-
-.matchDate {
-  font-family: $font-main;
-  font-size: 15px;
-  color: $metal-gray;
-  white-space: nowrap;
-}
-
-.matchScore {
-  font-family: $font-main;
-  font-size: 16px;
-  font-weight: 700;
-  color: $forest-dark;
-  white-space: nowrap;
-}
-
-.matchExpandIcon {
-  display: flex;
-  align-items: center;
-  flex-shrink: 0;
-  color: $forest-mid;
-}
-
-// Results table inside expanded match
-.matchResultsTable {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin-top: 12px;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid rgba($sage-gray, 0.5);
-}
-
-.matchResultsHeader {
-  display: grid;
-  grid-template-columns: 32px 1fr 60px;
-  padding: 6px 12px;
-  background-color: rgba($sage-gray, 0.4);
-  font-family: $font-main;
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: $metal-gray;
-}
-
-.matchResultsRow {
-  display: grid;
-  grid-template-columns: 32px 1fr 60px;
-  padding: 9px 12px;
-  font-family: $font-main;
-  font-size: 16px;
-  font-weight: 500;
-  color: $forest-dark;
-  border-top: 1px solid rgba($sage-gray, 0.35);
-  align-items: center;
-
-  &_winner {
-    background-color: rgba($accept, 0.08);
-  }
-}
-
-.matchResultsCell_rank {
-  font-weight: 700;
-  color: $metal-gray;
-  font-size: 15px;
-}
-
-.matchResultsCell_name {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.matchResultsCell_score {
-  font-weight: 700;
-  text-align: right;
-}
-
-.playerLink {
-  color: $forest-mid;
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.15s;
-
-  &:hover {
-    color: $forest-dark;
-    text-decoration: underline;
-  }
-}
-
-.guestName {
-  color: $metal-gray;
-  font-style: italic;
-}
-
-.winnerIcon {
-  flex-shrink: 0;
-  color: #F5C518;
-  animation: matchResultAwardShimmer 4s ease-in-out infinite;
-}
-
 .viewAllBtn {
   display: block;
   width: 100%;
@@ -471,16 +320,6 @@
   margin: 0;
 }
 
-@keyframes matchResultAwardShimmer {
-  0%   { color: #E94E77; }
-  16%  { color: #FF6B6B; }
-  33%  { color: #FF8C42; }
-  50%  { color: #4FC1E9; }
-  66%  { color: #48CFAD; }
-  83%  { color: #AC92EC; }
-  100% { color: #E94E77; }
-}
-
 // ─── Stats section ────────────────────────────────────────────────────────────
 .statsTabs {
   display: flex;
@@ -515,45 +354,6 @@
       border-color: $forest-dark;
     }
   }
-}
-
-.statsCards {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
-}
-
-.statCard {
-  background-color: $beige-light;
-  border-radius: 14px;
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  border: 1px solid rgba($sage-gray, 0.5);
-}
-
-.statCardLabel {
-  font-family: $font-main;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: $metal-gray;
-}
-
-.statCardValue {
-  font-family: $font-main;
-  font-size: 22px;
-  font-weight: 700;
-  color: $forest-dark;
-}
-
-.statCardSub {
-  font-family: $font-main;
-  font-size: 12px;
-  color: $metal-gray;
 }
 
 // ─── History modal ────────────────────────────────────────────────────────────

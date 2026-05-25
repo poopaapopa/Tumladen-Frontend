@@ -1,3 +1,12 @@
+export interface ActiveRoomSession {
+  id: string;
+  inviteCode: string;
+  name: string;
+  status: 'waiting' | 'playing' | 'finished';
+  gameType: string;
+  matchId?: string;
+}
+
 export interface MatchPlayer {
   actorId: string;
   actorType: 'user' | 'guest';
@@ -68,5 +77,5 @@ export function isOwnProfile(profile: UserProfile): profile is OwnUserProfile {
 }
 
 export const GAME_TYPE_LABELS: Record<string, string> = {
-  carcassonne: 'Каркассон',
+  carcassonne: 'Fortresses & Roads',
 };

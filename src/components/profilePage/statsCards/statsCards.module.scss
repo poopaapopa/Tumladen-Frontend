@@ -1,0 +1,40 @@
+@use "sass:color";
+
+.statsCards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.statCard {
+  background-color: $beige-light;
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1px solid rgba($sage-gray, 0.5);
+}
+
+.statCardLabel {
+  font-family: $font-main;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: $metal-gray;
+}
+
+.statCardValue {
+  font-family: $font-main;
+  font-size: 22px;
+  font-weight: 700;
+  color: $forest-dark;
+}
+
+.statCardSub {
+  font-family: $font-main;
+  font-size: 12px;
+  color: $metal-gray;
+}
