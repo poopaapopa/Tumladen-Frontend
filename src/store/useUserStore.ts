@@ -28,7 +28,11 @@ export const useUserStore = create<UserState>()(
         isAuthenticated: true
       }),
 
-      updateActor: (actor) => set({ actor }),
+      updateActor: (actor) => set((state) => ({
+        actor: state.actor
+          ? { ...state.actor, ...actor }
+          : actor,
+      })),
 
       setCurrentRoom: (room) => set((state) => ({
         actor: state.actor
