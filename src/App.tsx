@@ -24,16 +24,16 @@ function App() {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, token, setCurrentRoom, logout } = useUserStore();
+  const { isAuthenticated, actor, token, setCurrentRoom } = useUserStore();
 
-  // Fetch currentRoom from /me on mount / auth change
+  // Fetch currentRoom from /me on mount / auth change (registered users only)
   useEffect(() => {
-    if (!isAuthenticated || !token) return;
+    if (!isAuthenticated || !token || actor?.type === 'guest') return;
 
     authService.getMe(token)
       .then((data) => setCurrentRoom(data.currentRoom ?? null))
-      .catch(() => logout());
-  }, [isAuthenticated, token]);
+      .catch(() => { /* silently ignore — session may be stale or network error */ });
+  }, [isAuthenticated, token, actor?.type]);
 
   useEffect(() => {
     const isRoomPage = location.pathname.startsWith('/room/') && !location.pathname.startsWith('/room/game/');

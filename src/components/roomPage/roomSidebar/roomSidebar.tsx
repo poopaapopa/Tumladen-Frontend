@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Clock, Pencil, Check, X, Trash2, Lock, LockOpen } from 'lucide-react';
 import type { RoomResponse } from '@/types/room.ts';
+import { useUserStore } from '@/store/useUserStore';
 import clsx from 'clsx';
 import { EditableSelector } from '@/components/editableSelector/editableSelector.tsx';
 import Modal from '@/components/modal/modal.tsx';
@@ -20,6 +21,7 @@ interface RoomSidebarProps {
 
 export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendMessage }: RoomSidebarProps) => {
   const navigate = useNavigate();
+  const clearCurrentRoom = useUserStore((s) => s.clearCurrentRoom);
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState("");
   const [isStarting, setIsStarting] = useState(false);
@@ -31,6 +33,7 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
     if (room?.id) {
       sendMessage('delete_room', { roomId: room.id });
       setIsDeleteConfirmOpen(false);
+      clearCurrentRoom();
       navigate('/');
     }
   };
@@ -175,12 +178,12 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
         />
       </Modal>
 
-      <Modal isOpen={isRoomDeleted} onClose={() => navigate('/')}>
+      <Modal isOpen={isRoomDeleted} onClose={() => { clearCurrentRoom(); navigate('/'); }}>
         <ConfirmModal
           title="Комната уничтожена"
           text="К сожалению, организатор решил распустить группу и удалил эту комнату.
             Все текущие приготовления были отменены — участиники ищут себе новое пристанище."
-          onConfirm={() => navigate('/')}
+          onConfirm={() => { clearCurrentRoom(); navigate('/'); }}
           onConfirmText="Уйти на главную"
           image={deleteRoomImg}
         />
