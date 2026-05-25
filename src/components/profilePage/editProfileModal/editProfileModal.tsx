@@ -284,7 +284,6 @@ export function EditProfileModal({
   };
 
   // ── Derived ─────────────────────────────────────────────────────────────────
-  const hasAvatar = previewUrl !== null;
   const hasChanges = isFormDirty();
   const hasVisibleErrors = Object.keys(fieldErrors).length > 0;
 
@@ -302,7 +301,7 @@ export function EditProfileModal({
         <div className={styles.editProfileModal__avatarCol}>
           <div className={styles.editProfileModal__avatarCard}>
             <div className={styles.editProfileModal__avatarWrapper}>
-              {hasAvatar ? (
+              {previewUrl ? (
                 <img
                   src={previewUrl!}
                   alt="Аватар"
@@ -332,10 +331,10 @@ export function EditProfileModal({
               className={`${styles.editProfileModal__avatarBtn} ${styles.editProfileModal__avatarBtn_upload}`}
               onClick={() => fileInputRef.current?.click()}
             >
-              {hasAvatar ? 'Изменить фото' : 'Загрузить фото'}
+              {previewUrl ? 'Изменить фото' : 'Загрузить фото'}
             </button>
 
-            {hasAvatar && (
+            {previewUrl && (
               <button
                 type="button"
                 className={`${styles.editProfileModal__avatarBtn} ${styles.editProfileModal__avatarBtn_delete}`}

@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
-import { Group, Rect, Text } from 'react-konva';
+import { Group, Path, Rect } from 'react-konva';
 import { GameTile } from './tile';
 
 const PLACEMENT_OUTLINE_COLOR = "#27AE60";
 const PLACEMENT_FILL_COLOR = "rgba(39, 174, 96, 0.1)";
 const PENDING_OUTLINE_COLOR = "#2f2f2f";
+
+const ROTATE_CW_ICON_PATHS = [
+  'M21 2v6h-6',
+  'M3 12a9 9 0 0 1 15-6.7L21 8',
+  'M3 22v-6h6',
+  'M21 12a9 9 0 0 1-15 6.7L3 16',
+];
 
 interface PendingTileSlotProps {
   pos: { x: number; y: number; rotations: number[] };
@@ -64,19 +71,27 @@ export const PendingTileSlot: React.FC<PendingTileSlotProps> = ({
             fill="rgba(0, 0, 0, 0.35)"
             listening={false}
           />
-          <Text
-            text="↻"
-            fontSize={TILE_SIZE * 1.25}
-            fill="rgba(255, 255, 255, 0.75)"
-            y={35}
-            width={TILE_SIZE}
-            height={TILE_SIZE}
-            offsetX={TILE_SIZE / 2}
-            offsetY={TILE_SIZE / 2}
-            align="center"
-            rotation={180}
+          <Group
+            x={0}
+            y={0}
+            offsetX={12}
+            offsetY={12}
+            scaleX={TILE_SIZE / 36}
+            scaleY={TILE_SIZE / 36}
+            rotation={90}
             listening={false}
-          />
+          >
+            {ROTATE_CW_ICON_PATHS.map((data) => (
+              <Path
+                key={data}
+                data={data}
+                stroke="rgba(255, 255, 255, 0.75)"
+                strokeWidth={2}
+                lineCap="round"
+                lineJoin="round"
+              />
+            ))}
+          </Group>
         </>
       )}
     </Group>

@@ -133,7 +133,7 @@ export const CurrentTurnPanel = ({
             <span className={styles.deckCard__count}>
               {remaining} {tilesWord}
             </span>
-            <span className={styles.deckCard__label}>осталось</span>
+            <span className={styles.deckCard__label}>колода</span>
           </div>
           <div className={styles.deckCard__bar}>
             <div

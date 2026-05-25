@@ -472,7 +472,7 @@ const GameRoom = () => {
             className={styles.skipButton}
             onClick={handleConfirmPlaceTile}
           >
-            Поставить квадрат
+            Присоединить квадрат
           </button>
         )}
 

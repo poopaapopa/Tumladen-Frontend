@@ -10,6 +10,8 @@ import { useRoomSocket, type WebSocketMessage } from '../../api/ws.ts';
 import { RoomSidebar } from "./roomSidebar/roomSidebar.tsx";
 import { RoomPageSkeleton } from "./roomPageSkeleton.tsx";
 import { RoomPlayers } from './roomPlayers/roomPlayers.tsx';
+import { GameRulesPanel } from '../gameRules/gameRulesPanel.tsx';
+import { GAME_TYPE_LABELS } from '../../types/user';
 import type { RoomResponse, UpdateRoomSettingsPayload } from '../../types/room';
 
 const RoomPage = () => {
@@ -135,8 +137,10 @@ const RoomPage = () => {
           <img src={castleImg} alt="Game Art" className={styles.roomPage__image} />
           <div className={styles.roomPage__overlay} />
         </div>
-        <h1 className={styles.roomPage__gameTitle}>{room.gameType}</h1>
-        <div className={styles.roomPage__rules}>Правила игры...</div>
+        <h1 className={styles.roomPage__gameTitle}>{GAME_TYPE_LABELS[room.gameType] ?? room.gameType}</h1>
+        <div className={styles.roomPage__rules}>
+          <GameRulesPanel gameType={room.gameType} />
+        </div>
       </main>
 
       <RoomPlayers

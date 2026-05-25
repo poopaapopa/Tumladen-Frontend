@@ -69,7 +69,7 @@ function MainPage({ onPlayClick }: MainPageProps) {
   const games: Game[] = [
     {
       id: 1,
-      title: 'Каркассон',
+      title: 'Fortresses & Roads',
       description: 'Игроки выступают в роли средневековых феодалов, осваивающих земли вокруг одноименной французской крепости, по очереди выкладывая квадраты местности (города, дороги, монастыри) и размещая на них подданных для набора очков.',
       minPlayers: 2,
       maxPlayers: 5,

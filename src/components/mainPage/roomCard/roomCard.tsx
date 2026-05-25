@@ -2,6 +2,7 @@ import styles from './roomCard.module.scss';
 import castleImage from '@/assets/castle.png';
 import { UsersRound } from "lucide-react";
 import type { RoomResponse } from '@/types/room.ts';
+import { GAME_TYPE_LABELS } from '@/types/user.ts';
 
 interface RoomCardProps {
   room: RoomResponse;
@@ -15,7 +16,7 @@ function RoomCard({ room, onClick }: RoomCardProps) {
       <div className={styles.roomCard__body}>
         <div className={styles.roomCard__name}>{room.name}</div>
         <div className={styles.roomCard__settings}>
-          {room.gameType}
+          {GAME_TYPE_LABELS[room.gameType] ?? room.gameType}
         </div>
         <div className={styles.roomCard__footer}>
           <div className={styles.roomCard__status}>

@@ -1,0 +1,12 @@
+.rulesPanel {
+  width: 100%;
+
+  &__loading,
+  &__empty {
+    text-align: center;
+    color: $metal-gray;
+    font-family: $font-main;
+    font-size: 16px;
+    padding: 40px 0;
+  }
+}

@@ -68,5 +68,5 @@ export function isOwnProfile(profile: UserProfile): profile is OwnUserProfile {
 }
 
 export const GAME_TYPE_LABELS: Record<string, string> = {
-  carcassonne: 'Каркассон',
+  carcassonne: 'Fortresses & Roads',
 };
