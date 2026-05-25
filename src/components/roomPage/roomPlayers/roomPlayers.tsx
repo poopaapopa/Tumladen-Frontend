@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import styles from './roomPlayers.module.scss';
 import type { RoomResponse } from '@/types/room.ts';
+import { useUserStore } from '@/store/useUserStore';
 import { PlayerSlot } from "./playerSlot/playerSlot.tsx";
 import Modal from "@/components/modal/modal.tsx";
 import { ConfirmModal } from "@/components/confirmModal/confirmModal.tsx";
@@ -52,6 +53,7 @@ export const RoomPlayers = ({
   isKicked,
 }: RoomPlayersProps) => {
   const navigate = useNavigate();
+  const clearCurrentRoom = useUserStore((s) => s.clearCurrentRoom);
 
   const [showCopyToast, setShowCopyToast] = useState(false);
   const [kickTarget, setKickTarget] = useState<{id: string, name: string} | null>(null);
@@ -90,6 +92,7 @@ export const RoomPlayers = ({
       } else {
         sendMessage('leave_room', { roomId: room.id });
       }
+      clearCurrentRoom();
       navigate('/');
     }
   };
@@ -157,12 +160,12 @@ export const RoomPlayers = ({
           )}
         </Modal>
 
-        <Modal isOpen={isKicked} onClose={() => navigate('/')}>
+        <Modal isOpen={isKicked} onClose={() => { clearCurrentRoom(); navigate('/'); }}>
           <ConfirmModal
             title="Вы вне игры"
             text="Организатор партии решил продолжить подготовку без вашего участия.
               Вы можете вновь войти в эту комнату, но вряд ли вам будут рады."
-            onConfirm={() => navigate('/')}
+            onConfirm={() => { clearCurrentRoom(); navigate('/'); }}
             onConfirmText="Уйти на главную"
             image={ElfClosingDoorImg}
           />
