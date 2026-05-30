@@ -1,3 +1,12 @@
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
 @keyframes panelSlideIn {
   from {
     opacity: 0;
@@ -105,6 +114,21 @@
     word-break: break-word;
     padding: 2px 0;
     animation: glowPulse 3s infinite ease-in-out;
+  }
+
+  &__nicknameMarquee {
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  &__nicknameTrack {
+    display: inline-block;
+    animation: marquee var(--marquee-duration, 6s) linear infinite;
+
+    &::after {
+      content: attr(data-text);
+      padding-left: 2em;
+    }
   }
 }
 
@@ -305,5 +329,153 @@
     background: linear-gradient(90deg, $forest-mid 0%, $forest-dark 100%);
     border-radius: 3px;
     transition: width 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+}
+
+// ─── Mobile: compact bottom bar ─────────────────────────────────────
+
+@media (max-width: $mobile-breakpoint) {
+  .turnPanel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    background: rgba($beige-light, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba($forest-dark, 0.12);
+    box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.1);
+    z-index: 20;
+    pointer-events: auto;
+  }
+
+  .playerCard {
+    padding: 0;
+    min-height: auto;
+    gap: 8px;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    backdrop-filter: none;
+    border-left: none;
+    border-radius: 0;
+    animation: none;
+    flex: 0 1 auto;
+    max-width: 35dvw;
+    min-width: 0;
+
+    &__info {
+      gap: 4px;
+    }
+
+    &__label {
+      font-size: 8px;
+      letter-spacing: 0.08em;
+    }
+
+    &__nickname {
+      font-size: 14px;
+      line-height: 1.1;
+      position: relative;
+      overflow: visible;
+    }
+
+    &__nicknameMarquee {
+      max-width: 90px;
+      position: relative;
+      overflow: visible;
+    }
+  }
+
+  .timerRing {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+
+    &__text {
+      font-size: 14px;
+    }
+  }
+
+  .phaseCard {
+    padding: 0;
+    flex-direction: row;
+    align-items: center;
+    flex: 1;
+    justify-content: space-between;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    backdrop-filter: none;
+    border-left: none;
+    border-radius: 0;
+    animation: none;
+    flex-shrink: 0;
+  }
+
+  .phaseStepper {
+    gap: 3px;
+    flex-direction: column;
+    width: 73px;
+
+    &__pill {
+      font-size: 9px;
+      padding: 1px 6px;
+    }
+
+    &__arrow {
+      font-size: 9px;
+      transform: rotate(90deg);
+    }
+  }
+
+  .tileWrapper {
+    width: 64px;
+    height: 64px;
+    flex-shrink: 0;
+  }
+
+  .deckCard {
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    backdrop-filter: none;
+    border-left: none;
+    border-radius: 0;
+    animation: none;
+    flex-shrink: 0;
+    min-width: 50px;
+
+    &__row {
+      gap: 4px;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    &__icon {
+      width: 16px;
+      height: 16px;
+    }
+
+    &__count {
+      font-size: 11px;
+    }
+
+    &__label {
+      font-size: 9px;
+      margin-left: 0;
+    }
+
+    &__bar {
+      height: 3px;
+    }
   }
 }

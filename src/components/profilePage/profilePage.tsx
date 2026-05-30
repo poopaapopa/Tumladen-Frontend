@@ -256,7 +256,7 @@ export default function ProfilePage() {
                   className={styles.emptyStateImg}
                 />
                 <p className={styles.emptyStateText}>
-                  История партий пока пуста. <br/>Когда появятся завершённые партии, они будут показаны здесь
+                  История партий пока пуста. <br/>Когда появятся партии, они будут показаны здесь
                 </p>
               </div>
             ) : (

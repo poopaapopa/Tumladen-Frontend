@@ -29,6 +29,7 @@ export const PendingTileSlot: React.FC<PendingTileSlotProps> = ({
   pos, isPending, displayRotation, currentTileId, TILE_SIZE, TILE_STEP, onPlaceTile, onRotateTile, setCursor
 }) => {
   const [hovered, setHovered] = useState(false);
+  const isMobile = window.innerWidth <= 768;
 
   const handleClick = () => {
     if (isPending) {
@@ -60,7 +61,7 @@ export const PendingTileSlot: React.FC<PendingTileSlotProps> = ({
           highlightFill={isPending ? undefined : PLACEMENT_FILL_COLOR}
         />
       )}
-      {isPending && hovered && (
+      {isPending && (isMobile || hovered) && (
         <>
           <Rect
             width={TILE_SIZE}

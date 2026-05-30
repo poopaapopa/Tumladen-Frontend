@@ -128,7 +128,7 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
           </div>
           <span className={countClassName}>
             {displayScore}
-            <Star size={20} strokeWidth={2.5} className={styles.playerCard__figurinesIcon} />
+            <Star size={20} strokeWidth={2.5} className={styles.playerCard__starIcon} />
           </span>
         </div>
 

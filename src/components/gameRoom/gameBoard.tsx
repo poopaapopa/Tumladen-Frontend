@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useState, useMemo, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { Stage, Layer, Group } from 'react-konva';
 import Konva from 'konva';
 
@@ -20,6 +20,10 @@ interface Player {
 }
 
 interface GameBoardProps {
+  /** Width of the board container in pixels */
+  width: number;
+  /** Height of the board container in pixels */
+  height: number;
   board: Tile[];
   validPlacements?: Array<{ x: number, y: number, rotations: number[] }>;
   onPlaceTile?: (x: number, y: number) => void;
@@ -35,7 +39,24 @@ interface GameBoardProps {
   players?: Player[];
 }
 
+/** Distance between two touch points */
+function getTouchDistance(t1: Touch, t2: Touch): number {
+  const dx = t1.clientX - t2.clientX;
+  const dy = t1.clientY - t2.clientY;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+/** Midpoint between two touch points */
+function getTouchCenter(t1: Touch, t2: Touch): { x: number; y: number } {
+  return {
+    x: (t1.clientX + t2.clientX) / 2,
+    y: (t1.clientY + t2.clientY) / 2,
+  };
+}
+
 const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
+  width,
+  height,
   board = [],
   validPlacements = [],
   onPlaceTile,
@@ -50,11 +71,20 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
   placedMeeples = [],
   players = [],
 }, ref) => {
-  const centerX = (window.innerWidth - 450) / 2;
-  const centerY = (window.innerHeight - 70) / 2;
+  const stageWidth = width || 800;
+  const stageHeight = height || 600;
 
-  const [stage, setStage] = useState({ x: centerX, y: centerY, scale: 1 });
+  const [stage, setStage] = useState({ x: stageWidth / 2, y: stageHeight / 2, scale: 1 });
   const stageRef = useRef<Konva.Stage | null>(null);
+  const initializedRef = useRef(false);
+
+  // Re-center when dimensions become available for the first time
+  useEffect(() => {
+    if (width > 0 && height > 0 && !initializedRef.current) {
+      initializedRef.current = true;
+      setStage((prev) => ({ ...prev, x: width / 2, y: height / 2 }));
+    }
+  }, [width, height]);
 
   useImperativeHandle(ref, () => ({
     getStage: () => stageRef.current,
@@ -107,20 +137,84 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
     });
   };
 
+  // --- Pinch-to-zoom support ---
+  const lastPinchDistRef = useRef<number | null>(null);
+  const lastPinchCenterRef = useRef<{ x: number; y: number } | null>(null);
+  const isPinchingRef = useRef(false);
+
+  const handleTouchMove = useCallback((e: Konva.KonvaEventObject<TouchEvent>) => {
+    const touches = e.evt.touches;
+    if (touches.length < 2) {
+      lastPinchDistRef.current = null;
+      lastPinchCenterRef.current = null;
+      isPinchingRef.current = false;
+      return;
+    }
+
+    e.evt.preventDefault();
+    isPinchingRef.current = true;
+
+    // Disable drag during pinch
+    const s = stageRef.current;
+    if (s) s.draggable(false);
+
+    const dist = getTouchDistance(touches[0], touches[1]);
+    const center = getTouchCenter(touches[0], touches[1]);
+
+    if (lastPinchDistRef.current != null && lastPinchCenterRef.current != null) {
+      const oldScale = stage.scale;
+      const scaleFactor = dist / lastPinchDistRef.current;
+      let newScale = oldScale * scaleFactor;
+      newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, newScale));
+
+      // Get the container rect to convert page coords to stage-local coords
+      const containerRect = s?.container().getBoundingClientRect();
+      const cx = center.x - (containerRect?.left ?? 0);
+      const cy = center.y - (containerRect?.top ?? 0);
+
+      const mousePointTo = {
+        x: (cx - stage.x) / oldScale,
+        y: (cy - stage.y) / oldScale,
+      };
+
+      setStage({
+        scale: newScale,
+        x: cx - mousePointTo.x * newScale,
+        y: cy - mousePointTo.y * newScale,
+      });
+    }
+
+    lastPinchDistRef.current = dist;
+    lastPinchCenterRef.current = center;
+  }, [stage.scale, stage.x, stage.y]);
+
+  const handleTouchEnd = useCallback(() => {
+    lastPinchDistRef.current = null;
+    lastPinchCenterRef.current = null;
+    if (isPinchingRef.current) {
+      isPinchingRef.current = false;
+      // Re-enable drag after pinch ends
+      const s = stageRef.current;
+      if (s) s.draggable(true);
+    }
+  }, []);
+
   return (
     <Stage
       ref={stageRef}
-      width={window.innerWidth - 450}
-      height={window.innerHeight - 70}
+      width={stageWidth}
+      height={stageHeight}
       draggable
       x={stage.x}
       y={stage.y}
       scaleX={stage.scale}
       scaleY={stage.scale}
       onWheel={handleWheel}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
       onDragStart={() => setCursor('grabbing')}
       onDragEnd={() => setCursor('default')}
-      style={{ background: '#F5F5DC', cursor: 'default' }}
+      style={{ background: '#F5F5DC', cursor: 'default', touchAction: 'none' }}
     >
       <Layer>
         {/* 1. КВАДРАТЫ */}

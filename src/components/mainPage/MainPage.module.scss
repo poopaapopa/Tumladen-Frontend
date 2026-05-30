@@ -4,6 +4,10 @@
   background-color: $beige-light;
   overflow: hidden;
   height: 100%;
+
+  @media (max-width: $mobile-breakpoint) {
+    flex-direction: column;
+  }
 }
 
 .mainPage {
@@ -215,8 +219,8 @@
   }
 
   &__timer{
-    font-size: 18px; 
-    font-family: $font-main; 
+    font-size: 18px;
+    font-family: $font-main;
     font-weight: 700;
     color: $forest-dark;
     display: flex;
@@ -230,4 +234,27 @@
     stroke-width: 3px;
   }
 
+  // ─── Mobile: horizontal top strip ───────────────────────────────
+  @media (max-width: $mobile-breakpoint) {
+    width: 100%;
+    height: auto;
+    border-radius: 0;
+    padding: 8px 12px;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+
+    .sidebar__gameInfo {
+      display: none;
+    }
+
+    &__title {
+      font-size: 14px;
+      margin-bottom: 0;
+    }
+
+    &__gameInfo {
+      margin-bottom: 0;
+    }
+  }
 }

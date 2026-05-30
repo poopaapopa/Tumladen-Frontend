@@ -4,6 +4,7 @@ import { preloadTileImages } from '@/utils/tiles.config';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './gameRoom.module.scss';
 import sidebarstyles from '../mainPage/MainPage.module.scss';
+import { useContainerSize } from '@/hooks/useContainerSize';
 import { useRoomSocket } from '@/api/ws';
 import type { MatchFinishedPayload, WebSocketMessage } from '@/types/ws';
 import {
@@ -75,6 +76,9 @@ const GameRoom = () => {
 
   const { actionLog, recordMatchUpdate, clearLog } = useMatchActionLog(inviteCode);
   const { timeLeft, setTurnDeadline } = useTurnTimer(match?.status === 'active');
+
+  // Measure board container for responsive Stage sizing
+  const { width: boardWidth, height: boardHeight, ref: boardContainerRef } = useContainerSize();
 
   // Анимация возврата подданых
   const boardHandleRef = useRef<GameBoardHandle | null>(null);
@@ -419,9 +423,11 @@ const GameRoom = () => {
         registerPlayerCardRef={registerPlayerCardRef}
       />
 
-      <div className={styles.boardContainer}>
+      <div className={styles.boardContainer} ref={boardContainerRef}>
         <GameBoard
           ref={boardHandleRef}
+          width={boardWidth}
+          height={boardHeight}
           board={gameState?.board?.tiles || []}
           validPlacements={privateState?.validPlacements || []}
           onPlaceTile={handlePlaceTile}
