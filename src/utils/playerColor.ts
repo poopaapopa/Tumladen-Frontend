@@ -1,4 +1,4 @@
-const PLAYER_PALETTE = [
+export const PLAYER_PALETTE = [
   '#E8302A',
   '#2E6FE8',
   '#27C75A',

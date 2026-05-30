@@ -301,6 +301,27 @@
     margin: 10px 0 14px;
   }
 
+  &__illustratedRoad {
+    display: block;
+
+    .rules__illustrationFigureRoad {
+      float: right;
+      width: 325px;
+      margin: 0 0 12px 16px;
+    }
+
+    &::after {
+      content: '';
+      display: block;
+      clear: both;
+    }
+  }
+
+  &__illustratedStacked {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
   &__illustratedContent {
     flex: 1;
     min-width: 0;
@@ -315,20 +336,34 @@
     gap: 6px;
   }
 
+  &__illustrationFigureRoad {
+    align-items: stretch;
+  }
+
   &__illustration {
-    width: 150px;
-    max-height: 150px;
+    max-width: 27dvw;
     border-radius: 10px;
     border: 2px solid rgba($forest-mid, 0.15);
     object-fit: cover;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   }
 
+  &__illustrationMini {
+    height: 200px;
+  }
+
   &__illustrationCaption {
     font-size: 12px;
-    color: $metal-gray;
     text-align: center;
     font-style: italic;
+  }
+
+  &__illustrationCaptionRoad {
+    max-width: 325px;
+  }
+
+  &__illustrationCaptionMini {
+    max-width: 250px;
   }
 
   // ─── Scoring Table ───

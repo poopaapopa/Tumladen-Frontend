@@ -18,6 +18,7 @@ import elfCampfireImg from './assets/elf-campfire.png';
 function App() {
   const [activeModal, setActiveModal] = useState<boolean>(false);
   const [isRoomFullModal, setIsRoomFullModal] = useState<boolean>(false);
+  const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
 
   const openModal = () => setActiveModal(true);
   const closeModal = () => setActiveModal(false);
@@ -38,7 +39,7 @@ function App() {
   useEffect(() => {
     const isRoomPage = location.pathname.startsWith('/room/') && !location.pathname.startsWith('/room/game/');
 
-    if (isRoomPage && !isAuthenticated) {
+    if (isRoomPage && !isAuthenticated && !isLoggingOut) {
       const inviteCode = location.pathname.split('/room/')[1];
       if (inviteCode) {
         roomService.getRoomById(inviteCode)
@@ -60,7 +61,7 @@ function App() {
       setActiveModal(false);
       setIsRoomFullModal(false);
     }
-  }, [location.pathname, isAuthenticated]);
+  }, [location.pathname, isAuthenticated, isLoggingOut]);
 
   const handleCancelAuth = () => {
     closeModal();

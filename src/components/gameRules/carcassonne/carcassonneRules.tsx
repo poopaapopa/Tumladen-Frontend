@@ -1,21 +1,19 @@
 import { Lightbulb, Star } from 'lucide-react';
+import clsx from 'clsx';
 import styles from './carcassonneRules.module.scss';
 import { Meeple3D } from '@/components/gameRoom/matchPlayerCard/meeple';
 
-// Tile images for game entity examples
 import cityGateImg from '@/assets/tiles/city_gate.webp';
 import roadStraightImg from '@/assets/tiles/road_straight.webp';
 import monasteryImg from '@/assets/tiles/monastery.webp';
 import startTileImg from '@/assets/tiles/start_tile.webp';
 
-// Placeholder illustrations (elf images — will be replaced with real game screenshots)
-import elfGameImg from '@/assets/elf-game.png';
-import elfCampfireImg from '@/assets/elf-campfire.png';
-import elfMountainsImg from '@/assets/elf-mountains.png';
-import elfLeavesImg from '@/assets/elf-leaves.png';
-import elfExileImg from '@/assets/elf-exile.png';
-
-const MEEPLE_COLORS = ['#E8302A', '#2E6FE8', '#27C75A', '#F5C518', '#A83FE8'];
+import roadRulesImg from '@/assets/road-rules.png';
+import cityRulesImg from '@/assets/city-rules.png';
+import monasteryRulesImg from '@/assets/monastery-rules.png';
+import fieldsRulesImg from '@/assets/fields-rules.png';
+import multipleRulesImg from '@/assets/multiple-rules.png';
+import { PLAYER_PALETTE } from '@/utils/playerColor';
 
 const CarcassonneRules = () => (
   <div className={styles.rules}>
@@ -56,7 +54,7 @@ const CarcassonneRules = () => (
 
         <li>
           <span className={styles.rules__highlight}>7 подданных</span> на каждого игрока (в цвете игрока){' '}
-          {MEEPLE_COLORS.map((color) => (
+          {PLAYER_PALETTE.map((color) => (
             <Meeple3D key={color} color={color} size={18} className={styles.rules__inlineMeeple} variant="standing" />
           ))}
         </li>
@@ -152,27 +150,28 @@ const CarcassonneRules = () => (
     <section className={styles.rules__section}>
       <h2 className={styles.rules__heading}>Дороги</h2>
 
-      <div className={styles.rules__illustrated}>
-        <div className={styles.rules__illustratedContent}>
-          <p className={styles.rules__text}>
-            Выложив квадрат с дорогой, вы можете выставить на неё одного своего подданного из запаса.
-            Подданный, поставленный на дорогу, становится <strong>разбойником</strong>.
-          </p>
-          <p className={styles.rules__text}>
-            Дорога считается <strong>завершённой</strong>, когда оба её конца замкнуты —
-            городом, перекрёстком, монастырём или когда дорога образует кольцо.
-            Завершённая дорога приносит владельцу (владельцам) по 1 очку за каждый квадрат на котором расположена.
-            После завершения разбойник <strong>возвращается</strong> владельцу.
-          </p>
-        </div>
-        <figure className={styles.rules__illustrationFigure}>
+      <div className={clsx(styles.rules__illustrated, styles.rules__illustratedRoad)}>
+        <figure className={clsx(styles.rules__illustrationFigure, styles.rules__illustrationFigureRoad)}>
           <img
-            src={elfGameImg}
+            src={roadRulesImg}
             alt="Завершённая дорога из нескольких квадратов с разбойником на одном из них"
             className={styles.rules__illustration}
           />
-          <figcaption className={styles.rules__illustrationCaption}>Завершённая дорога с разбойником</figcaption>
+          <figcaption className={clsx(styles.rules__illustrationCaption, styles.rules__illustrationCaptionRoad)}>
+            Наличие разбойника на завершаемой дороге принесёт <strong>7 очков</strong>
+            синему игроку (по 1 очку за каждый квадрат дороги)
+          </figcaption>
         </figure>
+        <p className={styles.rules__text}>
+          Выложив квадрат с дорогой, вы можете выставить на неё одного своего подданного из запаса.
+          Подданный, поставленный на дорогу, становится <strong>разбойником</strong>.
+        </p>
+        <p className={styles.rules__text}>
+          Дорога считается <strong>завершённой</strong>, когда оба её конца замкнуты —
+          городом, перекрёстком, монастырём или когда дорога образует кольцо.
+          Завершённая дорога приносит владельцу (владельцам) по 1 очку за каждый квадрат на котором расположена.
+          После завершения разбойник <strong>возвращается</strong> владельцу.
+        </p>
       </div>
     </section>
 
@@ -189,17 +188,20 @@ const CarcassonneRules = () => (
           <p className={styles.rules__text}>
             Город считается <strong>завершённым</strong>, когда он полностью окружён стенами
             (все края города замкнуты). Завершённый город приносит по <strong>2 очка за каждый квадрат</strong>.
-            Некоторые квадраты города содержат <strong>герб</strong> (щит) —
-            каждый герб приносит дополнительные 2 очка. После завершения рыцарь <strong>возвращается</strong>.
+            Некоторые квадраты города содержат <strong>щит</strong> —
+            каждый щит приносит дополнительные 2 очка. После завершения рыцарь <strong>возвращается</strong>.
           </p>
         </div>
         <figure className={styles.rules__illustrationFigure}>
           <img
-            src={elfCampfireImg}
-            alt="Завершённый город из нескольких квадратов с рыцарем и гербом на одном из них"
-            className={styles.rules__illustration}
+            src={cityRulesImg}
+            alt="Завершённый город из нескольких квадратов с рыцарем и щитом на одном из них"
+            className={clsx(styles.rules__illustration, styles.rules__illustrationMini)}
           />
-          <figcaption className={styles.rules__illustrationCaption}>Завершённый город с рыцарем</figcaption>
+          <figcaption className={clsx(styles.rules__illustrationCaption, styles.rules__illustrationCaptionMini)}>
+            Наличие рыцаря на завершаемом городе принесёт <strong>8 очков</strong> 
+            красному игроку (по 2 очка за каждый квадрат города и 2 очка за щит)
+          </figcaption>
         </figure>
       </div>
     </section>
@@ -223,11 +225,13 @@ const CarcassonneRules = () => (
         </div>
         <figure className={styles.rules__illustrationFigure}>
           <img
-            src={elfMountainsImg}
+            src={monasteryRulesImg}
             alt="Монастырь в центре сетки 3×3 из квадратов с монахом"
-            className={styles.rules__illustration}
+            className={clsx(styles.rules__illustration, styles.rules__illustrationMini)}
           />
-          <figcaption className={styles.rules__illustrationCaption}>Завершённый монастырь</figcaption>
+          <figcaption className={clsx(styles.rules__illustrationCaption, styles.rules__illustrationCaptionMini)}>
+            Завершённый монастырь с монахом в центре сетки 3×3 из квадратов
+          </figcaption>
         </figure>
       </div>
     </section>
@@ -236,10 +240,11 @@ const CarcassonneRules = () => (
     <section className={styles.rules__section}>
       <h2 className={styles.rules__heading}>Поля и крестьяне</h2>
 
-      <div className={styles.rules__illustrated}>
+      <div className={clsx(styles.rules__illustrated, styles.rules__illustratedStacked)}>
         <div className={styles.rules__illustratedContent}>
           <p className={styles.rules__text}>
-            Выложив квадрат с полем, вы можете положить на него одного своего подданного <strong>на бок</strong>.
+            Выложив квадрат с полем (зелёной областью, ограниченной дорогами и городами),
+            вы можете положить на него одного своего подданного <strong>на бок</strong>.
             Подданный, положенный на поле, становится <strong>крестьянином</strong>.
           </p>
           <p className={styles.rules__text}>
@@ -250,20 +255,24 @@ const CarcassonneRules = () => (
         </div>
         <figure className={styles.rules__illustrationFigure}>
           <img
-            src={elfLeavesImg}
+            src={fieldsRulesImg}
             alt="Поле с лежащим крестьянином, граничащее с несколькими завершёнными городами"
             className={styles.rules__illustration}
           />
-          <figcaption className={styles.rules__illustrationCaption}>Крестьянин на поле</figcaption>
+          <figcaption className={styles.rules__illustrationCaption}>Поле, на котором находятся по 2 
+            крестьянина красного и синего игроков, граничит с четырьмя завершёнными городами. Каждый 
+            из этих игроков получит по <strong>12 очков</strong> (по три за каждый завершённый город).
+            Маленькие поля слева сверху и слева снизу приносят красному игроку по <strong>3 очка каждое</strong>.
+            Следует также учитывать, что никакие незавершённые постройки не приносят очков при подсчёте полей.
+          </figcaption>
         </figure>
       </div>
 
       <div className={styles.rules__tip}>
         <Lightbulb size={16} className={styles.rules__tipIcon} />
         <span>
-          Крестьяне — ограниченный ресурс! Каждый крестьянин блокирует одного подданного
-          на всю партию. Размещайте их осторожно и только когда поле граничит с несколькими
-          городами.
+          Каждый крестьянин блокирует одного подданного на всю партию.
+          Размещайте их осторожно и только когда поле граничит с несколькими городами.
         </span>
       </div>
     </section>
@@ -287,11 +296,14 @@ const CarcassonneRules = () => (
         </div>
         <figure className={styles.rules__illustrationFigure}>
           <img
-            src={elfExileImg}
-            alt="Два фрагмента города соединяются в один — на каждом стоит рыцарь разного цвета"
-            className={styles.rules__illustration}
+            src={multipleRulesImg}
+            alt="Спор за объект"
+            className={clsx(styles.rules__illustration, styles.rules__illustrationMini)}
           />
-          <figcaption className={styles.rules__illustrationCaption}>Спор за объект</figcaption>
+          <figcaption className={clsx(styles.rules__illustrationCaption, styles.rules__illustrationCaptionRoad)}>
+            Ставя квадрат углового города (обведён серым), красный объединяет два города в один.
+            Из-за большего количества рыцареей в городе он получает все 18 очков за город себе
+          </figcaption>
         </figure>
       </div>
 
