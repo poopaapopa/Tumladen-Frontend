@@ -44,7 +44,7 @@
 
 .turnPanel {
   position: absolute;
-  top: 70px;
+  top: 15px;
   right: 0;
   z-index: 10;
   width: 250px;
@@ -113,7 +113,6 @@
     color: var(--player-color);
     word-break: break-word;
     padding: 2px 0;
-    animation: glowPulse 3s infinite ease-in-out;
   }
 
   &__nicknameMarquee {
