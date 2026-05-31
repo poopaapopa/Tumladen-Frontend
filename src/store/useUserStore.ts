@@ -7,12 +7,14 @@ interface UserState {
   actor: Actor | null;
   token: string | null;
   isAuthenticated: boolean;
+  isLoggingOut: boolean;
 
   setAuth: (actor: Actor, token: string) => void;
   updateActor: (actor: Actor) => void;
   setCurrentRoom: (room: ActiveRoomSession | null) => void;
   clearCurrentRoom: () => void;
   logout: () => void;
+  setIsLoggingOut: (isLoggingOut: boolean) => void;
 }
 
 export const useUserStore = create<UserState>()(
@@ -21,11 +23,13 @@ export const useUserStore = create<UserState>()(
       actor: null,
       token: null,
       isAuthenticated: false,
+      isLoggingOut: false,
 
       setAuth: (actor, token) => set({
         actor,
         token,
-        isAuthenticated: true
+        isAuthenticated: true,
+        isLoggingOut: false
       }),
 
       updateActor: (actor) => set((state) => ({
@@ -49,8 +53,11 @@ export const useUserStore = create<UserState>()(
       logout: () => set({
         actor: null,
         token: null,
-        isAuthenticated: false
+        isAuthenticated: false,
+        isLoggingOut: true
       }),
+      
+      setIsLoggingOut: (isLoggingOut) => set({ isLoggingOut }),
     }),
     {
       name: 'session',

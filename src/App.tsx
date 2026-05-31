@@ -18,14 +18,13 @@ import elfCampfireImg from './assets/elf-campfire.png';
 function App() {
   const [activeModal, setActiveModal] = useState<boolean>(false);
   const [isRoomFullModal, setIsRoomFullModal] = useState<boolean>(false);
-  const [isLoggingOut, setIsLoggingOut] = useState<boolean>(false);
 
   const openModal = () => setActiveModal(true);
   const closeModal = () => setActiveModal(false);
 
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, actor, token, setCurrentRoom } = useUserStore();
+  const { isAuthenticated, actor, token, setCurrentRoom, isLoggingOut } = useUserStore();
 
   // Fetch currentRoom from /me on mount / auth change (registered users only)
   useEffect(() => {
