@@ -113,6 +113,7 @@
     color: var(--player-color);
     word-break: break-word;
     padding: 2px 0;
+    animation: glowPulse 3s infinite ease-in-out;
   }
 
   &__nicknameMarquee {
