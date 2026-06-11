@@ -48,6 +48,17 @@ export const PendingTileSlot: React.FC<PendingTileSlotProps> = ({
       onMouseEnter={() => { setCursor('pointer'); setHovered(true); }}
       onMouseLeave={() => { setCursor('default'); setHovered(false); }}
     >
+      {/* Невидимая hit-область: дочерние GameTile/оверлеи имеют listening={false}
+          (тайлы кэшируются в битмап), поэтому слоту нужен собственный приёмник
+          событий для hover/click/tap размещения квадрата. */}
+      <Rect
+        width={TILE_SIZE}
+        height={TILE_SIZE}
+        offsetX={TILE_SIZE / 2}
+        offsetY={TILE_SIZE / 2}
+        cornerRadius={10}
+        fill="transparent"
+      />
       {currentTileId && (
         <GameTile
           tileId={currentTileId}

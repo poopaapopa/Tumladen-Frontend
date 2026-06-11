@@ -54,6 +54,11 @@ function getTouchCenter(t1: Touch, t2: Touch): { x: number; y: number } {
   };
 }
 
+const MIN_SCALE = 0.3;
+const MAX_SCALE = 3.5;
+const TILE_SIZE = 150;
+const TILE_STEP = 152;
+
 const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
   width,
   height,
@@ -86,6 +91,62 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
     }
   }, [width, height]);
 
+  // Ограничиваем pixelRatio на мобильных: при devicePixelRatio 2–3 canvas
+  // рендерится в 2–3× разрешении, что резко повышает fill-rate при drag/zoom.
+  useEffect(() => {
+    const s = stageRef.current;
+    if (!s) return;
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
+    if (!isMobile) return;
+    const cap = Math.min(window.devicePixelRatio || 1, 1.5);
+    s.getLayers().forEach((layer) => {
+      layer.getCanvas().setPixelRatio(cap);
+    });
+    s.batchDraw();
+  }, [stageWidth, stageHeight]);
+
+  // rAF-троттлинг жестов: во время pinch/wheel напрямую двигаем stage без setState,
+  // чтобы не запускать реконсиляцию React на каждый кадр.
+  const rafRef = useRef<number | null>(null);
+  const pendingStageRef = useRef<{ x: number; y: number; scale: number } | null>(null);
+
+  const flushStage = useCallback(() => {
+    rafRef.current = null;
+    const target = pendingStageRef.current;
+    const s = stageRef.current;
+    if (!target || !s) return;
+    s.scale({ x: target.scale, y: target.scale });
+    s.position({ x: target.x, y: target.y });
+    s.batchDraw();
+  }, []);
+
+  const scheduleStage = useCallback((next: { x: number; y: number; scale: number }) => {
+    pendingStageRef.current = next;
+    if (rafRef.current == null) {
+      rafRef.current = requestAnimationFrame(flushStage);
+    }
+  }, [flushStage]);
+
+  // Синхронизируем React-state с фактическим положением stage по завершении жеста.
+  const commitStage = useCallback(() => {
+    if (rafRef.current != null) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+    const target = pendingStageRef.current;
+    pendingStageRef.current = null;
+    if (target) {
+      setStage(target);
+    } else {
+      const s = stageRef.current;
+      if (s) setStage({ x: s.x(), y: s.y(), scale: s.scaleX() });
+    }
+  }, []);
+
+  useEffect(() => () => {
+    if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+  }, []);
+
   useImperativeHandle(ref, () => ({
     getStage: () => stageRef.current,
     getTileStep: () => TILE_STEP,
@@ -101,16 +162,13 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
     ? [{ tileId: '0', x: 0, y: 0, rotation: 0 }]
     : board;
 
-  const MIN_SCALE = 0.3;
-  const MAX_SCALE = 3.5;
-  const TILE_SIZE = 150;
-  const TILE_STEP = 152;
-
   const playerColorMap = useMemo(() => {
     const map: Record<string, string> = {};
     players.forEach(p => { map[p.actorId] = getPlayerColorBySeat(p.seat); });
     return map;
   }, [players]);
+
+  const wheelCommitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
     e.evt.preventDefault();
@@ -130,11 +188,18 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
     newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, newScale));
     if (newScale === oldScale) return;
 
-    setStage({
+    // rAF-троттлинг: двигаем stage напрямую, React-state коммитим после паузы.
+    scheduleStage({
       scale: newScale,
       x: pointer.x - mousePointTo.x * newScale,
       y: pointer.y - mousePointTo.y * newScale,
     });
+
+    if (wheelCommitRef.current != null) clearTimeout(wheelCommitRef.current);
+    wheelCommitRef.current = setTimeout(() => {
+      wheelCommitRef.current = null;
+      commitStage();
+    }, 120);
   };
 
   // --- Pinch-to-zoom support ---
@@ -161,23 +226,29 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
     const dist = getTouchDistance(touches[0], touches[1]);
     const center = getTouchCenter(touches[0], touches[1]);
 
-    if (lastPinchDistRef.current != null && lastPinchCenterRef.current != null) {
-      const oldScale = stage.scale;
+    if (lastPinchDistRef.current != null && lastPinchCenterRef.current != null && s) {
+      // Читаем АКТУАЛЬНЫЕ значения с узла Stage, а не из React-state:
+      // во время жеста мы двигаем stage напрямую и setState не вызываем.
+      const pending = pendingStageRef.current;
+      const oldScale = pending ? pending.scale : s.scaleX();
+      const oldX = pending ? pending.x : s.x();
+      const oldY = pending ? pending.y : s.y();
+
       const scaleFactor = dist / lastPinchDistRef.current;
       let newScale = oldScale * scaleFactor;
       newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, newScale));
 
       // Get the container rect to convert page coords to stage-local coords
-      const containerRect = s?.container().getBoundingClientRect();
-      const cx = center.x - (containerRect?.left ?? 0);
-      const cy = center.y - (containerRect?.top ?? 0);
+      const containerRect = s.container().getBoundingClientRect();
+      const cx = center.x - containerRect.left;
+      const cy = center.y - containerRect.top;
 
       const mousePointTo = {
-        x: (cx - stage.x) / oldScale,
-        y: (cy - stage.y) / oldScale,
+        x: (cx - oldX) / oldScale,
+        y: (cy - oldY) / oldScale,
       };
 
-      setStage({
+      scheduleStage({
         scale: newScale,
         x: cx - mousePointTo.x * newScale,
         y: cy - mousePointTo.y * newScale,
@@ -186,7 +257,7 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
 
     lastPinchDistRef.current = dist;
     lastPinchCenterRef.current = center;
-  }, [stage.scale, stage.x, stage.y]);
+  }, [scheduleStage]);
 
   const handleTouchEnd = useCallback(() => {
     lastPinchDistRef.current = null;
@@ -196,8 +267,10 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
       // Re-enable drag after pinch ends
       const s = stageRef.current;
       if (s) s.draggable(true);
+      // Синхронизируем React-state с финальным положением stage.
+      commitStage();
     }
-  }, []);
+  }, [commitStage]);
 
   return (
     <Stage
@@ -213,11 +286,18 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       onDragStart={() => setCursor('grabbing')}
-      onDragEnd={() => setCursor('default')}
+      onDragEnd={() => {
+        setCursor('default');
+        // Stage контролируемый (x={stage.x}); синхронизируем React-state с
+        // фактическим положением после нативного драга, иначе будет «отскок».
+        const s = stageRef.current;
+        if (s) setStage({ x: s.x(), y: s.y(), scale: s.scaleX() });
+      }}
       style={{ background: '#F5F5DC', cursor: 'default', touchAction: 'none' }}
     >
-      <Layer>
-        {/* 1. КВАДРАТЫ */}
+      {/* Статический слой: тайлы кэшированы в битмапы, hit-graph отключён,
+          чтобы drag/zoom не пересчитывали интерактивность квадратов. */}
+      <Layer listening={false}>
         <Group>
           {tilesToRender.map((tile, index) => {
             const highlight = Object.values(lastPlacedByPlayer).find(
@@ -237,7 +317,10 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
             );
           })}
         </Group>
+      </Layer>
 
+      {/* Интерактивный слой: слоты, подсветка валидных клеток и меплы. */}
+      <Layer>
         {/* 2. СЛОТЫ ДЛЯ ПОДДАННЫХ */}
         {phase === 'place_meeple' && lastPlacedTile && (
           <Group x={lastPlacedTile.x * TILE_STEP} y={lastPlacedTile.y * TILE_STEP}>
