@@ -13,14 +13,12 @@ interface PlayerSlotProps {
 
 export const PlayerSlot = ({ idx, participant, room, isOwner, onKick }: PlayerSlotProps) => {
   const isThisParticipantOwner = participant?.actorId === room.ownerActorId;
-  const showKickButton = isOwner && !isThisParticipantOwner;
 
   return (
     <div
       className={clsx(
         styles.playerSlot,
-        participant && styles.playerSlot_occupied,
-        showKickButton && styles.playerSlot_kickable
+        participant && styles.playerSlot_occupied
       )}
     >
       <div className={styles.playerSlot__playerInfo}>
@@ -36,8 +34,7 @@ export const PlayerSlot = ({ idx, participant, room, isOwner, onKick }: PlayerSl
             <Crown size={20} className={styles.icon_crown} />
           ) : (
             <>
-              <Star size={20} className={styles.icon_star} />
-              {showKickButton && (
+              {isOwner ? (
                 <button
                   className={styles.playerSlot__btnKick}
                   onClick={() => onKick(participant.actorId, participant.displayName)}
@@ -45,6 +42,8 @@ export const PlayerSlot = ({ idx, participant, room, isOwner, onKick }: PlayerSl
                 >
                   <UserRoundX size={20} />
                 </button>
+              ) : (
+                <Star size={20} className={styles.icon_star} />
               )}
             </>
           )}

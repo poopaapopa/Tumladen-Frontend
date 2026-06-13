@@ -8,10 +8,12 @@ import { roomService, UnauthorizedError } from "@/api/room.ts";
 import type { RoomResponse } from '@/types/room.ts';
 import { useUserStore } from "@/store/useUserStore.ts";
 import sadElfImg from '@/assets/sad-elf.png';
-import { AlertTriangle, X } from 'lucide-react';
+import { AlertTriangle, X, Gamepad2, DoorOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import RangeSlider from '../rangeSlider/rangeSlider.tsx';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { SegmentedTabs } from '../segmentedTabs/segmentedTabs.tsx';
 
 interface MainPageProps {
   onPlayClick: () => void;
@@ -32,6 +34,13 @@ interface Game {
 
 const ALL_GAMES_FILTER = 'all';
 
+type MobileView = 'games' | 'rooms';
+
+const MOBILE_VIEW_TABS = [
+  { key: 'games' as const, label: 'Игры', icon: Gamepad2 },
+  { key: 'rooms' as const, label: 'Комнаты', icon: DoorOpen },
+];
+
 const PLAYERS_MIN = 2;
 const PLAYERS_MAX = 8;
 
@@ -50,6 +59,9 @@ function MainPage({ onPlayClick }: MainPageProps) {
   const navigate = useNavigate();
 
   const { isAuthenticated, actor } = useUserStore();
+
+  const isMobile = useIsMobile();
+  const [mobileView, setMobileView] = useState<MobileView>('games');
 
   const [rooms, setRooms] = useState<RoomResponse[]>([]);
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
@@ -214,8 +226,23 @@ function MainPage({ onPlayClick }: MainPageProps) {
 
   const isBusy = busyGameId !== null;
 
+  const showSidebar = !isMobile || mobileView === 'rooms';
+  const showGames = !isMobile || mobileView === 'games';
+
   return (
-    <main className={styles.pageWrapper}>
+    <main className={clsx(styles.pageWrapper, isMobile && styles.pageWrapper_mobile)}>
+      {isMobile && (
+        <div className={styles.mobileToggle}>
+          <SegmentedTabs
+            tabs={MOBILE_VIEW_TABS}
+            activeKey={mobileView}
+            onChange={setMobileView}
+            ariaLabel="Переключение между играми и комнатами"
+          />
+        </div>
+      )}
+
+      {showSidebar && (
       <div className={styles.sidebar}>
         <div className={styles.sidebar__title}>Комнаты</div>
 
@@ -296,7 +323,9 @@ function MainPage({ onPlayClick }: MainPageProps) {
           )}
         </div>
       </div>
+      )}
 
+      {showGames && (
       <div className={styles.mainPage}>
         <h2 className={styles.mainPage__title}>Игры</h2>
 
@@ -313,6 +342,7 @@ function MainPage({ onPlayClick }: MainPageProps) {
           ))}
         </div>
       </div>
+      )}
 
       <AnimatePresence>
         {createError && (

@@ -1,8 +1,8 @@
 @use "sass:color";
 
 .playerSlot {
-  background-color: rgba($beige-light, 0.5);
-  border: 2px dashed $metal-gray;
+  background-color: rgba($cream-deep, 0.45);
+  border: 2px dashed $sage-gray;
   border-radius: 50px;
   padding: 10px 20px;
   display: flex;
@@ -13,13 +13,15 @@
   position: relative;
 
   &:hover {
-    box-shadow: 0 0 0 3px rgba($forest-mid, 0.2);
-    border-color: $forest-dark;
+    box-shadow: 0 0 0 3px rgba($forest-mid, 0.15);
+    border-color: $forest-soft;
   }
 
   &_occupied {
-    background-color: $beige-light;
-    border: 2px solid $forest-dark;
+    background: linear-gradient(135deg, $cream 0%, $cream-deep 100%);
+    border: 2px solid $border-soft;
+    border-left: 4px solid $forest-mid;
+    box-shadow: 0 2px 6px rgba($forest-dark, 0.08);
   }
 
   &__playerInfo {
@@ -30,7 +32,7 @@
 
   &__slotNum {
     font-weight: 800;
-    color: $forest-mid;
+    color: $forest-soft;
     width: 20px;
   }
 
@@ -47,7 +49,7 @@
     justify-content: center;
   }
 
-  .icon_crown { color: #d4af37; filter: drop-shadow(0 0 5px rgba(212, 175, 55, 0.5)); }
+  .icon_crown { color: $gold; filter: drop-shadow(0 0 5px rgba($gold, 0.5)); }
   .icon_star, .kick_icon { color: $metal-gray; }
   .icon_star { transition: opacity 0.3s ease }
 
@@ -64,24 +66,8 @@
     padding: 6px;
     border-radius: 10px;
 
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.3s ease;
-
     &:hover {
       background-color: color.adjust($sage-gray, $lightness: 10%);
-    }
-  }
-
-  &_kickable:hover {
-    .icon_star {
-      opacity: 0;
-      visibility: hidden;
-    }
-
-    .playerSlot__btnKick {
-      opacity: 1;
-      visibility: visible;
     }
   }
 }

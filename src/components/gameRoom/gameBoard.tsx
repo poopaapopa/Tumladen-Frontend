@@ -13,6 +13,7 @@ import { PendingTileSlot } from './pendingTileSlot';
 import { KonvaMeeple } from './matchPlayerCard/meeple.tsx';
 import { MeepleSlot } from './meepleSlot.tsx';
 import { getZoneOffset } from '@/utils/tileZones.ts';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 interface Player {
   actorId: string;
@@ -78,6 +79,7 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
 }, ref) => {
   const stageWidth = width || 800;
   const stageHeight = height || 600;
+  const isMobile = useIsMobile();
 
   const [stage, setStage] = useState({ x: stageWidth / 2, y: stageHeight / 2, scale: 1 });
   const stageRef = useRef<Konva.Stage | null>(null);
@@ -96,14 +98,13 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
   useEffect(() => {
     const s = stageRef.current;
     if (!s) return;
-    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768;
     if (!isMobile) return;
     const cap = Math.min(window.devicePixelRatio || 1, 1.5);
     s.getLayers().forEach((layer) => {
       layer.getCanvas().setPixelRatio(cap);
     });
     s.batchDraw();
-  }, [stageWidth, stageHeight]);
+  }, [stageWidth, stageHeight, isMobile]);
 
   // rAF-троттлинг жестов: во время pinch/wheel напрямую двигаем stage без setState,
   // чтобы не запускать реконсиляцию React на каждый кадр.

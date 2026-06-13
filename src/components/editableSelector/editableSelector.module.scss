@@ -7,8 +7,8 @@
 
 .configBox {
   position: relative;
-  background: $beige-light;
-  border: 2px solid $forest-mid;
+  background: linear-gradient(135deg, $cream 0%, $cream-deep 100%);
+  border: 2px solid $border-soft;
   border-radius: 12px;
   padding: 12px;
   display: flex;
@@ -23,8 +23,8 @@
   &_editable {
     cursor: pointer;
     &:hover {
-      border-color: $forest-dark;
-      box-shadow: 0 0 0 3px rgba($forest-mid, 0.2);
+      border-color: $forest-soft;
+      box-shadow: 0 0 0 3px rgba($forest-mid, 0.12);
     }
   }
 }
@@ -43,16 +43,13 @@
 }
 
 .dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  background-color: $beige-light;
-  border: 2px solid $forest-dark;
+  position: fixed;
+  background-color: $cream;
+  border: 2px solid $border-soft;
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-  z-index: 100;
-  overflow: hidden;
+  box-shadow: 0 10px 25px rgba($forest-dark, 0.18);
+  z-index: 2000;
+  overflow-y: auto;
 }
 
 .option {
@@ -68,7 +65,7 @@
   transition: background 0.2s;
 
   &:hover {
-    background-color: $sage-gray;
+    background-color: $cream-deep;
   }
 
   &_active {
@@ -88,6 +85,6 @@
   }
 
   &:not(:last-child) {
-    border-bottom: 1px solid rgba($forest-dark, 0.1);
+    border-bottom: 1px solid rgba($border-soft, 0.6);
   }
 }

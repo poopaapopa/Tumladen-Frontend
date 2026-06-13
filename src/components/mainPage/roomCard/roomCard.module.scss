@@ -1,16 +1,19 @@
 .roomCard{
-  background-color: $beige-light;
+  background: linear-gradient(135deg, $cream 0%, $cream-deep 100%);
+  border: 1px solid $border-soft;
   border-radius: 15px;
   padding: 15px;
   display: flex;
   align-items: center;
   gap: 15px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 10px rgba($forest-dark, 0.07);
   cursor: pointer;
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 
   &:hover {
-    transform: scale(0.98);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba($forest-dark, 0.12);
+    border-color: $forest-soft;
   }
 
   &__image {
@@ -18,6 +21,7 @@
     height: 80px;
     border-radius: 50%;
     object-fit: cover;
+    border: 2px solid $border-soft;
   }
 
   &__body{
@@ -30,12 +34,12 @@
   &__name {
     font-weight: 600;
     font-size: 18px;
-    color: #1e1e1e;
+    color: $forest-dark;
   }
 
   &__settings {
     font-size: 14px;
-    color: #555;
+    color: $forest-soft;
     line-height: 1.2;
     margin-top: 5px;
   }
@@ -49,8 +53,8 @@
 
   &__status{
     font-size: 14px;
-    font-weight: 500;
-    color: #1e1e1e;
+    font-weight: 600;
+    color: $forest-mid;
   }
 
   &__capacity{
@@ -59,5 +63,22 @@
     gap: 5px;
     font-weight: 400;
     font-size: 18px;
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    padding: 12px;
+    gap: 12px;
+
+    &__name {
+      font-size: 16px;
+    }
+
+    &__settings {
+      font-size: 13px;
+    }
+
+    &__capacity {
+      font-size: 16px;
+    }
   }
 }

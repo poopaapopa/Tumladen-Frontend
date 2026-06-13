@@ -284,6 +284,7 @@
   padding: 10px 12px;
   display: flex;
   flex-direction: column;
+  margin-bottom: 10px;
   gap: 6px;
 
   &__row {
@@ -452,6 +453,7 @@
     border-radius: 0;
     animation: none;
     flex-shrink: 0;
+    margin-bottom: 0;
     min-width: 50px;
 
     &__row {

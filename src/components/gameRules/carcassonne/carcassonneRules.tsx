@@ -150,7 +150,7 @@ const CarcassonneRules = () => (
     <section className={styles.rules__section}>
       <h2 className={styles.rules__heading}>Дороги</h2>
 
-      <div className={clsx(styles.rules__illustrated, styles.rules__illustratedRoad)}>
+      <div className={clsx(styles.rules__illustrated, styles.rules__illustratedRoad, styles.rules__illustratedAfter)}>
         <figure className={clsx(styles.rules__illustrationFigure, styles.rules__illustrationFigureRoad)}>
           <img
             src={roadRulesImg}
@@ -158,8 +158,8 @@ const CarcassonneRules = () => (
             className={styles.rules__illustration}
           />
           <figcaption className={clsx(styles.rules__illustrationCaption, styles.rules__illustrationCaptionRoad)}>
-            Наличие разбойника на завершаемой дороге принесёт <strong>7 очков</strong>
-            синему игроку (по 1 очку за каждый квадрат дороги)
+            Наличие разбойника на завершаемой дороге принесёт <strong>7 очков</strong> синему 
+            игроку (по 1 очку за каждый квадрат дороги)
           </figcaption>
         </figure>
         <p className={styles.rules__text}>
@@ -180,6 +180,17 @@ const CarcassonneRules = () => (
       <h2 className={styles.rules__heading}>Города</h2>
 
       <div className={styles.rules__illustrated}>
+        <figure className={styles.rules__illustrationFigure}>
+          <img
+            src={cityRulesImg}
+            alt="Завершённый город из нескольких квадратов с рыцарем и щитом на одном из них"
+            className={clsx(styles.rules__illustration, styles.rules__illustrationMini)}
+          />
+          <figcaption className={clsx(styles.rules__illustrationCaption, styles.rules__illustrationCaptionMini)}>
+            Наличие рыцаря на завершаемом городе принесёт <strong>8 очков</strong> красному
+            игроку (по 2 очка за каждый квадрат города и 2 очка за щит)
+          </figcaption>
+        </figure>
         <div className={styles.rules__illustratedContent}>
           <p className={styles.rules__text}>
             Выложив квадрат с городом, вы можете выставить на него одного своего подданного из запаса.
@@ -192,17 +203,6 @@ const CarcassonneRules = () => (
             каждый щит приносит дополнительные 2 очка. После завершения рыцарь <strong>возвращается</strong>.
           </p>
         </div>
-        <figure className={styles.rules__illustrationFigure}>
-          <img
-            src={cityRulesImg}
-            alt="Завершённый город из нескольких квадратов с рыцарем и щитом на одном из них"
-            className={clsx(styles.rules__illustration, styles.rules__illustrationMini)}
-          />
-          <figcaption className={clsx(styles.rules__illustrationCaption, styles.rules__illustrationCaptionMini)}>
-            Наличие рыцаря на завершаемом городе принесёт <strong>8 очков</strong> 
-            красному игроку (по 2 очка за каждый квадрат города и 2 очка за щит)
-          </figcaption>
-        </figure>
       </div>
     </section>
 
@@ -211,6 +211,16 @@ const CarcassonneRules = () => (
       <h2 className={styles.rules__heading}>Монастыри</h2>
 
       <div className={styles.rules__illustrated}>
+        <figure className={styles.rules__illustrationFigure}>
+          <img
+            src={monasteryRulesImg}
+            alt="Монастырь в центре сетки 3×3 из квадратов с монахом"
+            className={clsx(styles.rules__illustration, styles.rules__illustrationMini)}
+          />
+          <figcaption className={clsx(styles.rules__illustrationCaption, styles.rules__illustrationCaptionMini)}>
+            Завершённый монастырь с монахом в центре сетки 3×3 из квадратов
+          </figcaption>
+        </figure>
         <div className={styles.rules__illustratedContent}>
           <p className={styles.rules__text}>
             Выложив квадрат с монастырём, вы можете выставить на него одного своего подданного из запаса.
@@ -223,16 +233,6 @@ const CarcassonneRules = () => (
             После завершения монах <strong>возвращается</strong> владельцу.
           </p>
         </div>
-        <figure className={styles.rules__illustrationFigure}>
-          <img
-            src={monasteryRulesImg}
-            alt="Монастырь в центре сетки 3×3 из квадратов с монахом"
-            className={clsx(styles.rules__illustration, styles.rules__illustrationMini)}
-          />
-          <figcaption className={clsx(styles.rules__illustrationCaption, styles.rules__illustrationCaptionMini)}>
-            Завершённый монастырь с монахом в центре сетки 3×3 из квадратов
-          </figcaption>
-        </figure>
       </div>
     </section>
 
@@ -281,7 +281,18 @@ const CarcassonneRules = () => (
     <section className={styles.rules__section}>
       <h2 className={styles.rules__heading}>Несколько подданных на одном объекте</h2>
 
-      <div className={styles.rules__illustrated}>
+      <div className={clsx(styles.rules__illustrated, styles.rules__illustratedAfter)}>
+        <figure className={styles.rules__illustrationFigure}>
+          <img
+            src={multipleRulesImg}
+            alt="Спор за объект"
+            className={clsx(styles.rules__illustration, styles.rules__illustrationMini)}
+          />
+          <figcaption className={clsx(styles.rules__illustrationCaption, styles.rules__illustrationCaptionRoad)}>
+            Ставя квадрат углового города (обведён серым), красный объединяет два города в один.
+            Из-за большего количества рыцареей в городе он получает все <strong>18 очков</strong> за город себе
+          </figcaption>
+        </figure>
         <div className={styles.rules__illustratedContent}>
           <p className={styles.rules__text}>
             Нельзя ставить подданного на объект, на котором <strong>уже стоит</strong> чей-либо
@@ -294,17 +305,6 @@ const CarcassonneRules = () => (
             все участники спора.
           </p>
         </div>
-        <figure className={styles.rules__illustrationFigure}>
-          <img
-            src={multipleRulesImg}
-            alt="Спор за объект"
-            className={clsx(styles.rules__illustration, styles.rules__illustrationMini)}
-          />
-          <figcaption className={clsx(styles.rules__illustrationCaption, styles.rules__illustrationCaptionRoad)}>
-            Ставя квадрат углового города (обведён серым), красный объединяет два города в один.
-            Из-за большего количества рыцареей в городе он получает все 18 очков за город себе
-          </figcaption>
-        </figure>
       </div>
 
       <div className={styles.rules__tip}>

@@ -11,6 +11,18 @@
   box-shadow: -4px 0 15px rgba(0, 0, 0, 0.05);
   z-index: 5;
 
+  @media (max-width: $mobile-breakpoint) {
+    border-radius: 0;
+    box-shadow: none;
+    padding: 16px;
+    overflow-y: auto;
+    background-color: $beige-light;
+
+    &__title {
+      display: none;
+    }
+  }
+
   &__title {
     color: $forest-dark;
     font-size: 24px;
@@ -73,6 +85,10 @@
   z-index: 2000;
   border: 1px solid rgba($beige-light, 0.1);
   pointer-events: none;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
 
   &__icon {
     color: $accept;

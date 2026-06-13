@@ -19,6 +19,11 @@
   width: 375px;
   overflow: hidden;
 
+  @media (max-width: $mobile-breakpoint) {
+    width: 100%;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
   &__borderSvg {
     position: absolute;
     top: 0;
