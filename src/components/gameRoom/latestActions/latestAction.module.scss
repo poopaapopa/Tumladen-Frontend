@@ -11,11 +11,11 @@
 
 .latestActions {
   position: absolute;
-  top: 420px;
+  top: 355px;
   right: 0px;
   z-index: 10;
   width: 250px;
-  height: calc(100% - 420px);
+  height: calc(100% - 385px);
   padding: 0 12px 0 15px;
   background-color: transparent;
   display: flex;
@@ -123,5 +123,60 @@
     color: $metal-gray;
     text-align: center;
     margin-top: 20px;
+  }
+
+  // ─── Mobile: hidden by default, slide-up overlay when open ──────
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+    position: fixed;
+    top: auto;
+    bottom: 90px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    height: auto;
+    max-height: 50vh;
+    padding: 10px;
+    background: rgba($beige-light, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 12px;
+    border: 1px solid rgba($forest-dark, 0.12);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+    z-index: 25;
+
+    &--mobileOpen {
+      display: flex;
+    }
+  }
+}
+
+// Toggle button — hidden on desktop, visible on mobile
+.logToggle {
+  display: none;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 15;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid rgba($forest-dark, 0.12);
+    background: rgba($beige-light, 0.85);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+    color: $forest-dark;
+    cursor: pointer;
+    transition: background-color 0.2s;
+
+    &:active {
+      background: rgba($beige-light, 1);
+    }
   }
 }

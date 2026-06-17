@@ -9,7 +9,7 @@ export interface ActiveRoomSession {
 
 export interface MatchPlayer {
   actorId: string;
-  actorType: 'user' | 'guest';
+  actorType: 'user' | 'guest' | 'bot';
   displayName: string;
   seat: number;
   score: number;

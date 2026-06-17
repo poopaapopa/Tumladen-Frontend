@@ -94,7 +94,9 @@ export const useMatchActionLog = (inviteCode?: string) => {
       const nextGs = next.gameState;
       const players = prevGs.players;
 
-      if (prevGs.phase === 'place_tile' && nextGs.phase === 'place_meeple') {
+      // Standard phase-change detection: current player placed a tile
+      const phaseChangedToMeeple = prevGs.phase === 'place_tile' && nextGs.phase === 'place_meeple';
+      if (phaseChangedToMeeple) {
         pushEntry(
           {
             kind: 'tile_placed',
@@ -105,13 +107,64 @@ export const useMatchActionLog = (inviteCode?: string) => {
         );
       }
 
-      const newMeeple = findNewMeeple(prevGs.meeples, nextGs.meeples);
-      if (newMeeple) {
+      // Detect consolidated bot turns via board diff + turn number jump.
+      // When the server processes bot turns instantly, turnNumber jumps and
+      // intermediate tile placements aren't captured by the phase-change above.
+      const turnDelta = nextGs.turnNumber - prevGs.turnNumber;
+      if (turnDelta > 1) {
+        const numPlayers = players.length;
+        const prevPlayerSeat = players.find((p) => p.actorId === prevGs.currentPlayerId)?.seat ?? 0;
+        // Build seat→actorId lookup
+        const playerBySeat = new Map(players.map((p) => [p.seat, p.actorId]));
+
+        // Previous player's tile was already logged (either by phase-change above or in a prior update),
+        // so we start from the next player in seat order.
+        const startOffset = 1;
+
+        // Diff the board to find new tiles
+        const prevTileKeys = new Set(
+          (prevGs.board?.tiles ?? []).map((t) => `${t.x}:${t.y}`)
+        );
+        const newBoardTiles = (nextGs.board?.tiles ?? []).filter(
+          (t) => !prevTileKeys.has(`${t.x}:${t.y}`)
+        );
+        // Exclude the tile already attributed to the current turn's placedTile
+        const currentPlacedTile = nextGs.currentTurn?.placedTile;
+        const unattributedTiles = newBoardTiles.filter(
+          (t) => !(currentPlacedTile && t.x === currentPlacedTile.x && t.y === currentPlacedTile.y)
+        );
+
+        // Only log intermediate turns if new tiles actually appeared on the board
+        if (unattributedTiles.length > 0) {
+          // Walk through intermediate turns and log tile placements with tileId
+          const intermediateCount = Math.min(turnDelta - startOffset, unattributedTiles.length);
+          for (let i = 0; i < intermediateCount; i++) {
+            const seat = (prevPlayerSeat + startOffset + i) % numPlayers;
+            const actorId = playerBySeat.get(seat);
+            const tile = unattributedTiles[i];
+            if (actorId) {
+              pushEntry(
+                { kind: 'tile_placed', actorId, tileId: tile?.tileId },
+                players,
+              );
+            }
+          }
+        }
+      }
+
+      // Detect all new meeples (not just one) for consolidated bot turns
+      const prevMeepleKeys = new Set(
+        prevGs.meeples.map((m) => `${m.tileInstanceId}:${m.zoneId}:${m.actorId}`)
+      );
+      const newMeeples = nextGs.meeples.filter(
+        (m) => !prevMeepleKeys.has(`${m.tileInstanceId}:${m.zoneId}:${m.actorId}`)
+      );
+      for (const meeple of newMeeples) {
         pushEntry(
           {
             kind: 'meeple_placed',
-            actorId: newMeeple.actorId,
-            featureType: newMeeple.featureType,
+            actorId: meeple.actorId,
+            featureType: meeple.featureType,
           },
           players,
         );

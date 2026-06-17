@@ -111,4 +111,13 @@
       background-color: color.adjust($accept, $lightness: -6%);
     }
   }
+
+    @media (max-width: $mobile-breakpoint) {
+    width: 290px;
+    padding: 10px 20px 10px 25px;
+
+    &__returnBtn {
+      font-size: 14px;
+    }
+  }
 }

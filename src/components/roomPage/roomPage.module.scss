@@ -74,6 +74,88 @@
   }
 }
 
+.roomPage_mobile {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 50px);
+  background-color: $beige-light;
+  font-family: $font-main;
+  overflow: hidden;
+
+  .roomPage__mobileHeader {
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .roomPage__visual {
+    position: relative;
+    width: 100%;
+    height: 160px;
+    flex-shrink: 0;
+  }
+
+  .roomPage__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top;
+    border-radius: 0 0 20px 20px;
+    mask-image: linear-gradient(to bottom, black 55%, transparent 100%),
+      linear-gradient(to right, black 60%, transparent 100%),
+      linear-gradient(to left, black 60%, transparent 100%);
+    mask-composite: intersect;
+  }
+
+  .roomPage__gameTitle {
+    font-family: $font-logo;
+    font-size: 30px;
+    font-weight: 400;
+    color: #1e1e1e;
+    margin-top: -28px;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+    text-shadow: 0 4px 10px rgba($beige-light, 0.5);
+    padding: 0 12px;
+  }
+
+  .roomPage__mobileTabs {
+    flex-shrink: 0;
+    padding: 10px 12px;
+  }
+
+  .roomPage__mobileBody {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .roomPage__mobileRules {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0 16px 24px;
+
+    &::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: rgba($sage-gray, 0.5);
+      border-radius: 3px;
+    }
+  }
+}
+
 .error {
   display: flex;
   flex-direction: column;

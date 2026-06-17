@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Group, Image, Rect } from 'react-konva';
+import type Konva from 'konva';
 import useImage from 'use-image';
 import { TILE_IMAGES } from '../../utils/tiles.config';
 
@@ -16,7 +17,7 @@ interface GameTileProps {
   highlightFill?: string;
 }
 
-export const GameTile: React.FC<GameTileProps> = ({
+const GameTileComponent: React.FC<GameTileProps> = ({
   tileId, x, y, rotation, tileSize, tileStep, opacity = 1, highlightColor, highlightDashed, highlightFill
 }) => {
   const step = tileStep ?? tileSize;
@@ -24,13 +25,47 @@ export const GameTile: React.FC<GameTileProps> = ({
   const CORNER_RADIUS = 10;
   const BEVEL_SIZE = 4;
 
+  const groupRef = useRef<Konva.Group | null>(null);
+
+  // Растеризуем тяжёлое содержимое тайла (тень, клиппинг, градиенты) один раз
+  // в offscreen-битмап. При drag/zoom Konva только blit'ит готовый битмап вместо
+  // повторного пересчёта shadowBlur/clipFunc/градиентов на каждый кадр.
+  useEffect(() => {
+    const node = groupRef.current;
+    if (!node) return;
+    if (!image) return;
+
+    // Запас под тень (shadowBlur=15 + shadowOffset 8) и обводки, чтобы не обрезалось.
+    const PAD = 30;
+    node.cache({
+      x: -PAD,
+      y: -PAD,
+      width: tileSize + PAD * 2,
+      height: tileSize + PAD * 2,
+      // Кэш и так растеризуется в текущем pixelRatio слоя; ограничиваем сверху.
+      pixelRatio: Math.min(
+        typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1,
+        2,
+      ),
+    });
+    node.getLayer()?.batchDraw();
+
+    return () => {
+      node.clearCache();
+    };
+  }, [image, tileSize, rotation, highlightColor, highlightDashed, highlightFill, opacity]);
+
   return (
     <Group
+      ref={groupRef}
       x={x * step}
       y={y * step}
       offsetX={tileSize / 2}
       offsetY={tileSize / 2}
       opacity={opacity}
+      listening={false}
+      perfectDrawEnabled={false}
+      shadowForStrokeEnabled={false}
     >
       <Rect
         width={tileSize}
@@ -41,6 +76,8 @@ export const GameTile: React.FC<GameTileProps> = ({
         shadowBlur={15}
         shadowOffset={{ x: 8, y: 8 }}
         listening={false}
+        perfectDrawEnabled={false}
+        shadowForStrokeEnabled={false}
       />
 
       <Rect
@@ -51,6 +88,7 @@ export const GameTile: React.FC<GameTileProps> = ({
         fill="#2c2c2c"
         cornerRadius={CORNER_RADIUS}
         listening={false}
+        perfectDrawEnabled={false}
       />
 
       <Group
@@ -75,6 +113,8 @@ export const GameTile: React.FC<GameTileProps> = ({
           offsetY={tileSize / 2}
           width={tileSize}
           height={tileSize}
+          listening={false}
+          perfectDrawEnabled={false}
         />
 
         <Rect
@@ -85,6 +125,8 @@ export const GameTile: React.FC<GameTileProps> = ({
           opacity={0.2}
           cornerRadius={CORNER_RADIUS}
           listening={false}
+          perfectDrawEnabled={false}
+          shadowForStrokeEnabled={false}
         />
 
         <Rect
@@ -100,6 +142,8 @@ export const GameTile: React.FC<GameTileProps> = ({
           strokeWidth={BEVEL_SIZE}
           cornerRadius={CORNER_RADIUS}
           listening={false}
+          perfectDrawEnabled={false}
+          shadowForStrokeEnabled={false}
         />
       </Group>
 
@@ -115,6 +159,7 @@ export const GameTile: React.FC<GameTileProps> = ({
           1, 'rgba(0, 0, 0, 0.05)'
         ]}
         listening={false}
+        perfectDrawEnabled={false}
       />
 
       {highlightColor && (
@@ -127,8 +172,13 @@ export const GameTile: React.FC<GameTileProps> = ({
           fill={highlightFill}
           cornerRadius={CORNER_RADIUS}
           listening={false}
+          perfectDrawEnabled={false}
+          shadowForStrokeEnabled={false}
         />
       )}
     </Group>
   );
 };
+
+export const GameTile = React.memo(GameTileComponent);
+GameTile.displayName = 'GameTile';

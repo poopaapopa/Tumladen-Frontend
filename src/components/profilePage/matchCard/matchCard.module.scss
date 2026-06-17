@@ -4,14 +4,13 @@
   border-radius: 12px;
   background-color: $beige-light;
   border: 1px solid rgba($sage-gray, 0.6);
-  overflow: hidden;
 }
 
 .matchCardHeader {
-  display: grid;
-  grid-template-columns: auto 1fr auto auto auto;
+  display: flex;
   align-items: center;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 6px 14px;
   padding: 12px 16px;
   width: 100%;
   background: none;
@@ -46,6 +45,11 @@
   font-size: 17px;
   font-weight: 700;
   color: $forest-dark;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .matchDate {
@@ -68,6 +72,7 @@
   align-items: center;
   flex-shrink: 0;
   color: $forest-mid;
+  margin-left: auto;
 }
 
 // Results table inside expanded match
@@ -160,3 +165,40 @@
   83%  { color: #AC92EC; }
   100% { color: #E94E77; }
 }
+
+// ─── Mobile ──────────────────────────────────────────────────────────────────
+@media (max-width: $mobile-breakpoint) {
+  .matchCardHeader {
+    padding: 10px 12px;
+    gap: 4px 10px;
+  }
+
+  .matchGame {
+    font-size: 15px;
+  }
+
+  .matchScore {
+    font-size: 14px;
+  }
+
+  .matchDate {
+    font-size: 13px;
+    margin-right: 40px;
+  }
+
+  .matchCardBody {
+    padding: 0 12px 12px;
+  }
+
+  .matchResultsHeader,
+  .matchResultsRow {
+    grid-template-columns: 26px 1fr 52px;
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .matchResultsRow {
+    font-size: 14px;
+  }
+}
+

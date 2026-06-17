@@ -1,0 +1,44 @@
+.segmentedTabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background-color: rgba($metal-gray, 0.25);
+  border-radius: 999px;
+  width: 100%;
+  box-sizing: border-box;
+
+  &__tab {
+    flex: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: none;
+    background: transparent;
+    color: $forest-dark;
+    font-family: $font-main;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 8px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+    white-space: nowrap;
+    min-width: 0;
+
+    span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &:hover:not(.segmentedTabs__tab_active) {
+      background-color: rgba($beige-light, 0.4);
+    }
+
+    &_active {
+      background-color: $forest-mid;
+      color: $beige-light;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    }
+  }
+}

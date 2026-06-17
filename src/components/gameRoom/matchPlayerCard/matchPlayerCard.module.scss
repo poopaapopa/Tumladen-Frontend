@@ -1,5 +1,14 @@
 @use "sass:color";
 
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
 .playerCard {
   background-color: $beige-light;
   border-radius: 15px;
@@ -54,9 +63,36 @@
     color: #d4af37;
   }
 
+  &__botIcon {
+    color: #7c6fb0;
+    flex-shrink: 0;
+    margin-right: 6px;
+  }
+
+  &__difficultyBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 8px;
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 6px;
+    flex-shrink: 0;
+  }
+
+  &__difficultyIcon {
+    display: none;
+    color: #fff;
+  }
+
   &__nickname {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     font-weight: 600;
     font-size: 18px;
     color: #1e1e1e;
@@ -102,5 +138,98 @@
     box-shadow: 0 0 10px var(--player-color);
     border: 2px solid var(--player-color);
     overflow: visible;
+    position: relative;
+  }
+
+  // ─── Mobile: compact chip ───────────────────────────────────────
+  @media (max-width: $mobile-breakpoint) {
+    padding: 6px 10px;
+    gap: 12px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    min-width: 200px;
+
+    &__image,
+    &__imageFallback {
+      width: 42px;
+      height: 42px;
+    }
+
+    &__body {
+      gap: 2px;
+    }
+
+    &__header {
+      gap: 6px;
+    }
+
+    &__nickname {
+      font-size: 13px;
+      max-width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &__nicknameMarquee {
+      overflow: hidden;
+      white-space: nowrap;
+      width: 100%;
+    }
+
+    &__nicknameTrack {
+      display: inline-block;
+      animation: marquee var(--marquee-duration, 6s) linear infinite;
+
+      &::after {
+        content: attr(data-text);
+        padding-left: 2em;
+      }
+    }
+
+    &__crown {
+      margin-left: 4px;
+    }
+
+    &__figurines {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: -5px;
+      height: auto;
+      max-width: 200px;
+      min-height: 40px;
+      gap: 0;
+    }
+
+    &__figurinesIcon {
+      margin-left: -10px;
+      transform: scale(0.8);
+      transform-origin: left center;
+    }
+
+    &__starIcon {
+      transform: scale(0.8);
+    }
+
+    &__count {
+      font-size: 14px;
+      padding: 2px 6px;
+    }
+
+    &__difficultyBadge {
+      padding: 3px;
+      border-radius: 15px;
+      margin-left: 6px;
+    }
+
+    &__difficultyLabel {
+      display: none;
+    }
+
+    &__difficultyIcon {
+      display: block;
+    }
   }
 }

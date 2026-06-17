@@ -325,6 +325,9 @@
   &__illustratedContent {
     flex: 1;
     min-width: 0;
+    // Текст всегда слева на десктопе, хотя в DOM фигура идёт первой
+    // (порядок в разметке нужен для book-style обтекания на мобильных).
+    order: 1;
   }
 
   &__illustrationFigure {
@@ -334,6 +337,7 @@
     flex-direction: column;
     align-items: center;
     gap: 6px;
+    order: 2;
   }
 
   &__illustrationFigureRoad {
@@ -395,6 +399,87 @@
 
     tr:last-child td {
       border-bottom: none;
+    }
+  }
+
+  // ─── Mobile: книжное обтекание текстом вокруг иллюстраций ───
+  @media (max-width: $mobile-breakpoint) {
+    // Секции с книжным обтеканием (город, монастырь): картинка плавает справа
+    &__illustrated:not(.rules__illustratedStacked):not(.rules__illustratedAfter) {
+      display: block;
+
+      .rules__illustrationFigure {
+        float: right;
+        width: 42%;
+        max-width: 190px;
+        margin: 2px 0 6px 8px;
+      }
+
+      // clearfix, чтобы заголовок следующей секции не наезжал на фигуру
+      &::after {
+        content: '';
+        display: block;
+        clear: both;
+      }
+    }
+
+    // Секции «дороги» и «несколько подданных»: картинка идёт ПОД текстом
+    &__illustratedAfter {
+      display: flex;
+      flex-direction: column;
+
+      .rules__illustrationFigure {
+        float: none;
+        width: 100%;
+        max-width: 100%;
+        margin: 6px 0 0;
+        order: 2;
+      }
+
+      .rules__illustratedContent {
+        order: 1;
+      }
+
+      // оба <p> в секции дорог тоже должны идти перед фигурой
+      .rules__text {
+        order: 1;
+      }
+    }
+
+    // Картинки показываются целиком, без обрезки
+    &__illustration {
+      max-width: 100%;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+    }
+
+    &__illustrationMini {
+      height: auto;
+    }
+
+    &__illustrationCaption,
+    &__illustrationCaptionRoad,
+    &__illustrationCaptionMini {
+      max-width: 100%;
+    }
+
+    &__tileImg {
+      width: 72px;
+      height: 72px;
+    }
+
+    &__phaseImage {
+      width: 70px;
+      height: 70px;
+    }
+
+    &__scoringTable {
+      font-size: 12px;
+
+      th, td {
+        padding: 6px 8px;
+      }
     }
   }
 }

@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Users, Settings, BookOpen } from 'lucide-react';
 
 import styles from './roomPage.module.scss';
 import castleImg from '../../assets/zamok.png';
@@ -13,12 +14,25 @@ import { RoomPlayers } from './roomPlayers/roomPlayers.tsx';
 import { GameRulesPanel } from '../gameRules/gameRulesPanel.tsx';
 import { GAME_TYPE_LABELS } from '../../types/user';
 import type { RoomResponse, UpdateRoomSettingsPayload } from '../../types/room';
+import { useIsMobile } from '@/hooks/useIsMobile';
+import { SegmentedTabs } from '../segmentedTabs/segmentedTabs.tsx';
+
+type RoomTab = 'players' | 'settings' | 'rules';
+
+const ROOM_TABS = [
+  { key: 'players' as const, label: 'Участники', icon: Users },
+  { key: 'settings' as const, label: 'Настройки', icon: Settings },
+  { key: 'rules' as const, label: 'Правила', icon: BookOpen },
+];
 
 const RoomPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
   const currentUser = useUserStore((state) => state.actor);
+
+  const isMobile = useIsMobile();
+  const [activeTab, setActiveTab] = useState<RoomTab>('players');
 
   const [room, setRoom] = useState<RoomResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -121,6 +135,56 @@ const RoomPage = () => {
   if (error || !room) return <div className={styles.error}>{error || "Комната исчезла"}</div>;
 
   const isOwner = currentUser?.id === room.ownerActorId;
+
+  if (isMobile) {
+    return (
+      <div className={styles.roomPage_mobile}>
+        <div className={styles.roomPage__mobileHeader}>
+          <div className={styles.roomPage__visual}>
+            <img src={castleImg} alt="Game Art" className={styles.roomPage__image} />
+            <div className={styles.roomPage__overlay} />
+          </div>
+          <h1 className={styles.roomPage__gameTitle}>
+            {GAME_TYPE_LABELS[room.gameType] ?? room.gameType}
+          </h1>
+        </div>
+
+        <div className={styles.roomPage__mobileTabs}>
+          <SegmentedTabs
+            tabs={ROOM_TABS}
+            activeKey={activeTab}
+            onChange={setActiveTab}
+            ariaLabel="Разделы комнаты"
+          />
+        </div>
+
+        <div className={styles.roomPage__mobileBody}>
+          {activeTab === 'players' && (
+            <RoomPlayers
+              room={room}
+              isOwner={isOwner}
+              sendMessage={sendMessage}
+              isKicked={isKicked}
+            />
+          )}
+          {activeTab === 'settings' && (
+            <RoomSidebar
+              room={room}
+              isOwner={isOwner}
+              isRoomDeleted={isRoomDeleted}
+              onSaveSetting={handleSaveSetting}
+              sendMessage={sendMessage}
+            />
+          )}
+          {activeTab === 'rules' && (
+            <div className={styles.roomPage__mobileRules}>
+              <GameRulesPanel gameType={room.gameType} />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.roomPage}>

@@ -159,6 +159,68 @@
       cursor: not-allowed;
     }
   }
+
+  // ── Mobile ─────────────────────────────────────────────────────────────────
+  @media (max-width: $mobile-breakpoint) {
+    padding: 22px 18px;
+
+    &__layout {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    &__avatarCard {
+      width: 150px;
+      flex-shrink: 0;
+    }
+
+    &__avatarBtns {
+      align-items: stretch;
+      justify-content: center;
+      gap: 25px;
+      flex: 1;
+    }
+
+    &__avatarBtn {
+      max-width: 220px;
+      padding: 10px;
+      border-radius: 12px;
+    }
+
+    &__footer {
+      justify-content: center;
+    }
+
+    &__title {
+      font-size: 24px;
+      margin-bottom: 22px;
+    }
+
+    &__avatarCol {
+      gap: 32px;
+      flex-direction: row;
+      width: unset;
+    }
+
+    &__avatarCard {
+      width: 150px;
+    }
+
+    &__formCol {
+      gap: 26px;
+      width: 100%;
+    }
+
+    &__saveBtn {
+      max-width: 100%;
+      width: 100%;
+      box-sizing: border-box;
+      text-align: center;
+      padding: 15px 28px;
+      font-size: 17px;
+    }
+  }
 }
 
 // Wide modal override — applied via Modal's className prop

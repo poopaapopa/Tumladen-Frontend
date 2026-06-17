@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Hourglass } from 'lucide-react';
+import { Bot, Hourglass } from 'lucide-react';
 import { preloadTileImages } from '@/utils/tiles.config';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './gameRoom.module.scss';
 import sidebarstyles from '../mainPage/MainPage.module.scss';
+import { useContainerSize } from '@/hooks/useContainerSize';
 import { useRoomSocket } from '@/api/ws';
 import type { MatchFinishedPayload, WebSocketMessage } from '@/types/ws';
 import {
@@ -75,6 +76,9 @@ const GameRoom = () => {
 
   const { actionLog, recordMatchUpdate, clearLog } = useMatchActionLog(inviteCode);
   const { timeLeft, setTurnDeadline } = useTurnTimer(match?.status === 'active');
+
+  // Measure board container for responsive Stage sizing
+  const { width: boardWidth, height: boardHeight, ref: boardContainerRef } = useContainerSize();
 
   // Анимация возврата подданых
   const boardHandleRef = useRef<GameBoardHandle | null>(null);
@@ -232,6 +236,10 @@ const GameRoom = () => {
         }
       }
 
+      // Track last placed tile per player for board highlights (обводка).
+      // For the current player's turn we use currentTurn.placedTile.
+      // For bot turns (which the server may consolidate), we also diff the board
+      // to find newly added tiles and attribute them to their players.
       const newPlacedTile = newMatch.gameState?.currentTurn?.placedTile;
       const placerId = newMatch.gameState?.currentPlayerId;
       if (newPlacedTile && placerId) {
@@ -254,6 +262,74 @@ const GameRoom = () => {
             [placerId]: { x: newPlacedTile.x, y: newPlacedTile.y, color },
           };
         });
+      }
+
+      // Detect tiles placed by bots (or during consolidated turns) by diffing the board.
+      // When turns are skipped (bot turns processed server-side), placedTile won't reflect them.
+      if (prevMatch) {
+        const prevTileKeys = new Set(
+          (prevMatch.gameState?.board?.tiles ?? []).map(
+            (t) => `${t.x}:${t.y}`
+          )
+        );
+        const newTiles = (newMatch.gameState?.board?.tiles ?? []).filter(
+          (t) => !prevTileKeys.has(`${t.x}:${t.y}`)
+        );
+        // Filter out the tile already handled via currentTurn.placedTile above.
+        const unattributedTiles = newTiles.filter(
+          (t) => !(newPlacedTile && t.x === newPlacedTile.x && t.y === newPlacedTile.y)
+        );
+
+        if (unattributedTiles.length > 0) {
+          // Determine intermediate players by walking through turn order.
+          // The server consolidates bot turns, so prevMatch.turnNumber → newMatch.turnNumber
+          // can skip multiple turns. Each intermediate turn was played by the next player in seat order.
+          const allPlayers = newMatch.gameState?.players ?? [];
+          const numPlayers = allPlayers.length;
+          const prevTurnNumber = prevMatch.gameState?.turnNumber ?? 0;
+          const newTurnNumber = newMatch.gameState?.turnNumber ?? 0;
+          const turnDelta = newTurnNumber - prevTurnNumber;
+
+          // Find the previous player's seat to determine the starting offset
+          const prevPlayerId = prevMatch.gameState?.currentPlayerId;
+          const prevPlayerSeat = allPlayers.find((p) => p.actorId === prevPlayerId)?.seat ?? 0;
+
+          // Build seat→player lookup
+          const playerBySeat = new Map(allPlayers.map((p) => [p.seat, p]));
+
+          // If the previous phase was place_tile, the previous player's tile is also new in the diff,
+          // so we skip one offset (their tile is attributed via currentTurn.placedTile or the
+          // earlier block). If prevPhase was place_meeple, their tile was already on the board.
+          const prevPhase = prevMatch.gameState?.phase;
+          const startOffset = prevPhase === 'place_tile' ? 0 : 1;
+
+          // Build a list of {actorId, color} for intermediate turns.
+          // i represents the turn offset from prevPlayer: i=0 is prevPlayer's own turn,
+          // i=1 is the next player, etc. startOffset skips turns already on the board.
+          const intermediateInfo: { actorId: string; color: string }[] = [];
+          for (let i = startOffset; i < turnDelta; i++) {
+            const seat = (prevPlayerSeat + i) % numPlayers;
+            const player = playerBySeat.get(seat);
+            intermediateInfo.push({
+              actorId: player?.actorId ?? `bot-seat-${seat}`,
+              color: getPlayerColorBySeat(seat),
+            });
+          }
+
+          setLastPlacedByPlayer((prev) => {
+            const updates: Record<string, { x: number; y: number; color: string }> = {};
+            unattributedTiles.forEach((tile, idx) => {
+              // Use the intermediate player's actorId as key so only their LAST tile is highlighted
+              // (same behavior as human players). Fall back to position-based key if no mapping.
+              const info = idx < intermediateInfo.length
+                ? intermediateInfo[idx]
+                : { actorId: `bot-tile-${tile.x}-${tile.y}`, color: getPlayerColorBySeat(undefined) };
+              updates[info.actorId] = { x: tile.x, y: tile.y, color: info.color };
+            });
+            if (Object.keys(updates).length === 0) return prev;
+            return { ...prev, ...updates };
+          });
+        }
       }
 
       setTurnDeadline(newMatch.gameState?.currentTurn?.turnEndsAt);
@@ -382,14 +458,19 @@ const GameRoom = () => {
 
   const ownerId = room?.ownerActorId;
 
-  // Merge GamePlayer (score, meeplesLeft) with MatchPlayer (avatarUrl)
+  // Merge GamePlayer (score, meeplesLeft) with MatchPlayer (avatarUrl, actorType, botDifficulty)
   const gamePlayers = match?.gameState?.players || [];
   const matchPlayers = match?.players || [];
-  const avatarByActor = new Map(matchPlayers.map((p) => [p.actorId, p.avatarUrl]));
-  const players: SidebarPlayer[] = gamePlayers.map((gp) => ({
-    ...gp,
-    avatarUrl: avatarByActor.get(gp.actorId),
-  }));
+  const matchPlayerByActor = new Map(matchPlayers.map((p) => [p.actorId, p]));
+  const players: SidebarPlayer[] = gamePlayers.map((gp) => {
+    const mp = matchPlayerByActor.get(gp.actorId);
+    return {
+      ...gp,
+      avatarUrl: mp?.avatarUrl,
+      actorType: mp?.actorType,
+      botDifficulty: mp?.botDifficulty,
+    };
+  });
   const drawnTile = gameState?.currentTurn?.drawnTile;
   const remainingTiles = gameState?.deck?.remainingCount;
   const boardTilesCount = gameState?.board?.tiles?.length ?? 0;
@@ -404,6 +485,7 @@ const GameRoom = () => {
   const currentPlayer = players.find((player) => player.actorId === currentTurnId);
   const currentColor = getPlayerColorBySeat(currentPlayer?.seat);
   const isYourTurn = Boolean(privateState?.isYourTurn);
+  const isCurrentPlayerBot = currentPlayer?.actorType === 'bot' || (currentTurnId?.startsWith('bot:') ?? false);
 
   const lastPlacedTile = gameState?.currentTurn?.placedTile;
 
@@ -419,9 +501,11 @@ const GameRoom = () => {
         registerPlayerCardRef={registerPlayerCardRef}
       />
 
-      <div className={styles.boardContainer}>
+      <div className={styles.boardContainer} ref={boardContainerRef}>
         <GameBoard
           ref={boardHandleRef}
+          width={boardWidth}
+          height={boardHeight}
           board={gameState?.board?.tiles || []}
           validPlacements={privateState?.validPlacements || []}
           onPlaceTile={handlePlaceTile}
@@ -448,13 +532,21 @@ const GameRoom = () => {
               currentColor={currentColor}
               timeLeft={timeLeft}
               turnDuration={gameState?.settings?.turnTimeSeconds}
+              isBot={isCurrentPlayerBot}
             />
 
             {!isYourTurn && currentPlayer && (
               <div className={styles.waitingBadge}>
-                <Hourglass size={18} className={styles.waitingBadge__hourglass} aria-hidden="true" />
+                {isCurrentPlayerBot ? (
+                  <Bot size={18} className={styles.waitingBadge__hourglass} aria-hidden="true" />
+                ) : (
+                  <Hourglass size={18} className={styles.waitingBadge__hourglass} aria-hidden="true" />
+                )}
                 <span className={styles.waitingBadge__text}>
-                  Ожидайте хода {currentPlayer.displayName}
+                  {isCurrentPlayerBot
+                    ? `Бот ${currentPlayer.displayName} думает...`
+                    : `Ожидайте хода ${currentPlayer.displayName}`
+                  }
                 </span>
               </div>
             )}

@@ -11,6 +11,37 @@
   box-shadow: 4px 0 15px rgba(0, 0, 0, 0.05);
   z-index: 5;
 
+  @media (max-width: $mobile-breakpoint) {
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0 16px 24px 16px;
+    overflow-y: auto;
+    background-color: $beige-light;
+
+    &__roomName {
+      font-size: 24px;
+    }
+
+    &__nameInput {
+      font-size: 18px;
+    }
+
+    &__btnStart {
+      padding: 18px;
+      font-size: 24px;
+    }
+
+    &__waitMessage {
+      font-size: 18px;
+      padding: 18px 0;
+    }
+
+    &__configBox,
+    &__privacyBox {
+      font-size: 16px;
+    }
+  }
+
   &__header {
     margin-bottom: 25px;
     border-bottom: 1px solid rgba($forest-dark, 0.1);
@@ -106,8 +137,8 @@
   }
 
   &__privacyBox {
-    background: $beige-light;
-    border: 2px solid $forest-mid;
+    background: linear-gradient(135deg, $cream 0%, $cream-deep 100%);
+    border: 2px solid $border-soft;
     border-radius: 12px;
     padding: 12px 16px;
     display: flex;
@@ -122,24 +153,24 @@
     margin-bottom: 20px;
 
     &_active {
-      background-color: $forest-mid;
+      background: $forest-mid;
       color: $beige-light;
-      border-color: $forest-dark;
+      border-color: $forest-mid;
     }
 
     &_editable {
       cursor: pointer;
 
       &:hover {
-        border-color: $forest-dark;
-        box-shadow: 0 0 0 3px rgba($forest-mid, 0.2);
+        border-color: $forest-soft;
+        box-shadow: 0 0 0 3px rgba($forest-mid, 0.12);
       }
     }
   }
 
   &__configBox {
-    background: $beige-light;
-    border: 2px solid $forest-dark;
+    background: linear-gradient(135deg, $cream 0%, $cream-deep 100%);
+    border: 2px solid $border-soft;
     border-radius: 12px;
     padding: 12px;
     display: flex;

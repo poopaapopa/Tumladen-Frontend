@@ -4,7 +4,8 @@ import {
   User,
   Trophy,
   Lock,
-  Pencil
+  Pencil,
+  X
 } from 'lucide-react';
 import styles from './profilePage.module.scss';
 import { userService } from '@/api/user.ts';
@@ -19,6 +20,7 @@ import elfMountains from '@/assets/elf-mountains.png';
 import editModalStyles from './editProfileModal/editProfileModal.module.scss';
 import { StatsCards } from './statsCards/statsCards.tsx';
 import { MatchCard } from './matchCard/matchCard.tsx';
+import { useIsMobile } from '@/hooks/useIsMobile.ts';
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -36,6 +38,7 @@ export default function ProfilePage() {
   const [historyOpen, setHistoryOpen] = useState(false);
   const [matchFilter, setMatchFilter] = useState<string>(ALL_GAMES);
   const [completionFilter, setCompletionFilter] = useState<CompletionFilter>('all');
+  const isMobile = useIsMobile();
 
   // Edit profile modal
   const [editOpen, setEditOpen] = useState(false);
@@ -126,8 +129,7 @@ export default function ProfilePage() {
       : stats.byGame.find((g) => g.gameType === statsTab) ??
         stats.overall;
 
-  // Placeholder achievements (8 slots)
-  const achievements = Array.from({ length: 8 }, (_, i) => ({
+  const achievements = Array.from({ length: isMobile ? 12 : 8 }, (_, i) => ({
     id: i,
     unlocked: false,
   }));
@@ -154,6 +156,25 @@ export default function ProfilePage() {
                   style={{ '--avatar-url': `url(${elfAvatar})` } as CSSProperties}
                 />
               )}
+
+              {/* Mobile-only overlay: name + email + edit button over the photo */}
+              <div className={styles.avatarOverlayInfo}>
+                <div className={styles.avatarOverlayText}>
+                  <span className={styles.avatarOverlayName}>{profile.nickname}</span>
+                  {isOwnProfile(profile) && profile.email && (
+                    <span className={styles.avatarOverlayEmail}>{profile.email}</span>
+                  )}
+                </div>
+                {isOwn && (
+                  <button
+                    className={styles.avatarOverlayEditBtn}
+                    onClick={() => setEditOpen(true)}
+                    aria-label="Редактировать профиль"
+                  >
+                    <Pencil size={18} />
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -256,7 +277,7 @@ export default function ProfilePage() {
                   className={styles.emptyStateImg}
                 />
                 <p className={styles.emptyStateText}>
-                  История партий пока пуста. <br/>Когда появятся завершённые партии, они будут показаны здесь
+                  История партий пока пуста. <br/>Когда появятся партии, они будут показаны здесь
                 </p>
               </div>
             ) : (
@@ -314,11 +335,24 @@ export default function ProfilePage() {
       </div>
 
       {/* ── Full history modal ─────────────────────────────────────────────── */}
-      <Modal isOpen={historyOpen} onClose={() => setHistoryOpen(false)}>
-        <div>
-          <p className={styles.historyModalTitle}>
-            История матчей ({filteredMatches.length})
-          </p>
+      <Modal
+        isOpen={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        className={styles.historyModalWindow}
+      >
+        <div className={styles.historyModalCard}>
+          <div className={styles.historyModalHeader}>
+            <p className={styles.historyModalTitle}>
+              История матчей ({filteredMatches.length})
+            </p>
+            <button
+              className={styles.historyModalClose}
+              onClick={() => setHistoryOpen(false)}
+              aria-label="Закрыть историю"
+            >
+              <X size={22} />
+            </button>
+          </div>
           <div className={styles.historyModal}>
             {filteredMatches.map((entry) => (
               <MatchCard key={entry.id} entry={entry} userId={profile.id} />

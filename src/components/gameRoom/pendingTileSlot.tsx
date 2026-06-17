@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Group, Path, Rect } from 'react-konva';
 import { GameTile } from './tile';
+import { useIsMobile } from '@/hooks/useIsMobile';
 
 const PLACEMENT_OUTLINE_COLOR = "#27AE60";
 const PLACEMENT_FILL_COLOR = "rgba(39, 174, 96, 0.1)";
@@ -29,6 +30,7 @@ export const PendingTileSlot: React.FC<PendingTileSlotProps> = ({
   pos, isPending, displayRotation, currentTileId, TILE_SIZE, TILE_STEP, onPlaceTile, onRotateTile, setCursor
 }) => {
   const [hovered, setHovered] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleClick = () => {
     if (isPending) {
@@ -47,6 +49,17 @@ export const PendingTileSlot: React.FC<PendingTileSlotProps> = ({
       onMouseEnter={() => { setCursor('pointer'); setHovered(true); }}
       onMouseLeave={() => { setCursor('default'); setHovered(false); }}
     >
+      {/* Невидимая hit-область: дочерние GameTile/оверлеи имеют listening={false}
+          (тайлы кэшируются в битмап), поэтому слоту нужен собственный приёмник
+          событий для hover/click/tap размещения квадрата. */}
+      <Rect
+        width={TILE_SIZE}
+        height={TILE_SIZE}
+        offsetX={TILE_SIZE / 2}
+        offsetY={TILE_SIZE / 2}
+        cornerRadius={10}
+        fill="transparent"
+      />
       {currentTileId && (
         <GameTile
           tileId={currentTileId}
@@ -60,7 +73,7 @@ export const PendingTileSlot: React.FC<PendingTileSlotProps> = ({
           highlightFill={isPending ? undefined : PLACEMENT_FILL_COLOR}
         />
       )}
-      {isPending && hovered && (
+      {isPending && (isMobile || hovered) && (
         <>
           <Rect
             width={TILE_SIZE}
