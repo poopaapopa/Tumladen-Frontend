@@ -1,4 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { Bot } from 'lucide-react';
 import styles from './currentTurnPanel.module.scss';
 import iconImg from '@/assets/icon.png';
 import { TILE_IMAGES } from '@/utils/tiles.config.ts';
@@ -15,6 +16,8 @@ interface CurrentTurnPanelProps {
   deckPercent?: number;
   timeLeft: number | null;
   turnDuration?: number;
+  /** Whether the current player is a bot */
+  isBot?: boolean;
 }
 
 const URGENT_THRESHOLD = 10;
@@ -123,6 +126,7 @@ export const CurrentTurnPanel = ({
   deckPercent,
   timeLeft,
   turnDuration,
+  isBot,
 }: CurrentTurnPanelProps) => {
   const isPlaceMeeple = phase === 'place_meeple';
   const remaining = remainingTiles ?? 0;
@@ -140,7 +144,10 @@ export const CurrentTurnPanel = ({
         }`}
       >
         <div className={styles.playerCard__info}>
-          <span className={styles.playerCard__label}>Сейчас ходит:</span>
+          <span className={styles.playerCard__label}>
+            {isBot && <Bot size={14} className={styles.playerCard__botIcon} />}
+            Сейчас ходит:
+          </span>
           <MarqueeText text={currentPlayerName} className={styles.playerCard__nickname} />
         </div>
         {timeLeft !== null && (

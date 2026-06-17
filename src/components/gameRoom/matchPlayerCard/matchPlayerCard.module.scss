@@ -63,9 +63,36 @@
     color: #d4af37;
   }
 
+  &__botIcon {
+    color: #7c6fb0;
+    flex-shrink: 0;
+    margin-right: 6px;
+  }
+
+  &__difficultyBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: #fff;
+    padding: 1px 6px;
+    border-radius: 8px;
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-left: 6px;
+    flex-shrink: 0;
+  }
+
+  &__difficultyIcon {
+    display: none;
+    color: #fff;
+  }
+
   &__nickname {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     font-weight: 600;
     font-size: 18px;
     color: #1e1e1e;
@@ -120,7 +147,7 @@
     gap: 12px;
     border-radius: 10px;
     flex-shrink: 0;
-    min-width: 0;
+    min-width: 200px;
 
     &__image,
     &__imageFallback {
@@ -172,7 +199,7 @@
       margin-top: -5px;
       height: auto;
       max-width: 200px;
-      min-height: 20px;
+      min-height: 40px;
       gap: 0;
     }
 
@@ -189,6 +216,20 @@
     &__count {
       font-size: 14px;
       padding: 2px 6px;
+    }
+
+    &__difficultyBadge {
+      padding: 3px;
+      border-radius: 15px;
+      margin-left: 6px;
+    }
+
+    &__difficultyLabel {
+      display: none;
+    }
+
+    &__difficultyIcon {
+      display: block;
     }
   }
 }

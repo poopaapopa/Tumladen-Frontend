@@ -1,11 +1,31 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from 'react';
-import { Star, Crown } from "lucide-react";
+import { Star, Crown, Bot, Smile, Shield, Flame } from "lucide-react";
+import type { LucideIcon } from 'lucide-react';
 import clsx from 'clsx';
 import styles from './matchPlayerCard.module.scss';
 import defaultAvatar from '@/assets/elf-avatar.svg';
 import { avatarSrc } from '@/utils/avatar.ts';
 import { getPlayerColorBySeat } from "@/utils/playerColor.ts";
 import { Meeple3D } from "./meeple.tsx";
+import type { ActorType, BotDifficulty } from '@/types/room';
+
+const DIFFICULTY_LABELS: Record<BotDifficulty, string> = {
+  easy: 'Лёгкий',
+  medium: 'Средний',
+  hard: 'Сложный',
+};
+
+const DIFFICULTY_COLORS: Record<BotDifficulty, string> = {
+  easy: '#27AE60',
+  medium: '#E2A308',
+  hard: '#e74c3c',
+};
+
+const DIFFICULTY_ICONS: Record<BotDifficulty, LucideIcon> = {
+  easy: Smile,
+  medium: Shield,
+  hard: Flame,
+};
 
 interface MatchPlayerCardProps {
   displayName: string;
@@ -15,6 +35,8 @@ interface MatchPlayerCardProps {
   meeplesLeft: number;
   seat: number;
   avatarUrl?: string | null;
+  actorType?: ActorType;
+  botDifficulty?: BotDifficulty;
 }
 
 export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(({
@@ -25,6 +47,8 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
   meeplesLeft,
   seat,
   avatarUrl,
+  actorType,
+  botDifficulty,
 }, ref) => {
   const playerColor = getPlayerColorBySeat(seat);
   const [displayScore, setDisplayScore] = useState(score);
@@ -32,6 +56,8 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
   const animationFrameRef = useRef<number | null>(null);
   const animationTimeoutRef = useRef<number | null>(null);
   const displayedScoreRef = useRef(score);
+
+  const isBot = actorType === 'bot';
 
   useEffect(() => {
     displayedScoreRef.current = displayScore;
@@ -109,7 +135,14 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
         ['--player-color' as string]: playerColor
       }}
     >
-      {hasAvatar ? (
+      {isBot ? (
+        <span
+          className={styles.playerCard__imageFallback}
+          aria-label={displayName}
+          role="img"
+          style={{ ['--avatar-url' as string]: `url(${defaultAvatar})` }}
+        />
+      ) : hasAvatar ? (
         <img src={avatarSrc(avatarUrl)} alt={displayName} className={styles.playerCard__image} />
       ) : (
         <span
@@ -123,8 +156,23 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
       <div className={styles.playerCard__body}>
         <div className={styles.playerCard__header}>
           <div className={styles.playerCard__nickname}>
+            {isBot && <Bot size={18} className={styles.playerCard__botIcon} />}
             {displayName}
-            {isRoomOwner && <Crown size={18} className={styles.playerCard__crown} />}
+            {isBot && botDifficulty && (() => {
+              const DiffIcon = DIFFICULTY_ICONS[botDifficulty];
+              return (
+                <span
+                  className={styles.playerCard__difficultyBadge}
+                  style={{ backgroundColor: DIFFICULTY_COLORS[botDifficulty] }}
+                >
+                  <span className={styles.playerCard__difficultyLabel}>
+                    {DIFFICULTY_LABELS[botDifficulty]}
+                  </span>
+                  <DiffIcon size={12} className={styles.playerCard__difficultyIcon} />
+                </span>
+              );
+            })()}
+            {isRoomOwner && !isBot && <Crown size={18} className={styles.playerCard__crown} />}
           </div>
           <span className={countClassName}>
             {displayScore}

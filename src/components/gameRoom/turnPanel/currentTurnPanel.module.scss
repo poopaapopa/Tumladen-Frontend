@@ -104,6 +104,14 @@
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: rgba($forest-dark, 0.55);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__botIcon {
+    color: #7c6fb0;
+    flex-shrink: 0;
   }
 
   &__nickname {

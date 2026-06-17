@@ -1,3 +1,5 @@
+import type { ActorType, BotDifficulty } from './room';
+
 export type Phase = 'place_tile' | 'place_meeple';
 export type MatchStatus = 'waiting' | 'active' | 'finished';
 
@@ -19,9 +21,12 @@ export interface GamePlayer {
 
 export interface MatchPlayer {
   actorId: string;
+  actorType?: ActorType;
   displayName: string;
   avatarUrl?: string | null;
   seat: number;
+  botDifficulty?: BotDifficulty;
+  isDisconnected?: boolean;
 }
 
 export interface PlacedMeeple {
@@ -88,8 +93,8 @@ export interface PrivateState {
   validMeeplePlacements: ValidMeeplePlacement[];
 }
 
-/** GamePlayer enriched with identity fields from MatchPlayer (avatarUrl). */
-export type SidebarPlayer = GamePlayer & Pick<MatchPlayer, 'avatarUrl'>;
+/** GamePlayer enriched with identity fields from MatchPlayer (avatarUrl, actorType, botDifficulty). */
+export type SidebarPlayer = GamePlayer & Pick<MatchPlayer, 'avatarUrl' | 'actorType' | 'botDifficulty'>;
 
 export interface LogEntry {
   id: string;

@@ -1,10 +1,19 @@
+export type ActorType = 'guest' | 'user' | 'bot';
+export type BotDifficulty = 'easy' | 'medium' | 'hard';
+
+export interface BotConfig {
+  difficulty: BotDifficulty;
+}
+
 export interface ParticipantResponse {
   actorId: string;
+  actorType: ActorType;
   displayName: string;
+  botDifficulty?: BotDifficulty;
   joinedAt: string;
 }
 
-export type SettingValue = string | number | boolean;
+export type SettingValue = string | number | boolean | BotConfig[];
 export type RoomStatus = 'waiting' | 'playing' | 'finished';
 
 export interface Settings {

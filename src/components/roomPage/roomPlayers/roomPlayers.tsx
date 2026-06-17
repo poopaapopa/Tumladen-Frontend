@@ -4,7 +4,7 @@ import { Share2, LogOut, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import styles from './roomPlayers.module.scss';
-import type { RoomResponse } from '@/types/room.ts';
+import type { RoomResponse, BotDifficulty, BotConfig } from '@/types/room.ts';
 import { useUserStore } from '@/store/useUserStore';
 import { PlayerSlot } from "./playerSlot/playerSlot.tsx";
 import Modal from "@/components/modal/modal.tsx";
@@ -97,6 +97,34 @@ export const RoomPlayers = ({
     }
   };
 
+  // --- Bot management ---
+  const currentBots = (room.settings?.bots as BotConfig[] | undefined) || [];
+
+  const sendBotsUpdate = (newBots: BotConfig[]) => {
+    sendMessage('update_room_settings', {
+      roomId: room.id,
+      gameType: room.gameType,
+      name: room.name,
+      maxPlayers: room.maxPlayers,
+      isPrivate: room.isPrivate,
+      settings: { ...room.settings, bots: newBots },
+    });
+  };
+
+  const handleAddBot = (difficulty: BotDifficulty) => {
+    const newBots = [...currentBots, { difficulty }];
+    sendBotsUpdate(newBots);
+  };
+
+  const handleRemoveBot = (botActorId: string) => {
+    // Find bot's index among bot participants to map to the bots config array
+    const botParticipants = room.participants?.filter(p => p.actorType === 'bot') || [];
+    const botIndex = botParticipants.findIndex(p => p.actorId === botActorId);
+    if (botIndex === -1) return;
+    const newBots = currentBots.filter((_, i) => i !== botIndex);
+    sendBotsUpdate(newBots);
+  };
+
   return (
     <section className={styles.roomPlayers}>
         <h2 className={styles.roomPlayers__title}>
@@ -112,6 +140,8 @@ export const RoomPlayers = ({
               room={room}
               isOwner={isOwner}
               onKick={handleKick}
+              onAddBot={handleAddBot}
+              onRemoveBot={handleRemoveBot}
             />
           ))}
         </div>

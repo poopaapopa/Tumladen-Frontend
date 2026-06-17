@@ -1,5 +1,4 @@
 import React from 'react';
-import sidebarstyles from '../mainPage/MainPage.module.scss';
 import styles from './gameRoom.module.scss';
 import type { SidebarPlayer } from '@/types/match';
 import { MatchPlayerCard } from './matchPlayerCard/matchPlayerCard.tsx';
@@ -38,9 +37,9 @@ export const GameRoomSidebar = ({
   });
 
   return (
-    <div className={sidebarstyles.sidebar}>
-      <div className={sidebarstyles.sidebar__gameInfo}>
-        <div className={sidebarstyles.sidebar__title}>Игроки</div>
+    <div className={styles.sidebar}>
+      <div className={styles.sidebar__gameInfo}>
+        <div className={styles.sidebar__title}>Игроки</div>
       </div>
 
       <div className={styles.playersList}>
@@ -58,6 +57,8 @@ export const GameRoomSidebar = ({
                 score={player.score}
                 meeplesLeft={displayedMeeples}
                 seat={player.seat}
+                actorType={player.actorType}
+                botDifficulty={player.botDifficulty}
               />
 
               {index === 0 && <div className={styles.playersList__divider} />}
