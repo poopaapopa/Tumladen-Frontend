@@ -7,6 +7,11 @@ import styles from './botDifficultyPopover.module.scss';
 
 interface BotDifficultyPopoverProps {
   onSelect: (difficulty: BotDifficulty) => void;
+  /** Optional custom trigger element. Receives ref and onClick handler. */
+  renderTrigger?: (props: {
+    ref: React.RefObject<HTMLButtonElement | null>;
+    onClick: () => void;
+  }) => React.ReactNode;
 }
 
 interface PopoverPosition {
@@ -26,7 +31,7 @@ const DIFFICULTY_OPTIONS: { value: BotDifficulty; label: string; color: string }
   { value: 'hard', label: 'Сложный', color: '#e74c3c' },
 ];
 
-export const BotDifficultyPopover = ({ onSelect }: BotDifficultyPopoverProps) => {
+export const BotDifficultyPopover = ({ onSelect, renderTrigger }: BotDifficultyPopoverProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [position, setPosition] = useState<PopoverPosition | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -88,15 +93,19 @@ export const BotDifficultyPopover = ({ onSelect }: BotDifficultyPopoverProps) =>
 
   return (
     <>
-      <button
-        ref={triggerRef}
-        className={styles.addBotButton}
-        onClick={handleToggle}
-        type="button"
-      >
-        <Bot size={18} />
-        <span>Добавить бота</span>
-      </button>
+      {renderTrigger ? (
+        renderTrigger({ ref: triggerRef, onClick: handleToggle })
+      ) : (
+        <button
+          ref={triggerRef}
+          className={styles.addBotButton}
+          onClick={handleToggle}
+          type="button"
+        >
+          <Bot size={18} />
+          <span>Добавить бота</span>
+        </button>
+      )}
 
       {createPortal(
         <AnimatePresence>

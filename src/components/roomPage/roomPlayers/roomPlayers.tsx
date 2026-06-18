@@ -125,6 +125,16 @@ export const RoomPlayers = ({
     sendBotsUpdate(newBots);
   };
 
+  const handleChangeBotDifficulty = (botActorId: string, newDifficulty: BotDifficulty) => {
+    const botParticipants = room.participants?.filter(p => p.actorType === 'bot') || [];
+    const botIndex = botParticipants.findIndex(p => p.actorId === botActorId);
+    if (botIndex === -1) return;
+    const newBots = currentBots.map((bot, i) =>
+      i === botIndex ? { ...bot, difficulty: newDifficulty } : bot
+    );
+    sendBotsUpdate(newBots);
+  };
+
   return (
     <section className={styles.roomPlayers}>
         <h2 className={styles.roomPlayers__title}>
@@ -142,6 +152,7 @@ export const RoomPlayers = ({
               onKick={handleKick}
               onAddBot={handleAddBot}
               onRemoveBot={handleRemoveBot}
+              onChangeBotDifficulty={handleChangeBotDifficulty}
             />
           ))}
         </div>

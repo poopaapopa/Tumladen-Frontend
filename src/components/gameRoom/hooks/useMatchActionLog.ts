@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { LogEntry, MatchPlayer, MatchStatePayload, PlacedMeeple } from '@/types/match';
+import type { LogEntry, MatchPlayer, MatchStatePayload } from '@/types/match';
 import { getPlayerColorBySeat } from '@/utils/playerColor.ts';
 import { pluralizePoints } from '@/utils/pluralize.ts';
 
@@ -27,15 +27,6 @@ const buildText = (action: MatchAction): string => {
     case 'score_gained':
       return `получил ${action.delta} ${pluralizePoints(action.delta)}`;
   }
-};
-
-const findNewMeeple = (
-  prev: PlacedMeeple[],
-  next: PlacedMeeple[],
-): PlacedMeeple | undefined => {
-  if (next.length <= prev.length) return undefined;
-  const prevKeys = new Set(prev.map((m) => `${m.tileInstanceId}:${m.zoneId}:${m.actorId}`));
-  return next.find((m) => !prevKeys.has(`${m.tileInstanceId}:${m.zoneId}:${m.actorId}`));
 };
 
 export const useMatchActionLog = (inviteCode?: string) => {

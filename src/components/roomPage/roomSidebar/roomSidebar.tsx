@@ -143,7 +143,7 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
           onSelect={(val) => onSaveSetting('maxPlayers', val)}
         />
         <EditableSelector
-          value={currentSettings['turnTimeSeconds']}
+          value={currentSettings['turnTimeSeconds'] as string | number | boolean}
           icon={Clock}
           options={timerOptions}
           isOwner={isOwner}

@@ -58,6 +58,22 @@
     line-height: 1.4;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    border: none;
+    font-family: inherit;
+
+    &_clickable {
+      cursor: pointer;
+      transition: filter 0.15s ease, transform 0.1s ease;
+
+      &:hover {
+        filter: brightness(1.15);
+        transform: scale(1.05);
+      }
+
+      &:active {
+        transform: scale(0.97);
+      }
+    }
   }
 
   &__blayerBadge {

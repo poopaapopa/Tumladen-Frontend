@@ -24,9 +24,10 @@ interface PlayerSlotProps {
   onKick: (targetId: string, targetName: string) => void;
   onAddBot: (difficulty: BotDifficulty) => void;
   onRemoveBot: (actorId: string) => void;
+  onChangeBotDifficulty: (actorId: string, difficulty: BotDifficulty) => void;
 }
 
-export const PlayerSlot = ({ idx, participant, room, isOwner, onKick, onAddBot, onRemoveBot }: PlayerSlotProps) => {
+export const PlayerSlot = ({ idx, participant, room, isOwner, onKick, onAddBot, onRemoveBot, onChangeBotDifficulty }: PlayerSlotProps) => {
   const isThisParticipantOwner = participant?.actorId === room.ownerActorId;
   const isBot = participant?.actorType === 'bot';
 
@@ -45,12 +46,30 @@ export const PlayerSlot = ({ idx, participant, room, isOwner, onKick, onAddBot, 
             {isBot && <Bot size={18} className={styles.icon_bot} />}
             {participant.displayName}
             {isBot && participant.botDifficulty && (
-              <span
-                className={styles.playerSlot__difficultyBadge}
-                style={{ backgroundColor: DIFFICULTY_COLORS[participant.botDifficulty] }}
-              >
-                {DIFFICULTY_LABELS[participant.botDifficulty]}
-              </span>
+              isOwner ? (
+                <BotDifficultyPopover
+                  onSelect={(newDifficulty) => onChangeBotDifficulty(participant.actorId, newDifficulty)}
+                  renderTrigger={({ ref, onClick }) => (
+                    <button
+                      ref={ref}
+                      type="button"
+                      className={clsx(styles.playerSlot__difficultyBadge, styles.playerSlot__difficultyBadge_clickable)}
+                      style={{ backgroundColor: DIFFICULTY_COLORS[participant.botDifficulty!] }}
+                      onClick={onClick}
+                      title="Изменить сложность"
+                    >
+                      {DIFFICULTY_LABELS[participant.botDifficulty!]}
+                    </button>
+                  )}
+                />
+              ) : (
+                <span
+                  className={styles.playerSlot__difficultyBadge}
+                  style={{ backgroundColor: DIFFICULTY_COLORS[participant.botDifficulty] }}
+                >
+                  {DIFFICULTY_LABELS[participant.botDifficulty]}
+                </span>
+              )
             )}
           </span>
         ) : (
