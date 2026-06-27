@@ -1,0 +1,160 @@
+[
+  {
+    "tileId": "castle-town-no-shield",
+    "zones": [
+      { "zoneId": "city_1", "segment": "center_t_left" },
+      { "zoneId": "road_1", "segment": "bottom_center" },
+      { "zoneId": "field_1", "segment": "bottom_right" },
+      { "zoneId": "field_2", "segment": "left_b_b" }
+    ]
+  },
+  {
+    "tileId": "castle-town-road-hidden-by-bushes",
+    "zones": [
+      { "zoneId": "city_1", "segment": "left_center" },
+      { "zoneId": "city_2", "segment": "right_center" },
+      { "zoneId": "road_1", "segment": "bottom_center" },
+      { "zoneId": "road_2", "segment": "top_center" },
+      { "zoneId": "field_1", "segment": "left_t_t" },
+      { "zoneId": "field_2", "segment": "right_t_t" },
+      { "zoneId": "field_3", "segment": "right_b_b" },
+      { "zoneId": "field_4", "segment": "left_b_b" }
+    ]
+  },
+  {
+    "tileId": "castle-town-with-extra-tower",
+    "zones": [
+      { "zoneId": "city_1", "segment": "left_center" },
+      { "zoneId": "city_2", "segment": "top_center" },
+      { "zoneId": "city_3", "segment": "right_center" },
+      { "zoneId": "city_4", "segment": "bottom_center" },
+      { "zoneId": "field_1", "segment": "center" }
+    ]
+  },
+  {
+    "tileId": "castle-town-without-three-house",
+    "zones": [
+      { "zoneId": "city_1", "segment": "left_center" },
+      { "zoneId": "city_2", "segment": "bottom_center" },
+      { "zoneId": "field_1", "segment": "right_center" }
+    ]
+  },
+  {
+    "tileId": "castle-town-with-two-towers",
+    "zones": [
+      { "zoneId": "city_1", "segment": "left_center" },
+      { "zoneId": "city_2", "segment": "right_center" },
+      { "zoneId": "city_3", "segment": "bottom_center" },
+      { "zoneId": "field_1", "segment": "top_center" }
+    ]
+  },
+  {
+    "tileId": "castle-with-extra-tower",
+    "zones": [
+      { "zoneId": "city_1", "segment": "left_center" },
+      { "zoneId": "field_1", "segment": "top_top" },
+      { "zoneId": "field_2", "segment": "center_b_right" }
+    ]
+  },
+  {
+    "tileId": "castle-with-extra-tower-and-wall",
+    "zones": [
+      { "zoneId": "city_1", "segment": "right_center" },
+      { "zoneId": "road_1", "segment": "left_center" },
+      { "zoneId": "field_1", "segment": "top_left" },
+      { "zoneId": "field_2", "segment": "bottom_left" }
+    ]
+  },
+  {
+    "tileId": "castle-with-gates-and-roads",
+    "zones": [
+      { "zoneId": "city_1", "segment": "center" },
+      { "zoneId": "road_1", "segment": "top_center" },
+      { "zoneId": "road_2", "segment": "bottom_center" },
+      { "zoneId": "field_1", "segment": "left_t_t" },
+      { "zoneId": "field_2", "segment": "left_b_b" },
+      { "zoneId": "field_3", "segment": "right_b_b" },
+      { "zoneId": "field_4", "segment": "right_t_t" }
+    ]
+  },
+  {
+    "tileId": "cathedral-with-crypt",
+    "zones": [
+      { "zoneId": "city_1", "segment": "center" }
+    ]
+  },
+  {
+    "tileId": "cottage-replaced-with-tavern-and-lake",
+    "zones": [
+      { "zoneId": "road_1", "segment": "center" },
+      { "zoneId": "field_1", "segment": "left_center" },
+      { "zoneId": "field_2", "segment": "right_center" }
+    ]
+  },
+  {
+    "tileId": "landscape-with-tavern-and-pond",
+    "zones": [
+      { "zoneId": "road_1", "segment": "top_center" },
+      { "zoneId": "road_2", "segment": "bottom_center" },
+      { "zoneId": "road_3", "segment": "left_center" },
+      { "zoneId": "field_1", "segment": "right_center" },
+      { "zoneId": "field_2", "segment": "top_left" },
+      { "zoneId": "field_3", "segment": "bottom_left" }
+    ]
+  },
+  {
+    "tileId": "map-with-road-no-icon",
+    "zones": [
+      { "zoneId": "road_1", "segment": "top_center" },
+      { "zoneId": "road_2", "segment": "right_center" },
+      { "zoneId": "field_1", "segment": "center" },
+      { "zoneId": "field_2", "segment": "bottom_right" },
+      { "zoneId": "field_3", "segment": "top_left" }
+    ]
+  },
+  {
+    "tileId": "monastery-with-two-roads",
+    "zones": [
+      { "zoneId": "monastery_1", "segment": "center" },
+      { "zoneId": "road_1", "segment": "bottom_center" },
+      { "zoneId": "road_2", "segment": "top_center" },
+      { "zoneId": "field_1", "segment": "left_center" },
+      { "zoneId": "field_2", "segment": "right_center" }
+    ]
+  },
+  {
+    "tileId": "road-village-with-tavern-lake",
+    "zones": [
+      { "zoneId": "city_1", "segment": "right_center" },
+      { "zoneId": "road_1", "segment": "center_t_t_l" },
+      { "zoneId": "field_1", "segment": "top_left" },
+      { "zoneId": "field_2", "segment": "bottom_center" }
+    ]
+  },
+  {
+    "tileId": "tavern-with-pond-near-road",
+    "zones": [
+      { "zoneId": "road_1", "segment": "center" },
+      { "zoneId": "field_1", "segment": "top_left" },
+      { "zoneId": "field_2", "segment": "bottom_center" }
+    ]
+  },
+  {
+    "tileId": "town-with-pond-bushes-road",
+    "zones": [
+      { "zoneId": "city_1", "segment": "center_t_left" },
+      { "zoneId": "road_1", "segment": "bottom_center" },
+      { "zoneId": "field_1", "segment": "right_right_t" },
+      { "zoneId": "field_2", "segment": "left_b_b" }
+    ]
+  },
+  {
+    "tileId": "town-with-tavern-and-lake",
+    "zones": [
+      { "zoneId": "city_1", "segment": "center_t_left" },
+      { "zoneId": "road_1", "segment": "bottom_bottom" },
+      { "zoneId": "field_1", "segment": "bottom_right" },
+      { "zoneId": "field_2", "segment": "right_right_t" }
+    ]
+  }
+]

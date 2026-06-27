@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from './gameRoom.module.scss';
-import type { SidebarPlayer } from '@/types/match';
+import type { MeepleType, SidebarPlayer } from '@/types/match';
 import { MatchPlayerCard } from './matchPlayerCard/matchPlayerCard.tsx';
 
 interface GameRoomSidebarProps {
@@ -13,6 +13,9 @@ interface GameRoomSidebarProps {
   pendingMeeples?: Record<string, number>;
   /** Регистрация DOM-узла карточки игрока для координат анимации полёта */
   registerPlayerCardRef?: (actorId: string, el: HTMLDivElement | null) => void;
+  isMeeplePlacementPhase?: boolean;
+  selectedMeepleType?: MeepleType;
+  onSelectMeepleType?: (type: MeepleType) => void;
 }
 
 export const GameRoomSidebar = ({
@@ -23,6 +26,9 @@ export const GameRoomSidebar = ({
   onLeaveClick,
   pendingMeeples,
   registerPlayerCardRef,
+  isMeeplePlacementPhase,
+  selectedMeepleType,
+  onSelectMeepleType,
 }: GameRoomSidebarProps) => {
   const sortedPlayers = [...players].sort((a, b) => {
     if (a.actorId === currentUserId) {
@@ -56,9 +62,18 @@ export const GameRoomSidebar = ({
                 isTurn={player.actorId === currentTurnId}
                 score={player.score}
                 meeplesLeft={displayedMeeples}
+                bigMeeplesLeft={player.bigMeeplesLeft}
                 seat={player.seat}
                 actorType={player.actorType}
                 botDifficulty={player.botDifficulty}
+                canSelectMeeple={
+                  isMeeplePlacementPhase &&
+                  player.actorId === currentUserId &&
+                  player.actorId === currentTurnId &&
+                  (player.bigMeeplesLeft ?? 0) > 0
+                }
+                selectedMeepleType={selectedMeepleType}
+                onSelectMeepleType={onSelectMeepleType}
               />
 
               {index === 0 && <div className={styles.playersList__divider} />}

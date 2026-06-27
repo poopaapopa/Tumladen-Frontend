@@ -36,7 +36,7 @@ interface GameBoardProps {
   onPlaceMeeple?: (zoneId: string) => void;
   lastPlacedTile?: Tile | null;
   lastPlacedByPlayer?: Record<string, { x: number; y: number; color: string }>;
-  placedMeeples?: Array<{ tileInstanceId: string, zoneId: string, actorId: string, seat?: number, featureType: string }>;
+  placedMeeples?: Array<{ tileInstanceId: string, zoneId: string, actorId: string, seat?: number, featureType: string, meepleType?: string }>;
   players?: Player[];
 }
 
@@ -373,6 +373,7 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
             const color = meeple.seat !== undefined
               ? getPlayerColorBySeat(meeple.seat)
               : (playerColorMap[meeple.actorId] || '#989898');
+            const isBig = meeple.meepleType === 'big';
             return (
               <KonvaMeeple
                 key={`m-${index}`}
@@ -380,7 +381,7 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
                 y={tile.y * TILE_STEP + offset.y}
                 color={color}
                 variant={meeple.featureType === 'field' ? 'lying' : 'standing'}
-                size={55}
+                size={isBig ? 75 : 55}
               />
             );
           })}

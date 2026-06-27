@@ -13,7 +13,7 @@ export interface ParticipantResponse {
   joinedAt: string;
 }
 
-export type SettingValue = string | number | boolean | BotConfig[];
+export type SettingValue = string | number | boolean | string[] | BotConfig[];
 export type RoomStatus = 'waiting' | 'playing' | 'finished';
 
 export interface Settings {

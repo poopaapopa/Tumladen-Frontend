@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Users, Clock, Pencil, Check, X, Trash2, Lock, LockOpen } from 'lucide-react';
-import type { RoomResponse } from '@/types/room.ts';
+import type { RoomResponse, SettingValue } from '@/types/room.ts';
 import { useUserStore } from '@/store/useUserStore';
 import clsx from 'clsx';
 import { EditableSelector } from '@/components/editableSelector/editableSelector.tsx';
@@ -15,7 +15,7 @@ interface RoomSidebarProps {
   room: RoomResponse;
   isOwner: boolean;
   isRoomDeleted: boolean;
-  onSaveSetting: (key: string, newValue: number | string | boolean) => void;
+  onSaveSetting: (key: string, newValue: SettingValue) => void;
   sendMessage: (type: string, payload: Record<string, unknown>) => void;
 }
 
@@ -28,6 +28,9 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const currentSettings = room?.settings || {};
+  const expansions = Array.isArray(currentSettings['expansions'])
+    ? (currentSettings['expansions'] as string[])
+    : [];
 
   const handleDeleteRoom = () => {
     if (room?.id) {
@@ -150,6 +153,34 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
           suffix="с."
           onSelect={(val) => onSaveSetting('turnTimeSeconds', val)}
         />
+      </div>
+
+      <div className={styles.roomSidebar__expansionsSection}>
+        <span className={styles.roomSidebar__expansionsTitle}>Дополнения</span>
+        <label className={styles.roomSidebar__expansionRow}>
+          <span
+            className={clsx(
+              styles.roomSidebar__expansionLabel,
+              expansions.includes('inns_and_cathedrals') && styles.roomSidebar__expansionLabel_active
+            )}
+          >
+            Таверны и Соборы
+          </span>
+          <input
+            type="checkbox"
+            className={styles.roomSidebar__expansionCheckbox}
+            checked={expansions.includes('inns_and_cathedrals')}
+            disabled={!isOwner}
+            onChange={() => {
+              const has = expansions.includes('inns_and_cathedrals');
+              const next = has
+                ? expansions.filter((e: string) => e !== 'inns_and_cathedrals')
+                : [...expansions, 'inns_and_cathedrals'];
+              onSaveSetting('expansions', next);
+            }}
+          />
+          <span className={styles.roomSidebar__switch} />
+        </label>
       </div>
 
       {isOwner ? (

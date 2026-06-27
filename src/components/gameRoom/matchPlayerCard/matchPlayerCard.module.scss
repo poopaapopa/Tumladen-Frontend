@@ -101,10 +101,34 @@
   &__figurines  {
     margin-top: 5px;
     height: 45px;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  &__meepleWrapper {
+    display: inline-flex;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    margin-right: var(--meeple-gap, -2px);
+    flex-shrink: 0;
+
+    &_selectable {
+      cursor: pointer;
+      opacity: 0.5;
+
+      &:hover {
+        opacity: 0.8;
+      }
+    }
+
+    &_selected {
+      opacity: 1;
+      filter: drop-shadow(0 0 6px var(--player-color));
+    }
   }
 
   &__figurinesIcon{
-    margin-right: -2px;
+    pointer-events: none;
   }
 
   &__count {

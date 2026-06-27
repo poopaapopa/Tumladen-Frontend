@@ -12,6 +12,7 @@ export class UnauthorizedError extends Error {
 async function handleResponse(res: Response, errorMessage: string): Promise<Response> {
   if (res.status === 401) {
     useUserStore.getState().logout();
+    window.location.href = '/';
     throw new UnauthorizedError('Сессия истекла. Пожалуйста, войдите снова.');
   }
   if (!res.ok) throw new Error(errorMessage);

@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { Group, Image, Rect } from 'react-konva';
 import type Konva from 'konva';
 import useImage from 'use-image';
-import { TILE_IMAGES } from '../../utils/tiles.config';
+import { TILE_IMAGES } from '@/utils/tiles.config';
 
 interface GameTileProps {
   tileId: string;
