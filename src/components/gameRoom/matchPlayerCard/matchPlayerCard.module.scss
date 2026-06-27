@@ -96,6 +96,20 @@
     font-weight: 600;
     font-size: 18px;
     color: #1e1e1e;
+    min-width: 0;
+    flex: 1;
+  }
+
+  &__nicknameWrapper {
+    display: inline-block;
+    vertical-align: middle;
+    max-width: 140px;
+    min-width: 0;
+    flex: 1;
+
+    @media (max-width: $mobile-breakpoint) {
+      max-width: 80px;
+    }
   }
 
   &__figurines  {

@@ -122,21 +122,9 @@
     word-break: break-word;
     padding: 2px 0;
     animation: glowPulse 3s infinite ease-in-out;
-  }
-
-  &__nicknameMarquee {
-    overflow: hidden;
-    white-space: nowrap;
-  }
-
-  &__nicknameTrack {
     display: inline-block;
-    animation: marquee var(--marquee-duration, 6s) linear infinite;
-
-    &::after {
-      content: attr(data-text);
-      padding-left: 2em;
-    }
+    vertical-align: middle;
+    flex: 1;
   }
 }
 
