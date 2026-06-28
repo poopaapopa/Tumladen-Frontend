@@ -8,6 +8,7 @@ import { avatarSrc } from '@/utils/avatar.ts';
 import { getPlayerColorBySeat } from "@/utils/playerColor.ts";
 import { Meeple3D } from "./meeple.tsx";
 import type { ActorType, BotDifficulty } from '@/types/room';
+import { MarqueeText } from '@/components/marqueeText/marqueeText';
 
 const DIFFICULTY_LABELS: Record<BotDifficulty, string> = {
   easy: 'Лёгкий',
@@ -157,7 +158,9 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
         <div className={styles.playerCard__header}>
           <div className={styles.playerCard__nickname}>
             {isBot && <Bot size={18} className={styles.playerCard__botIcon} />}
-            {displayName}
+            <div className={styles.playerCard__nicknameWrapper}>
+              <MarqueeText text={displayName} />
+            </div>
             {isBot && botDifficulty && (() => {
               const DiffIcon = DIFFICULTY_ICONS[botDifficulty];
               return (
