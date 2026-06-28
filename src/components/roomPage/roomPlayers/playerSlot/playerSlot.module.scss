@@ -47,6 +47,24 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    // min-width: 0;                // Разрешает сжатие во flex-контейнере
+    // max-width: 240px;            // Ограничивает имя, предотвращая сдвиг иконки удаления
+
+    // @media (max-width: $mobile-breakpoint) {
+    //   max-width: 130px;
+    // }
+  }
+
+  &__nameText {
+    display: inline-block;
+    vertical-align: middle;
+    max-width: 290px;
+    width: 100%;   /* Добавлено */
+    min-width: 0;  /* Добавлено */
+
+    @media (max-width: $mobile-breakpoint) {
+      max-width: 80px;
+    }
   }
 
   &__difficultyBadge {

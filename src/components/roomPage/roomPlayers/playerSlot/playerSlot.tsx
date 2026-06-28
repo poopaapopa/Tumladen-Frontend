@@ -3,6 +3,7 @@ import clsx from 'clsx';
 import type { RoomResponse, ParticipantResponse, BotDifficulty } from '@/types/room.ts';
 import { BotDifficultyPopover } from '../botDifficultyPopover/botDifficultyPopover.tsx';
 import styles from './playerSlot.module.scss';
+import { MarqueeText } from '@/components/marqueeText/marqueeText';
 
 const DIFFICULTY_LABELS: Record<BotDifficulty, string> = {
   easy: 'Лёгкий',
@@ -44,7 +45,10 @@ export const PlayerSlot = ({ idx, participant, room, isOwner, onKick, onAddBot, 
         {participant ? (
           <span className={styles.playerSlot__playerName}>
             {isBot && <Bot size={18} className={styles.icon_bot} />}
-            {participant.displayName}
+            {/* <span className={styles.playerSlot__nameText}>{participant.displayName}</span> */}
+            <div className={styles.header__userNameWrapper}>
+              <MarqueeText text={participant.displayName} className={styles.playerSlot__nameText} />
+            </div>
             {isBot && participant.botDifficulty && (
               isOwner ? (
                 <BotDifficultyPopover
