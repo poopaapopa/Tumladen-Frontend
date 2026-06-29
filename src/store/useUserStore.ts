@@ -67,7 +67,7 @@ export const useUserStore = create<UserState>()(
     }),
     {
       name: 'session',
-      onRehydrate: () => {
+      onRehydrateStorage: () => {
         return (state) => {
           if (!state) return;
           const { sessionCreatedAt } = state;
