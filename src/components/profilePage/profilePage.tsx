@@ -2,8 +2,6 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   User,
-  Trophy,
-  Lock,
   Pencil,
   X
 } from 'lucide-react';
@@ -12,7 +10,7 @@ import { userService } from '@/api/user.ts';
 import { useUserStore } from '@/store/useUserStore.ts';
 import Modal from '../modal/modal.tsx';
 import { EditProfileModal } from './editProfileModal/editProfileModal.tsx';
-import type { UserProfile, OwnUserProfile } from '@/types/user.ts';
+import type { UserProfile, OwnUserProfile, Achievement } from '@/types/user.ts';
 import { isOwnProfile, GAME_TYPE_LABELS } from '@/types/user.ts';
 import { avatarSrc } from '@/utils/avatar.ts';
 import elfAvatar from '@/assets/elf-avatar.svg';
@@ -21,6 +19,8 @@ import editModalStyles from './editProfileModal/editProfileModal.module.scss';
 import { StatsCards } from './statsCards/statsCards.tsx';
 import { MatchCard } from './matchCard/matchCard.tsx';
 import { useIsMobile } from '@/hooks/useIsMobile.ts';
+import { AchievementBadge } from './achievementBadge/achievementBadge.tsx';
+import { AchievementModal } from './achievementModal/achievementModal.tsx';
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -43,6 +43,9 @@ export default function ProfilePage() {
   // Edit profile modal
   const [editOpen, setEditOpen] = useState(false);
   const [editCloseTrigger, setEditCloseTrigger] = useState(0);
+
+  // Achievement modal
+  const [selectedAchievement, setSelectedAchievement] = useState<Achievement | null>(null);
 
   const isOwn = !!actor && actor.id === id;
 
@@ -129,10 +132,22 @@ export default function ProfilePage() {
       : stats.byGame.find((g) => g.gameType === statsTab) ??
         stats.overall;
 
-  const achievements = Array.from({ length: isMobile ? 12 : 8 }, (_, i) => ({
-    id: i,
-    unlocked: false,
-  }));
+  const unlockedAchievements = profile.achievements ?? [];
+  const totalSlots = isMobile ? 12 : 8;
+
+  // Build fixed grid: real unlocked achievements first, then locked placeholders
+  const achievementSlots = Array.from({ length: totalSlots }, (_, i) => {
+    if (i < unlockedAchievements.length) {
+      return unlockedAchievements[i];
+    }
+    // Locked placeholder
+    return {
+      code: `locked_${i}`,
+      title: 'Заблокировано',
+      description: '',
+      unlockedAt: null,
+    } as Achievement;
+  });
 
   return (
     <div className={styles.page}>
@@ -182,20 +197,12 @@ export default function ProfilePage() {
           <div className={styles.achievementsCard}>
             <p className={styles.sectionTitle}>Достижения</p>
             <div className={styles.achievementsGrid}>
-              {achievements.map((a) => (
-                <div
-                  key={a.id}
-                  className={`${styles.achievementBadge} ${
-                    a.unlocked ? styles.achievementBadge_unlocked : ''
-                  }`}
-                  title={a.unlocked ? 'Достижение получено' : 'Заблокировано'}
-                >
-                  {a.unlocked ? (
-                    <Trophy size={20} />
-                  ) : (
-                    <Lock size={16} />
-                  )}
-                </div>
+              {achievementSlots.map((a) => (
+                <AchievementBadge
+                  key={a.code}
+                  achievement={a}
+                  onClick={() => setSelectedAchievement(a)}
+                />
               ))}
             </div>
           </div>
@@ -360,6 +367,13 @@ export default function ProfilePage() {
           </div>
         </div>
       </Modal>
+
+      {/* ── Achievement detail modal ───────────────────────────────────────── */}
+      <AchievementModal
+        achievement={selectedAchievement}
+        isOpen={!!selectedAchievement}
+        onClose={() => setSelectedAchievement(null)}
+      />
 
       {/* ── Edit profile modal ─────────────────────────────────────────────── */}
       {isOwn && isOwnProfile(profile) && (

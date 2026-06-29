@@ -56,11 +56,21 @@ export interface UserStats {
   byGame: GameStats[];
 }
 
+export interface Achievement {
+  code: string;
+  title: string;
+  description: string;
+  gameType?: string | null;
+  unlockedAt?: string | null;
+  matchId?: string | null;
+}
+
 /** Profile visible to everyone — no email */
 export interface PublicUserProfile {
   id: string;
   nickname: string;
   avatarUrl: string | null;
+  achievements: Achievement[];
   matchHistory: MatchHistoryEntry[];
   stats: UserStats;
 }

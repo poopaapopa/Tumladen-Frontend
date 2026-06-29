@@ -291,12 +291,13 @@
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s;
   text-align: center;
 
   &:hover {
-    background-color: $forest-mid;
-    color: $beige-light;
+    background-color: rgba($forest-mid, 0.1);
+    color: $forest-dark;
+    border-color: $forest-dark;
   }
 }
 

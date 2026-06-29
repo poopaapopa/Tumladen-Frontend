@@ -10,3 +10,12 @@ export function timeAgo(iso: string): string {
   if (days < 30) return `${days} дн. назад`;
   return `${months} мес. назад`;
 }
+
+export function formatDate(iso: string): string {
+  const date = new Date(iso);
+  return date.toLocaleDateString('ru-RU', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
