@@ -1,0 +1,31 @@
+@keyframes marqueeShared {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.marqueeContainer {
+  overflow: hidden;
+  white-space: nowrap;
+  width: 100%;
+  display: block; 
+  vertical-align: middle;
+
+  span {
+    display: inline-block; 
+    vertical-align: middle;
+  }
+}
+
+.marqueeTrack {
+  display: inline-block;
+  animation: marqueeShared var(--marquee-duration, 6s) linear infinite;
+
+  &::after {
+    content: attr(data-text);
+    padding-left: 2em; // Отступ между концом строки и началом нового цикла
+  }
+}

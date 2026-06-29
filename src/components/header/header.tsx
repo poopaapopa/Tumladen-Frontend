@@ -10,6 +10,7 @@ import { ConfirmModal } from '../confirmModal/confirmModal';
 import { useUserStore } from '@/store/useUserStore';
 import { LogOut, UserPlus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { MarqueeText } from '@/components/marqueeText/marqueeText';
 
 function Header() {
   const navigate = useNavigate();
@@ -57,7 +58,9 @@ function Header() {
               to={`/profile/${actor.id}`}
               className={styles.header__profileLink}
             >
-              <span style={{ fontWeight: 600 }}>{actor.displayName}</span>
+              <div className={styles.header__userNameWrapper}>
+                <MarqueeText text={actor.displayName} className={styles.header__userName} />
+              </div>
               <img
                 src={avatarSrc(actor.avatarUrl) || defaultAvatar}
                 alt={actor.displayName}
@@ -75,7 +78,9 @@ function Header() {
         ) : isGuest && actor ? (
           <div className={styles.header__profile}>
             <div className={styles.header__guestInfo}>
-              <span className={styles.header__guestName}>{actor.displayName}</span>
+              <div className={styles.header__guestNameWrapper}>
+                <MarqueeText text={actor.displayName} className={styles.header__guestName} />
+              </div>
               <span className={styles.header__guestBadge}>Гость</span>
             </div>
             <img

@@ -1,10 +1,11 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React from 'react';
 import { Bot } from 'lucide-react';
 import styles from './currentTurnPanel.module.scss';
 import iconImg from '@/assets/icon.png';
 import { TILE_IMAGES } from '@/utils/tiles.config.ts';
 import type { Phase } from '@/types/match.ts';
 import { pluralizeRu } from '@/utils/pluralize.ts';
+import { MarqueeText } from '@/components/marqueeText/marqueeText';
 
 interface CurrentTurnPanelProps {
   currentPlayerName: string;
@@ -21,59 +22,6 @@ interface CurrentTurnPanelProps {
 }
 
 const URGENT_THRESHOLD = 10;
-const MARQUEE_SPEED = 40; // px per second
-
-/**
- * Renders text with a continuous marquee scroll when it overflows its container.
- * The text duplicates itself so the loop appears seamless.
- */
-const MarqueeText = ({ text, className }: { text: string; className?: string }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const textRef = useRef<HTMLSpanElement>(null);
-  const [needsMarquee, setNeedsMarquee] = useState(false);
-  const [duration, setDuration] = useState(6);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    const textEl = textRef.current;
-    if (!container || !textEl) return;
-
-    const check = () => {
-      const textWidth = textEl.scrollWidth;
-      const containerWidth = container.clientWidth;
-      const overflows = textWidth > containerWidth;
-      setNeedsMarquee(overflows);
-      if (overflows) {
-        setDuration(textWidth / MARQUEE_SPEED);
-      }
-    };
-
-    check();
-
-    const ro = new ResizeObserver(check);
-    ro.observe(container);
-    return () => ro.disconnect();
-  }, [text]);
-
-  return (
-    <div ref={containerRef} className={styles.playerCard__nicknameMarquee}>
-      {needsMarquee ? (
-        <span
-          ref={textRef}
-          className={`${className ?? ''} ${styles.playerCard__nicknameTrack}`}
-          data-text={text}
-          style={{ '--marquee-duration': `${duration}s` } as React.CSSProperties}
-        >
-          {text}
-        </span>
-      ) : (
-        <span ref={textRef} className={className}>
-          {text}
-        </span>
-      )}
-    </div>
-  );
-};
 
 const TimerRing = ({
   timeLeft,
@@ -148,7 +96,10 @@ export const CurrentTurnPanel = ({
             {isBot && <Bot size={14} className={styles.playerCard__botIcon} />}
             Сейчас ходит:
           </span>
-          <MarqueeText text={currentPlayerName} className={styles.playerCard__nickname} />
+          <div className={styles.playerCard__nickname}>
+            <MarqueeText text={currentPlayerName} />
+          </div>
+          {/* <MarqueeText text={currentPlayerName} className={styles.playerCard__nickname} /> */}
         </div>
         {timeLeft !== null && (
           <TimerRing timeLeft={timeLeft} duration={turnDuration} />
