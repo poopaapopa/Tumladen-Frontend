@@ -3,11 +3,14 @@ import { persist } from 'zustand/middleware';
 import type { Actor } from "../api/auth.ts";
 import type { ActiveRoomSession } from "../types/user.ts";
 
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000;
+
 interface UserState {
   actor: Actor | null;
   token: string | null;
   isAuthenticated: boolean;
   isLoggingOut: boolean;
+  sessionCreatedAt: number | null;
 
   setAuth: (actor: Actor, token: string) => void;
   updateActor: (actor: Actor) => void;
@@ -24,12 +27,14 @@ export const useUserStore = create<UserState>()(
       token: null,
       isAuthenticated: false,
       isLoggingOut: false,
+      sessionCreatedAt: null,
 
       setAuth: (actor, token) => set({
         actor,
         token,
         isAuthenticated: true,
-        isLoggingOut: false
+        isLoggingOut: false,
+        sessionCreatedAt: Date.now(),
       }),
 
       updateActor: (actor) => set((state) => ({
@@ -54,13 +59,23 @@ export const useUserStore = create<UserState>()(
         actor: null,
         token: null,
         isAuthenticated: false,
-        isLoggingOut: true
+        isLoggingOut: true,
+        sessionCreatedAt: null,
       }),
       
       setIsLoggingOut: (isLoggingOut) => set({ isLoggingOut }),
     }),
     {
       name: 'session',
+      onRehydrate: () => {
+        return (state) => {
+          if (!state) return;
+          const { sessionCreatedAt } = state;
+          if (sessionCreatedAt && Date.now() - sessionCreatedAt > SESSION_TTL_MS) {
+            state.logout();
+          }
+        };
+      },
     }
   )
 );

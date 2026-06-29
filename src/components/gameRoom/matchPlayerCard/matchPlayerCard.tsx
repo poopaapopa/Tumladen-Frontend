@@ -8,6 +8,7 @@ import { avatarSrc } from '@/utils/avatar.ts';
 import { getPlayerColorBySeat } from "@/utils/playerColor.ts";
 import { Meeple3D } from "./meeple.tsx";
 import type { ActorType, BotDifficulty } from '@/types/room';
+import type { MeepleType } from '@/types/match';
 import { MarqueeText } from '@/components/marqueeText/marqueeText';
 
 const DIFFICULTY_LABELS: Record<BotDifficulty, string> = {
@@ -34,10 +35,14 @@ interface MatchPlayerCardProps {
   isTurn: boolean;
   score: number;
   meeplesLeft: number;
+  bigMeeplesLeft?: number;
   seat: number;
   avatarUrl?: string | null;
   actorType?: ActorType;
   botDifficulty?: BotDifficulty;
+  canSelectMeeple?: boolean;
+  selectedMeepleType?: MeepleType;
+  onSelectMeepleType?: (type: MeepleType) => void;
 }
 
 export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(({
@@ -46,10 +51,14 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
   isTurn,
   score,
   meeplesLeft,
+  bigMeeplesLeft = 0,
   seat,
   avatarUrl,
   actorType,
   botDifficulty,
+  canSelectMeeple,
+  selectedMeepleType,
+  onSelectMeepleType,
 }, ref) => {
   const playerColor = getPlayerColorBySeat(seat);
   const [displayScore, setDisplayScore] = useState(score);
@@ -183,14 +192,42 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
           </span>
         </div>
 
-        <div className={styles.playerCard__figurines}>
+        <div
+          className={styles.playerCard__figurines}
+          style={{ ['--meeple-gap' as string]: `${meeplesLeft + bigMeeplesLeft > 7 ? -8 : -2}px` }}
+        >
+          {bigMeeplesLeft > 0 && (
+            <div
+              className={clsx(
+                styles.playerCard__meepleWrapper,
+                canSelectMeeple && styles.playerCard__meepleWrapper_selectable,
+                canSelectMeeple && selectedMeepleType === 'big' && styles.playerCard__meepleWrapper_selected,
+              )}
+              onClick={() => canSelectMeeple && onSelectMeepleType?.('big')}
+            >
+              <Meeple3D
+                size={48}
+                color={playerColor}
+                className={styles.playerCard__figurinesIcon}
+              />
+            </div>
+          )}
           {Array.from({ length: meeplesLeft }).map((_, i) => (
-            <Meeple3D
+            <div
               key={i}
-              size={40}
-              color={playerColor}
-              className={styles.playerCard__figurinesIcon}
-            />
+              className={clsx(
+                styles.playerCard__meepleWrapper,
+                canSelectMeeple && styles.playerCard__meepleWrapper_selectable,
+                canSelectMeeple && selectedMeepleType === 'regular' && styles.playerCard__meepleWrapper_selected,
+              )}
+              onClick={() => canSelectMeeple && onSelectMeepleType?.('regular')}
+            >
+              <Meeple3D
+                size={40}
+                color={playerColor}
+                className={styles.playerCard__figurinesIcon}
+              />
+            </div>
           ))}
         </div>
       </div>

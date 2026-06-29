@@ -182,6 +182,88 @@
     color: $forest-dark;
   }
 
+  &__expansionsSection {
+    margin-bottom: 20px;
+  }
+
+  &__expansionsTitle {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    color: $forest-mid;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+  }
+
+  &__expansionRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: linear-gradient(135deg, $cream 0%, $cream-deep 100%);
+    border: 2px solid $border-soft;
+    border-radius: 12px;
+    cursor: pointer;
+    user-select: none;
+
+    &:has(input:disabled) {
+      cursor: default;
+    }
+  }
+
+  &__expansionCheckbox {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  &__expansionLabel {
+    font-size: 18px;
+    font-weight: 600;
+    color: $metal-gray;
+    transition: color 0.2s ease;
+
+    &_active {
+      color: $forest-dark;
+    }
+  }
+
+  &__switch {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: $border-soft;
+    border-radius: 12px;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 18px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+      transition: transform 0.2s ease;
+    }
+
+    .roomSidebar__expansionCheckbox:checked ~ & {
+      background: $forest-mid;
+
+      &::after {
+        transform: translateX(20px);
+      }
+    }
+
+    .roomSidebar__expansionCheckbox:disabled ~ & {
+      opacity: 0.5;
+    }
+  }
+
   &__btnStart {
     margin-top: auto;
     background-color: $forest-mid;

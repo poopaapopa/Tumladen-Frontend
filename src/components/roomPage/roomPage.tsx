@@ -3,17 +3,17 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Users, Settings, BookOpen } from 'lucide-react';
 
 import styles from './roomPage.module.scss';
-import castleImg from '../../assets/zamok.png';
-import { roomService } from '../../api/room.ts'
-import { useUserStore } from '../../store/useUserStore';
-import { useRoomSocket, type WebSocketMessage } from '../../api/ws.ts';
+import castleImg from '@/assets/zamok.png';
+import { roomService } from '@/api/room.ts'
+import { useUserStore } from '@/store/useUserStore';
+import { useRoomSocket, type WebSocketMessage } from '@/api/ws.ts';
 
 import { RoomSidebar } from "./roomSidebar/roomSidebar.tsx";
 import { RoomPageSkeleton } from "./roomPageSkeleton.tsx";
 import { RoomPlayers } from './roomPlayers/roomPlayers.tsx';
 import { GameRulesPanel } from '../gameRules/gameRulesPanel.tsx';
-import { GAME_TYPE_LABELS } from '../../types/user';
-import type { RoomResponse, UpdateRoomSettingsPayload } from '../../types/room';
+import { GAME_TYPE_LABELS } from '@/types/user';
+import type { RoomResponse, SettingValue, UpdateRoomSettingsPayload } from '@/types/room';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { SegmentedTabs } from '../segmentedTabs/segmentedTabs.tsx';
 
@@ -89,7 +89,7 @@ const RoomPage = () => {
 
   const { sendMessage } = useRoomSocket(room?.id, handleRoomUpdate, handleKicked);
 
-  const handleSaveSetting = (key: string, newValue: number | string | boolean) => {
+  const handleSaveSetting = (key: string, newValue: SettingValue) => {
     if (!room || !isOwner) return;
 
     const currentSettings = room.settings || {};
@@ -102,6 +102,8 @@ const RoomPage = () => {
       hasChanged = room.maxPlayers !== Number(newValue);
     else if (key === 'isPrivate')
       hasChanged = room.isPrivate !== Boolean(newValue);
+    else if (Array.isArray(newValue))
+      hasChanged = JSON.stringify(currentSettings[key]) !== JSON.stringify(newValue);
     else
       hasChanged = currentSettings[key] !== newValue;
 

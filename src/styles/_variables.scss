@@ -6,12 +6,12 @@ $metal-gray: #989898;
 $accept: #27AE60;
 $decline: #e74c3c;
 
-// ─── Card surfaces & accents (более продуманная палитра карточек) ───
-$cream: #FAF8EC; // основная «чистая» поверхность карточки
+// ─── Card surfaces & accents ───
+$cream: #FAF8EC; // основная поверхность карточки
 $cream-deep: #ECE7D2; // вторичная поверхность / hover / низ градиента
-$border-soft: #D8D4BB; // мягкая тёплая рамка вместо контрастной зелёной
-$gold: #C9A227; // тёплый акцент (владелец, выделения)
-$forest-soft: #6E8466; // осветлённый лесной для второстепенного текста
+$border-soft: #D8D4BB; // рамка
+$gold: #C9A227; // акцент (владелец, выделения)
+$forest-soft: #6E8466; // для второстепенного текста
 
 $font-logo: 'Cinzel', serif;
 $font-main: 'Montserrat', sans-serif;

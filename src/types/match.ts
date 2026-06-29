@@ -11,11 +11,14 @@ export interface Tile {
   instanceId?: string;
 }
 
+export type MeepleType = 'regular' | 'big';
+
 export interface GamePlayer {
   actorId: string;
   displayName: string;
   score: number;
   meeplesLeft: number;
+  bigMeeplesLeft?: number;
   seat: number;
 }
 
@@ -35,6 +38,7 @@ export interface PlacedMeeple {
   actorId: string;
   seat?: number;
   featureType: string;
+  meepleType?: MeepleType;
 }
 
 export interface DrawnTile {

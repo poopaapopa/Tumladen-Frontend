@@ -1,4 +1,5 @@
 import tilesData from '../data/base_tiles.json';
+import expansionTilesData from '../data/inns_cathedrals.json';
 
 const SEGMENT_COORDS: Record<string, { x: number; y: number }> = {
   top_left:       { x: -50, y: -50 },
@@ -16,15 +17,19 @@ const SEGMENT_COORDS: Record<string, { x: number; y: number }> = {
   center_t_right: { x:  25, y: -25 },
   right_right_b:  { x:  30, y:  55 },
   bottom_bottom:  { x:   0, y:  60 },
+  top_top:        { x:   0, y: -60 },
   right_right_t:  { x:  60, y: -25 },
   right_right_c:  { x:  55, y:   0 },
   right_b_b:      { x:  35, y:  60 },
   left_b_b:       { x: -35, y:  60 },
+  right_t_t:      { x:  35, y:  -60 },
+  left_t_t:       { x: -35, y:  -60 },
+  center_t_t_l:   { x: -15, y: -15 },
 };
 
 const ZONE_OFFSETS: Record<string, Record<string, { x: number; y: number }>> = {};
 
-for (const tile of tilesData) {
+for (const tile of [...tilesData, ...expansionTilesData]) {
   ZONE_OFFSETS[tile.tileId] = {};
   for (const zone of tile.zones) {
     ZONE_OFFSETS[tile.tileId][zone.zoneId] = SEGMENT_COORDS[zone.segment] ?? { x: 0, y: 0 };

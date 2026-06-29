@@ -9,6 +9,7 @@ import { useRoomSocket } from '@/api/ws';
 import type { MatchFinishedPayload, WebSocketMessage } from '@/types/ws';
 import {
   type MatchStatePayload,
+  type MeepleType,
   type PlacedMeeple,
   type PrivateState,
   type SidebarPlayer,
@@ -34,7 +35,7 @@ import {
 } from './meepleFlight/meepleFlight.tsx';
 import { getZoneOffset } from '@/utils/tileZones.ts';
 
-export type { Tile, MatchStatePayload, PrivateState } from '../../types/match';
+export type { Tile, MatchStatePayload, PrivateState } from '@/types/match';
 
 const GameRoom = () => {
   const { id: inviteCode } = useParams<{ id: string }>();
@@ -51,6 +52,7 @@ const GameRoom = () => {
   const [privateState, setPrivateState] = useState<PrivateState | null>(null);
   const [currentRotation, setCurrentRotation] = useState(0);
   const [pendingPlacement, setPendingPlacement] = useState<{ x: number; y: number; rotation: number } | null>(null);
+  const [selectedMeepleType, setSelectedMeepleType] = useState<MeepleType>('regular');
   // Карта последних поставленных квадратов по каждому игроку: actorId -> { x, y, color }
   const lastPlacedStorageKey = inviteCode ? `lastPlacedByPlayer:${inviteCode}` : null;
   const [lastPlacedByPlayer, setLastPlacedByPlayer] = useState<
@@ -339,6 +341,7 @@ const GameRoom = () => {
       if (isTurnChanged) {
         setCurrentRotation(0);
         setPendingPlacement(null);
+        setSelectedMeepleType('regular');
       }
     }
 
@@ -427,6 +430,7 @@ const GameRoom = () => {
       payload: {
         roomId: room.id,
         zoneId,
+        meepleType: selectedMeepleType,
       },
     });
   };
@@ -499,6 +503,9 @@ const GameRoom = () => {
         onLeaveClick={() => setIsExitModalOpen(true)}
         pendingMeeples={pendingMeeples}
         registerPlayerCardRef={registerPlayerCardRef}
+        isMeeplePlacementPhase={phase === 'place_meeple' && isYourTurn}
+        selectedMeepleType={selectedMeepleType}
+        onSelectMeepleType={setSelectedMeepleType}
       />
 
       <div className={styles.boardContainer} ref={boardContainerRef}>
