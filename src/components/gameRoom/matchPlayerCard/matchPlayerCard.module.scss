@@ -105,7 +105,6 @@
     vertical-align: middle;
     max-width: 140px;
     min-width: 0;
-    flex: 1;
 
     @media (max-width: $mobile-breakpoint) {
       max-width: 80px;
@@ -123,7 +122,7 @@
     display: inline-flex;
     border-radius: 6px;
     transition: all 0.15s ease;
-    margin-right: var(--meeple-gap, -2px);
+    margin-right: var(--meeple-gap, -3px);
     flex-shrink: 0;
 
     &_selectable {

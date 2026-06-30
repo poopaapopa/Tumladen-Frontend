@@ -194,7 +194,7 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
 
         <div
           className={styles.playerCard__figurines}
-          style={{ ['--meeple-gap' as string]: `${meeplesLeft + bigMeeplesLeft > 7 ? -8 : -2}px` }}
+          style={{ ['--meeple-gap' as string]: `${meeplesLeft + bigMeeplesLeft > 7 ? -8 : -3}px` }}
         >
           {bigMeeplesLeft > 0 && (
             <div
