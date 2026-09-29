@@ -24,7 +24,7 @@ function App() {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAuthenticated, actor, token, setCurrentRoom, isLoggingOut } = useUserStore();
+  const { isAuthenticated, actor, token, setCurrentRoom } = useUserStore();
 
   // Fetch currentRoom from /me on mount / auth change (registered users only)
   useEffect(() => {
@@ -38,29 +38,39 @@ function App() {
   useEffect(() => {
     const isRoomPage = location.pathname.startsWith('/room/') && !location.pathname.startsWith('/room/game/');
 
-    if (isRoomPage && !isAuthenticated && !isLoggingOut) {
-      const inviteCode = location.pathname.split('/room/')[1];
-      if (inviteCode) {
-        roomService.getRoomById(inviteCode)
-          .then((data) => {
-            if (data.room.playersCount >= data.room.maxPlayers) {
-              setIsRoomFullModal(true);
-              setActiveModal(false);
-            } else {
-              setActiveModal(true);
-            }
-          })
-          .catch(() => {
-            setActiveModal(true);
-          });
-      } else {
-        setActiveModal(true);
-      }
-    } else {
+    if (!isRoomPage || isAuthenticated) {
       setActiveModal(false);
       setIsRoomFullModal(false);
+      return;
     }
-  }, [location.pathname, isAuthenticated, isLoggingOut]);
+
+    // The guest form must not depend on the room request: if the API is slow or
+    // unavailable, an unauthenticated visitor still needs a way to sign in.
+    setActiveModal(true);
+    setIsRoomFullModal(false);
+
+    const inviteCode = location.pathname.split('/room/')[1];
+    if (!inviteCode) return;
+
+    let cancelled = false;
+
+    roomService.getRoomById(inviteCode)
+      .then((data) => {
+        if (cancelled) return;
+
+        if (data.room.playersCount >= data.room.maxPlayers) {
+          setIsRoomFullModal(true);
+          setActiveModal(false);
+        }
+      })
+      .catch(() => {
+        // Keep the guest form open. RoomPage will display the room loading error.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname, isAuthenticated]);
 
   const handleCancelAuth = () => {
     closeModal();

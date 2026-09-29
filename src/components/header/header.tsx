@@ -16,7 +16,7 @@ function Header() {
   const navigate = useNavigate();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isLogOutOpen, setIsLogOutOpen] = useState(false);
-  const { isAuthenticated, actor, logout, setIsLoggingOut } = useUserStore();
+  const { isAuthenticated, actor, logout } = useUserStore();
   const [authCloseAttempt, setAuthCloseAttempt] = useState(0);
 
   const isGuest = isAuthenticated && actor?.type === 'guest';
@@ -37,11 +37,9 @@ function Header() {
   };
 
   const handleLogout = () => {
-    setIsLoggingOut(true);
     logout();
     setIsLogOutOpen(false);
     navigate('/');
-    setTimeout(() => setIsLoggingOut(false), 1000);
   };
 
   return (
