@@ -334,7 +334,10 @@ const GameRoom = () => {
         }
       }
 
-      setTurnDeadline(newMatch.gameState?.currentTurn?.turnEndsAt);
+      setTurnDeadline(
+        newMatch.gameState?.currentTurn?.turnEndsAt,
+        newMatch.serverTime,
+      );
       setMatch(newMatch);
       matchRef.current = newMatch;
 

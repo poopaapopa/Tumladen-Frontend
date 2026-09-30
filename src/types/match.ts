@@ -74,6 +74,7 @@ export interface MatchStatePayload {
   id: string;
   roomId: string;
   status: MatchStatus;
+  serverTime?: string;
   players: MatchPlayer[];
   gameType: string;
   gameState: GameState;
