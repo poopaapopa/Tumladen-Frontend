@@ -14,6 +14,9 @@ export const MarqueeText: React.FC<MarqueeTextProps> = ({ text, className, speed
   const [needsMarquee, setNeedsMarquee] = useState(false);
   const [duration, setDuration] = useState(6);
 
+  // Отступ между оригиналом и копией текста.
+  const GAP_PX = 38;
+
   useEffect(() => {
     const container = containerRef.current;
     const textEl = textRef.current;
@@ -22,12 +25,12 @@ export const MarqueeText: React.FC<MarqueeTextProps> = ({ text, className, speed
     const check = () => {
       const textWidth = textEl.scrollWidth;
       const containerWidth = container.clientWidth;
-      console.log(textWidth, containerWidth)
       const overflows = textWidth > containerWidth;
-      
+
       setNeedsMarquee(overflows);
       if (overflows) {
-        setDuration(textWidth / speed);
+        const travelDistance = textWidth + GAP_PX;
+        setDuration(travelDistance / speed);
       }
     };
 
@@ -35,7 +38,6 @@ export const MarqueeText: React.FC<MarqueeTextProps> = ({ text, className, speed
     check();
 
     // Наблюдаем и за контейнером, и за самим текстом.
-    // Это гарантирует, что переход ширины текста из 0 в реальное значение будет зафиксирован.
     const ro = new ResizeObserver(check);
     ro.observe(container);
     ro.observe(textEl);
@@ -43,18 +45,31 @@ export const MarqueeText: React.FC<MarqueeTextProps> = ({ text, className, speed
     return () => ro.disconnect();
   }, [text, speed]);
 
+  if (needsMarquee) {
+    const textWidth = textRef.current?.scrollWidth ?? 0;
+    const singleWidth = textWidth + GAP_PX;
+    return (
+      <div ref={containerRef} className={styles.marqueeContainer}>
+        <span
+          className={clsx(className, styles.marqueeTrack)}
+          style={
+            {
+              '--marquee-duration': `${duration}s`,
+              '--marquee-gap': `${GAP_PX}px`,
+              '--marquee-single-width': `${singleWidth}px`,
+            } as React.CSSProperties
+          }
+        >
+          <span ref={textRef}>{text}</span>
+          <span>{text}</span>
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div ref={containerRef} className={styles.marqueeContainer}>
-      <span
-        ref={textRef}
-        className={clsx(className, needsMarquee && styles.marqueeTrack)}
-        data-text={needsMarquee ? text : undefined}
-        style={
-          needsMarquee
-            ? ({ '--marquee-duration': `${duration}s` } as React.CSSProperties)
-            : undefined
-        }
-      >
+      <span ref={textRef} className={className}>
         {text}
       </span>
     </div>
