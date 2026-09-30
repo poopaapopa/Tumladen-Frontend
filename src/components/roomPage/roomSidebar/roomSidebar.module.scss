@@ -206,9 +206,15 @@
     border-radius: 12px;
     cursor: pointer;
     user-select: none;
+    margin-bottom: 15px;
 
     &:has(input:disabled) {
       cursor: default;
+    }
+
+    &_disabled {
+      cursor: default;
+      opacity: 0.6;
     }
   }
 
@@ -262,6 +268,21 @@
     .roomSidebar__expansionCheckbox:disabled ~ & {
       opacity: 0.5;
     }
+
+    .roomSidebar__expansionRow_disabled & {
+      display: none;
+    }
+  }
+
+  &__comingSoonBadge {
+    background-color: $forest-mid;
+    color: $beige-light;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
   }
 
   &__btnStart {

@@ -30,6 +30,7 @@ interface Game {
   maxPlayers: number;
   duration: string;
   gameType: string;
+  comingSoon?: boolean;
 }
 
 const ALL_GAMES_FILTER = 'all';
@@ -82,11 +83,41 @@ function MainPage({ onPlayClick }: MainPageProps) {
     {
       id: 1,
       title: 'Fortresses & Roads',
-      description: 'Игроки выступают в роли средневековых феодалов, осваивающих земли вокруг одноименной французской крепости, по очереди выкладывая квадраты местности (города, дороги, монастыри) и размещая на них подданных для набора очков.',
+      description: 'Игроки выступают в роли средневековых феодалов, осваивающих земли вокруг одноименной французской крепости, по очереди выкладывая квадраты местности и размещая на них подданных для набора очков.',
       minPlayers: 2,
-      maxPlayers: 5,
+      maxPlayers: 6,
       duration: '20 мин',
       gameType: 'carcassonne',
+    },
+    {
+      id: 2,
+      title: 'Эволюция',
+      description: 'Стройте уникальные виды, создавая комбинации характеристик, и сражайтесь за ресурсы на доисторической Земле. Выживут только сильнейшие!',
+      minPlayers: 2,
+      maxPlayers: 6,
+      duration: '40 мин',
+      gameType: 'evolution',
+      comingSoon: true,
+    },
+    {
+      id: 3,
+      title: 'Small World',
+      description: 'Комбинируйте рассы и способности, завоёвывайте территории на карте, собирайте дань с захваченных регионов и набирайте очки победы. Умение вовремя остановиться — ключ к победе в этой яркой классике настольных игр.',
+      minPlayers: 2,
+      maxPlayers: 5,
+      duration: '30 мин',
+      gameType: 'smallworld',
+      comingSoon: true,
+    },
+    {
+      id: 4,
+      title: 'Catan',
+      description: 'Колонизируйте остров Катан, распределяя поселения и города. Торгуйте ресурсами с другими игроками, стройте дороги для расширения владений и набирайте очки победы, чтобы стать ведущим колонистом острова.',
+      minPlayers: 3,
+      maxPlayers: 4,
+      duration: '35 мин',
+      gameType: 'catan',
+      comingSoon: true,
     },
   ];
 
@@ -336,6 +367,7 @@ function MainPage({ onPlayClick }: MainPageProps) {
               key={game.id}
               isLoading={busyGameId === game.id}
               disabled={isBusy && busyGameId !== game.id}
+              comingSoon={game.comingSoon}
               onQuickPlay={() => quickPlayForGame(game.id)}
               onCreateRoom={() => createRoomForGame(game.id)}
             />

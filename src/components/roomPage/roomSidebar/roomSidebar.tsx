@@ -181,6 +181,20 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
           />
           <span className={styles.roomSidebar__switch} />
         </label>
+
+        <label className={clsx(styles.roomSidebar__expansionRow, styles.roomSidebar__expansionRow_disabled)}>
+          <span className={styles.roomSidebar__expansionLabel}>
+            Торговцы и Строители
+          </span>
+          <span className={styles.roomSidebar__comingSoonBadge}>Скоро</span>
+        </label>
+
+        <label className={clsx(styles.roomSidebar__expansionRow, styles.roomSidebar__expansionRow_disabled)}>
+          <span className={styles.roomSidebar__expansionLabel}>
+            Принцесса и Дракон
+          </span>
+          <span className={styles.roomSidebar__comingSoonBadge}>Скоро</span>
+        </label>
       </div>
 
       {isOwner ? (

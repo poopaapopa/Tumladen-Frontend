@@ -8,6 +8,16 @@
   to { transform: rotate(360deg); }
 }
 
+.gameCard__wrapper {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+
+  @media (max-width: $mobile-breakpoint) {
+    width: 100%;
+  }
+}
+
 .gameCard {
   position: relative;
   background-color: $sage-gray;
@@ -16,11 +26,11 @@
   flex-direction: column;
   transition: all 0.3s ease;
   box-shadow: 8px 8px 15px rgba(0, 0, 0, 0.25);
-  width: 375px;
+  width: 100%;
+  height: 450px;
   overflow: hidden;
 
   @media (max-width: $mobile-breakpoint) {
-    width: 100%;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 
@@ -102,6 +112,7 @@
     line-height: 1.4;
     margin: 0 0 20px 0;
     overflow: hidden;
+    flex: 1;
   }
 
   &__footer {
@@ -174,6 +185,21 @@
   &_disabled {
     opacity: 0.7;
     pointer-events: none;
+  }
+
+  &__comingSoonBadge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 5;
+    background-color: $forest-mid;
+    color: $beige-light;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   }
 
   &__statItem {
