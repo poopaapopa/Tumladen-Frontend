@@ -1,0 +1,87 @@
+.privacy {
+  flex-shrink: 0;
+  margin-bottom: 20px;
+  border-radius: 12px;
+}
+
+.configItem {
+  flex: 1;
+  min-width: 0;
+  border-radius: 12px;
+}
+
+.expansionsTitle {
+  margin-bottom: 10px;
+}
+
+.expansionRow {
+  margin-bottom: 15px;
+  border-radius: 12px;
+}
+
+.startButton {
+  height: 99px;
+  margin-top: auto;
+  flex-shrink: 0;
+  border-radius: 12px;
+}
+
+.visual {
+  width: 100%;
+  border-radius: 20px;
+}
+
+.title {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.gameTitle {
+  max-width: 420px;
+  border-radius: 8px;
+}
+
+.rules {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 8px;
+}
+
+.rulesHeading {
+  margin-top: 18px;
+}
+
+.playerAction {
+  border-radius: 10px;
+}
+
+.mobileTabs {
+  display: flex;
+  gap: 4px;
+  width: 100%;
+  padding: 4px;
+  background-color: rgba($metal-gray, 0.25);
+  border-radius: 999px;
+}
+
+.mobileTab {
+  flex: 1;
+  height: 32px;
+  border-radius: 999px;
+}
+
+@media (max-width: $mobile-breakpoint) {
+  .startButton {
+    height: 65px;
+  }
+
+  .visual {
+    border-radius: 0 0 20px 20px;
+  }
+
+  .gameTitle {
+    border-radius: 6px;
+  }
+}
