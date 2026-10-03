@@ -15,10 +15,11 @@ interface GameTileProps {
   highlightColor?: string;
   highlightDashed?: boolean;
   highlightFill?: string;
+  cacheRendering?: boolean;
 }
 
 const GameTileComponent: React.FC<GameTileProps> = ({
-  tileId, x, y, rotation, tileSize, tileStep, opacity = 1, highlightColor, highlightDashed, highlightFill
+  tileId, x, y, rotation, tileSize, tileStep, opacity = 1, highlightColor, highlightDashed, highlightFill, cacheRendering = false
 }) => {
   const step = tileStep ?? tileSize;
   const [image] = useImage(TILE_IMAGES[tileId]);
@@ -27,13 +28,19 @@ const GameTileComponent: React.FC<GameTileProps> = ({
 
   const groupRef = useRef<Konva.Group | null>(null);
 
-  // Растеризуем тяжёлое содержимое тайла (тень, клиппинг, градиенты) один раз
-  // в offscreen-битмап. При drag/zoom Konva только blit'ит готовый битмап вместо
-  // повторного пересчёта shadowBlur/clipFunc/градиентов на каждый кадр.
+  // На мобильных растрируем тяжёлое содержимое тайла один раз, чтобы снизить
+  // нагрузку при drag/zoom. На десктопе рисуем исходник напрямую, чтобы
+  // не растягивать небольшой offscreen-битмап при увеличении доски.
   useEffect(() => {
     const node = groupRef.current;
     if (!node) return;
     if (!image) return;
+
+    if (!cacheRendering) {
+      node.clearCache();
+      node.getLayer()?.batchDraw();
+      return;
+    }
 
     // Запас под тень (shadowBlur=15 + shadowOffset 8) и обводки, чтобы не обрезалось.
     const PAD = 30;
@@ -53,7 +60,7 @@ const GameTileComponent: React.FC<GameTileProps> = ({
     return () => {
       node.clearCache();
     };
-  }, [image, tileSize, rotation, highlightColor, highlightDashed, highlightFill, opacity]);
+  }, [image, tileSize, rotation, highlightColor, highlightDashed, highlightFill, opacity, cacheRendering]);
 
   return (
     <Group

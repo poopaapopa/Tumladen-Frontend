@@ -59,6 +59,29 @@ const MIN_SCALE = 0.3;
 const MAX_SCALE = 3.5;
 const TILE_SIZE = 150;
 const TILE_STEP = 152;
+const DESKTOP_BLUR_START_SCALE = 0.95;
+const DESKTOP_BLUR_FULL_SCALE = 0.5;
+const DESKTOP_MAX_BLUR_PX = 0.75;
+
+function applyZoomBlur(stage: Konva.Stage, scale: number, isMobile: boolean): void {
+  const blurProgress = Math.min(
+    1,
+    Math.max(
+      0,
+      (DESKTOP_BLUR_START_SCALE - scale)
+        / (DESKTOP_BLUR_START_SCALE - DESKTOP_BLUR_FULL_SCALE),
+    ),
+  );
+  const blur = isMobile ? 0 : blurProgress * DESKTOP_MAX_BLUR_PX;
+  const filter = blur > 0 ? `blur(${blur.toFixed(2)}px)` : '';
+
+  stage.getLayers().forEach((layer) => {
+    const canvas = layer.getNativeCanvasElement();
+    if (canvas.style.filter !== filter) {
+      canvas.style.filter = filter;
+    }
+  });
+}
 
 const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
   width,
@@ -95,14 +118,19 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
 
   // Ограничиваем pixelRatio на мобильных: при devicePixelRatio 2–3 canvas
   // рендерится в 2–3× разрешении, что резко повышает fill-rate при drag/zoom.
+  // На десктопе явно возвращаем нативный pixelRatio, иначе мобильное значение
+  // сохраняется после изменения ширины viewport и изображение остаётся размытым.
   useEffect(() => {
     const s = stageRef.current;
     if (!s) return;
-    if (!isMobile) return;
-    const cap = Math.min(window.devicePixelRatio || 1, 1.5);
+    const devicePixelRatio = window.devicePixelRatio || 1;
+    const targetPixelRatio = isMobile
+      ? Math.min(devicePixelRatio, 1.5)
+      : devicePixelRatio;
     s.getLayers().forEach((layer) => {
-      layer.getCanvas().setPixelRatio(cap);
+      layer.getCanvas().setPixelRatio(targetPixelRatio);
     });
+    applyZoomBlur(s, s.scaleX(), isMobile);
     s.batchDraw();
   }, [stageWidth, stageHeight, isMobile]);
 
@@ -118,8 +146,9 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
     if (!target || !s) return;
     s.scale({ x: target.scale, y: target.scale });
     s.position({ x: target.x, y: target.y });
+    applyZoomBlur(s, target.scale, isMobile);
     s.batchDraw();
-  }, []);
+  }, [isMobile]);
 
   const scheduleStage = useCallback((next: { x: number; y: number; scale: number }) => {
     pendingStageRef.current = next;
@@ -296,8 +325,8 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
       }}
       style={{ background: '#F5F5DC', cursor: 'default', touchAction: 'none' }}
     >
-      {/* Статический слой: тайлы кэшированы в битмапы, hit-graph отключён,
-          чтобы drag/zoom не пересчитывали интерактивность квадратов. */}
+      {/* Статический слой: на мобильных тайлы кэшируются для производительности;
+          на десктопе исходники рисуются напрямую для сохранения чёткости при zoom. */}
       <Layer listening={false}>
         <Group>
           {tilesToRender.map((tile, index) => {
@@ -314,6 +343,7 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
                 tileSize={TILE_SIZE}
                 tileStep={TILE_STEP}
                 highlightColor={highlight?.color}
+                cacheRendering={isMobile}
               />
             );
           })}
