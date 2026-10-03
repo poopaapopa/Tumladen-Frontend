@@ -14,6 +14,7 @@ import clsx from 'clsx';
 import RangeSlider from '../rangeSlider/rangeSlider.tsx';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { SegmentedTabs } from '../segmentedTabs/segmentedTabs.tsx';
+import { InfinityValue } from '@/components/infinityValue/infinityValue.tsx';
 
 interface MainPageProps {
   onPlayClick: () => void;
@@ -46,14 +47,14 @@ const PLAYERS_MIN = 2;
 const PLAYERS_MAX = 8;
 
 // Дискретные точки на оси «время на ход». Последний слот (null) соответствует
-// бесконечному ходу (turnTimeSeconds === 0 в данных комнаты).
+// ходу без ограничения по времени (turnTimeSeconds === 0 в данных комнаты).
 const TURN_TIME_POINTS: ReadonlyArray<number | null> = [30, 60, 90, 120, 180, null];
 const TURN_TIME_MIN_INDEX = 0;
 const TURN_TIME_MAX_INDEX = TURN_TIME_POINTS.length - 1;
 
 const formatTurnTime = (index: number) => {
   const point = TURN_TIME_POINTS[index];
-  return point === null ? '∞' : `${point}с`;
+  return point === null ? <InfinityValue size={17} /> : `${point}с`;
 };
 
 function MainPage({ onPlayClick }: MainPageProps) {
@@ -236,7 +237,7 @@ function MainPage({ onPlayClick }: MainPageProps) {
       ? (TURN_TIME_POINTS[numericIndices[numericIndices.length - 1]] as number)
       : null;
 
-    // Бесконечный ход (turnTimeSeconds === 0) проходит, если в диапазон попал слот ∞.
+    // Ход без ограничения проходит, если в диапазон попал последний слот.
     const allowUnlimited =
       TURN_TIME_POINTS[tMinIdx] === null || TURN_TIME_POINTS[tMaxIdx] === null;
 

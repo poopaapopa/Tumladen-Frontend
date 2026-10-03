@@ -9,7 +9,7 @@ export interface RangeSliderProps {
   value: [number, number];
   onChange: (value: [number, number]) => void;
   label?: string;
-  formatValue?: (val: number) => string;
+  formatValue?: (val: number) => React.ReactNode;
   className?: string;
 }
 
@@ -92,7 +92,13 @@ function RangeSlider({
             {label}
           </span>
           <span className={styles.rangeSlider__value}>
-            {lo === hi ? displayLo : `${displayLo} – ${displayHi}`}
+            {lo === hi ? displayLo : (
+              <>
+                {displayLo}
+                <span aria-hidden="true">–</span>
+                {displayHi}
+              </>
+            )}
           </span>
         </div>
       )}

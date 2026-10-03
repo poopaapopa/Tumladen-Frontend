@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import {ChevronDown, type LucideIcon} from 'lucide-react';
+import { ChevronDown, type LucideIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { InfinityValue } from '@/components/infinityValue/infinityValue.tsx';
 import styles from './editableSelector.module.scss';
 import clsx from 'clsx';
 
@@ -36,7 +37,6 @@ export const EditableSelector = ({ value, icon: Icon, options, onSelect, isOwner
   const [position, setPosition] = useState<DropdownPosition | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const stringValue = value === 0 ? '∞' : value.toString();
   const stringSuffix = suffix && value !== 0 ? ` ${suffix}` : '';
 
   // Считаем позицию выпадающего списка относительно вьюпорта (fixed),
@@ -114,7 +114,9 @@ export const EditableSelector = ({ value, icon: Icon, options, onSelect, isOwner
         onClick={handleToggle}
       >
         <Icon size={20} />
-        <span>{stringValue + stringSuffix}</span>
+        <span>
+          {value === 0 ? <InfinityValue size={26} /> : `${value}${stringSuffix}`}
+        </span>
         {isOwner && (
           <ChevronDown
             size={26}
@@ -152,7 +154,7 @@ export const EditableSelector = ({ value, icon: Icon, options, onSelect, isOwner
                   onClick={() => handlePick(opt)}
                 >
                   <Icon size={20} />
-                  {opt.label}
+                  {opt.value === 0 ? <InfinityValue size={26} /> : opt.label}
                 </div>
               ))}
             </motion.div>

@@ -77,7 +77,7 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
     { value: 90, label: '90 с.' },
     { value: 120, label: '120 с.' },
     { value: 180, label: '180 с.' },
-    { value: 0, label: '∞' }
+    { value: 0, label: 'Без ограничений' }
   ];
 
   return (

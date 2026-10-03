@@ -21,6 +21,9 @@ $track-height: 4px;
   }
 
   &__value {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
     font-size: 13px;
     font-weight: 600;
     color: $forest-dark;
