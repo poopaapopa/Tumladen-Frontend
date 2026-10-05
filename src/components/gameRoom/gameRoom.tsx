@@ -8,6 +8,8 @@ import { useContainerSize } from '@/hooks/useContainerSize';
 import { useRoomSocket } from '@/api/ws';
 import type { MatchFinishedPayload, WebSocketMessage } from '@/types/ws';
 import {
+  type FeatureScoredEvent,
+  type MatchEvent,
   type MatchStatePayload,
   type MeepleType,
   type PlacedMeeple,
@@ -34,8 +36,25 @@ import {
   type MeepleFlight,
 } from './meepleFlight/meepleFlight.tsx';
 import { getZoneOffset } from '@/utils/tileZones.ts';
+import {
+  getScoreEventDisplayMs,
+  getScoreEventMeepleReturnDelayMs,
+} from './scoreEventTiming.ts';
 
 export type { Tile, MatchStatePayload, PrivateState } from '@/types/match';
+
+const isFeatureScoredEvent = (event: MatchEvent): event is FeatureScoredEvent =>
+  event.type === 'feature_scored';
+
+interface PendingMeepleCounts {
+  regular: number;
+  big: number;
+}
+
+interface LaunchMeepleFlightOptions {
+  trackInventory?: boolean;
+  onComplete?: () => void;
+}
 
 const GameRoom = () => {
   const { id: inviteCode } = useParams<{ id: string }>();
@@ -49,10 +68,23 @@ const GameRoom = () => {
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
   const [isRoomDeleted, setIsRoomDeleted] = useState(false);
   const [matchResult, setMatchResult] = useState<MatchFinishedPayload | null>(null);
+  const [pendingMatchResult, setPendingMatchResult] = useState<MatchFinishedPayload | null>(null);
   const [privateState, setPrivateState] = useState<PrivateState | null>(null);
   const [currentRotation, setCurrentRotation] = useState(0);
   const [pendingPlacement, setPendingPlacement] = useState<{ x: number; y: number; rotation: number } | null>(null);
   const [selectedMeepleType, setSelectedMeepleType] = useState<MeepleType>('regular');
+  const [scoreEventQueue, setScoreEventQueue] = useState<FeatureScoredEvent[]>([]);
+  const [departedScoreEventIds, setDepartedScoreEventIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const [arrivedScoreEventIds, setArrivedScoreEventIds] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const seenScoreEventIdsRef = useRef<Set<string>>(new Set());
+  const launchedScoreFlightEventIdsRef = useRef<Set<string>>(new Set());
+  const scoreAnimationDeadlineRef = useRef(0);
+  const matchResultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const skipFinalScoringRef = useRef(false);
   // Карта последних поставленных квадратов по каждому игроку: actorId -> { x, y, color }
   const lastPlacedStorageKey = inviteCode ? `lastPlacedByPlayer:${inviteCode}` : null;
   const [lastPlacedByPlayer, setLastPlacedByPlayer] = useState<
@@ -86,7 +118,9 @@ const GameRoom = () => {
   const boardHandleRef = useRef<GameBoardHandle | null>(null);
   const playerCardRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const [flights, setFlights] = useState<MeepleFlight[]>([]);
-  const [pendingMeeples, setPendingMeeples] = useState<Record<string, number>>({});
+  const [pendingMeeples, setPendingMeeples] = useState<
+    Record<string, PendingMeepleCounts>
+  >({});
   const flightTimeoutsRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set());
 
   const registerPlayerCardRef = useCallback(
@@ -97,10 +131,18 @@ const GameRoom = () => {
     [],
   );
 
-  const launchMeepleFlights = useCallback((removed: PlacedMeeple[], boardTiles: { tileId: string; x: number; y: number; rotation: number; instanceId?: string }[]) => {
+  const launchMeepleFlights = useCallback((
+    removed: PlacedMeeple[],
+    boardTiles: { tileId: string; x: number; y: number; rotation: number; instanceId?: string }[],
+    options: LaunchMeepleFlightOptions = {},
+  ) => {
+    const { trackInventory = true, onComplete } = options;
     const stage = boardHandleRef.current?.getStage();
     const tileStep = boardHandleRef.current?.getTileStep() ?? 152;
-    if (!stage || removed.length === 0) return;
+    if (!stage || removed.length === 0) {
+      onComplete?.();
+      return;
+    }
 
     const containerRect = stage.container().getBoundingClientRect();
     const sx = stage.x();
@@ -108,7 +150,7 @@ const GameRoom = () => {
     const scale = stage.scaleX();
 
     const newFlights: MeepleFlight[] = [];
-    const pendingDelta: Record<string, number> = {};
+    const pendingDelta: Record<string, PendingMeepleCounts> = {};
 
     removed.forEach((m, idx) => {
       const tile = boardTiles.find((t) => t.instanceId && t.instanceId === m.tileInstanceId);
@@ -138,31 +180,54 @@ const GameRoom = () => {
         color,
         variant: m.featureType === 'field' ? 'lying' : 'standing',
       });
-      pendingDelta[m.actorId] = (pendingDelta[m.actorId] ?? 0) + 1;
+      const meepleType = m.meepleType === 'big' ? 'big' : 'regular';
+      const actorDelta = pendingDelta[m.actorId] ?? { regular: 0, big: 0 };
+      actorDelta[meepleType] += 1;
+      pendingDelta[m.actorId] = actorDelta;
     });
 
-    if (newFlights.length === 0) return;
+    if (newFlights.length === 0) {
+      onComplete?.();
+      return;
+    }
 
     setFlights((prev) => [...prev, ...newFlights]);
-    setPendingMeeples((prev) => {
-      const next = { ...prev };
-      for (const [aid, n] of Object.entries(pendingDelta)) {
-        next[aid] = (next[aid] ?? 0) + n;
-      }
-      return next;
-    });
+    if (trackInventory) {
+      setPendingMeeples((prev) => {
+        const next = { ...prev };
+        for (const [aid, delta] of Object.entries(pendingDelta)) {
+          const current = next[aid] ?? { regular: 0, big: 0 };
+          next[aid] = {
+            regular: current.regular + delta.regular,
+            big: current.big + delta.big,
+          };
+        }
+        return next;
+      });
+    }
 
     const ids = newFlights.map((f) => f.id);
     const timeout = setTimeout(() => {
       setFlights((prev) => prev.filter((f) => !ids.includes(f.id)));
-      setPendingMeeples((prev) => {
-        const next = { ...prev };
-        for (const [aid, n] of Object.entries(pendingDelta)) {
-          next[aid] = Math.max(0, (next[aid] ?? 0) - n);
-          if (next[aid] === 0) delete next[aid];
-        }
-        return next;
-      });
+      if (trackInventory) {
+        setPendingMeeples((prev) => {
+          const next = { ...prev };
+          for (const [aid, delta] of Object.entries(pendingDelta)) {
+            const current = next[aid] ?? { regular: 0, big: 0 };
+            const remaining = {
+              regular: Math.max(0, current.regular - delta.regular),
+              big: Math.max(0, current.big - delta.big),
+            };
+            if (remaining.regular === 0 && remaining.big === 0) {
+              delete next[aid];
+            } else {
+              next[aid] = remaining;
+            }
+          }
+          return next;
+        });
+      }
+      onComplete?.();
       flightTimeoutsRef.current.delete(timeout);
     }, FLIGHT_DURATION_MS);
     flightTimeoutsRef.current.add(timeout);
@@ -175,9 +240,163 @@ const GameRoom = () => {
     setPendingMeeples({});
   }, []);
 
+  const enqueueScoreEvents = useCallback((events: MatchEvent[] | undefined) => {
+    const unseen = (events ?? [])
+      .filter(isFeatureScoredEvent)
+      .filter((event) => {
+        if (seenScoreEventIdsRef.current.has(event.id)) return false;
+        seenScoreEventIdsRef.current.add(event.id);
+        return true;
+      });
+    if (unseen.length === 0) return;
+
+    setScoreEventQueue((previous) => [...previous, ...unseen]);
+    scoreAnimationDeadlineRef.current = Math.max(
+      Date.now(),
+      scoreAnimationDeadlineRef.current,
+    ) + unseen.reduce(
+      (total, event) => total + getScoreEventDisplayMs(event),
+      0,
+    );
+  }, []);
+
+  const stopScorePlayback = useCallback(() => {
+    setScoreEventQueue([]);
+    setDepartedScoreEventIds(new Set());
+    setArrivedScoreEventIds(new Set());
+    launchedScoreFlightEventIdsRef.current.clear();
+    scoreAnimationDeadlineRef.current = 0;
+    if (matchResultTimeoutRef.current) {
+      clearTimeout(matchResultTimeoutRef.current);
+      matchResultTimeoutRef.current = null;
+    }
+  }, []);
+
+  const clearScoreEvents = useCallback(() => {
+    stopScorePlayback();
+    seenScoreEventIdsRef.current.clear();
+    skipFinalScoringRef.current = false;
+    setPendingMatchResult(null);
+  }, [stopScorePlayback]);
+
+  const showMatchResult = useCallback((payload: MatchFinishedPayload) => {
+    stopScorePlayback();
+    clearFlights();
+    skipFinalScoringRef.current = false;
+    setPendingMatchResult(null);
+    setMatchResult(payload);
+  }, [clearFlights, stopScorePlayback]);
+
+  const handleSkipFinalScoring = useCallback(() => {
+    skipFinalScoringRef.current = true;
+    stopScorePlayback();
+    clearFlights();
+    if (pendingMatchResult) {
+      showMatchResult(pendingMatchResult);
+    }
+  }, [clearFlights, pendingMatchResult, showMatchResult, stopScorePlayback]);
+
+  const activeScoreEvent = scoreEventQueue[0];
+
+  useEffect(() => {
+    if (!activeScoreEvent) return;
+    const timeout = setTimeout(() => {
+      setScoreEventQueue((previous) => previous.slice(1));
+    }, getScoreEventDisplayMs(activeScoreEvent));
+    return () => clearTimeout(timeout);
+  }, [activeScoreEvent]);
+
+  useEffect(() => {
+    const returnedMeeples = activeScoreEvent?.payload.returnedMeeples ?? [];
+    if (!activeScoreEvent || launchedScoreFlightEventIdsRef.current.has(activeScoreEvent.id)) {
+      return;
+    }
+    if (returnedMeeples.length === 0) {
+      launchedScoreFlightEventIdsRef.current.add(activeScoreEvent.id);
+      return;
+    }
+
+    let frame: number | null = null;
+    let returnDelayTimeout: ReturnType<typeof setTimeout> | null = null;
+    const launchReturnedMeeples = () => {
+      frame = requestAnimationFrame(() => {
+        if (launchedScoreFlightEventIdsRef.current.has(activeScoreEvent.id)) return;
+
+        const currentMatch = matchRef.current;
+        if (!currentMatch) return;
+        launchedScoreFlightEventIdsRef.current.add(activeScoreEvent.id);
+
+        const seatById = new Map(
+          currentMatch.gameState.players.map((player) => [player.actorId, player.seat]),
+        );
+        const enriched = returnedMeeples.map((meeple) => ({
+          ...meeple,
+          seat: meeple.seat ?? seatById.get(meeple.actorId),
+        }));
+
+        // Убираем ghost и создаём полёт в одном render — фигура не исчезает между ними.
+        setDepartedScoreEventIds((previous) => {
+          const next = new Set(previous);
+          next.add(activeScoreEvent.id);
+          return next;
+        });
+        launchMeepleFlights(enriched, currentMatch.gameState.board.tiles, {
+          trackInventory: false,
+          onComplete: () => {
+            setArrivedScoreEventIds((previous) => {
+              const next = new Set(previous);
+              next.add(activeScoreEvent.id);
+              return next;
+            });
+          },
+        });
+      });
+    };
+    const returnDelayMs = getScoreEventMeepleReturnDelayMs(activeScoreEvent);
+    if (returnDelayMs > 0) {
+      returnDelayTimeout = setTimeout(launchReturnedMeeples, returnDelayMs);
+    } else {
+      launchReturnedMeeples();
+    }
+
+    return () => {
+      if (returnDelayTimeout) clearTimeout(returnDelayTimeout);
+      if (frame !== null) cancelAnimationFrame(frame);
+    };
+  }, [activeScoreEvent, launchMeepleFlights]);
+
+  useEffect(() => {
+    if (!pendingMatchResult || scoreEventQueue.length > 0 || flights.length > 0) {
+      return;
+    }
+
+    const payload = pendingMatchResult;
+    const showResult = () => {
+      matchResultTimeoutRef.current = null;
+      showMatchResult(payload);
+    };
+    const delay = Math.max(0, scoreAnimationDeadlineRef.current - Date.now());
+    if (delay === 0) {
+      showResult();
+      return;
+    }
+
+    const timeout = setTimeout(showResult, delay);
+    matchResultTimeoutRef.current = timeout;
+    return () => {
+      clearTimeout(timeout);
+      if (matchResultTimeoutRef.current === timeout) {
+        matchResultTimeoutRef.current = null;
+      }
+    };
+  }, [flights.length, pendingMatchResult, scoreEventQueue.length, showMatchResult]);
+
   useEffect(() => () => {
     flightTimeoutsRef.current.forEach((t) => clearTimeout(t));
     flightTimeoutsRef.current.clear();
+    if (matchResultTimeoutRef.current) {
+      clearTimeout(matchResultTimeoutRef.current);
+    }
   }, []);
 
   useEffect(() => {
@@ -209,7 +428,14 @@ const GameRoom = () => {
       const prevMatch = matchRef.current;
       const isTurnChanged =
         prevMatch?.gameState?.turnNumber !== newMatch.gameState?.turnNumber;
+      const eventReturnedMeepleKeys = new Set(
+        (newMatch.events ?? [])
+          .filter(isFeatureScoredEvent)
+          .flatMap((event) => event.payload.returnedMeeples ?? [])
+          .map((meeple) => `${meeple.tileInstanceId}:${meeple.zoneId}:${meeple.actorId}`),
+      );
 
+      enqueueScoreEvents(newMatch.events);
       recordMatchUpdate(prevMatch, newMatch);
 
       // Диффим подданных — какие исчезли с доски (вернулись игроку)
@@ -222,15 +448,20 @@ const GameRoom = () => {
         const removed = prevMeeples.filter(
           (m) => !nextKeys.has(`${m.tileInstanceId}:${m.zoneId}:${m.actorId}`),
         );
-        if (removed.length > 0) {
-          // запускаем после применения нового состояния — нужен актуальный board для tile lookup
-          // tiles на самом деле берём из prevMatch (квадрат точно ещё там — у фичи только что сняли подданного)
+        const removedWithoutScoreEvent = removed.filter(
+          (meeple) => !eventReturnedMeepleKeys.has(
+            `${meeple.tileInstanceId}:${meeple.zoneId}:${meeple.actorId}`,
+          ),
+        );
+        if (removedWithoutScoreEvent.length > 0) {
+          // Подданные завершённых дорог/городов запускаются вместе с их событием
+          // из последовательной очереди. Здесь остаются монастыри и fallback для
+          // событий от старой версии backend без returnedMeeples.
           const boardTiles = prevMatch.gameState?.board?.tiles ?? [];
-          // обогащаем seat из prevPlayers, если не задан
           const seatById = new Map(
             prevMatch.gameState.players.map((p) => [p.actorId, p.seat]),
           );
-          const enriched = removed.map((m) => ({
+          const enriched = removedWithoutScoreEvent.map((m) => ({
             ...m,
             seat: m.seat ?? seatById.get(m.actorId),
           }));
@@ -370,19 +601,24 @@ const GameRoom = () => {
 
     if (data.type === 'match_finished') {
       clearLog();
-      clearFlights();
       if (lastPlacedStorageKey) {
         try { localStorage.removeItem(lastPlacedStorageKey); } catch { /* ignore */ }
       }
       setLastPlacedByPlayer({});
       const payload = data.payload;
       if (payload && payload.terminationReason === 'normal_completion') {
-        setMatchResult(payload);
+        if (skipFinalScoringRef.current) {
+          showMatchResult(payload);
+        } else {
+          setPendingMatchResult(payload);
+        }
       } else {
+        clearFlights();
+        clearScoreEvents();
         setIsRoomDeleted(true);
       }
     }
-  }, [recordMatchUpdate, clearLog, clearFlights, setTurnDeadline, lastPlacedStorageKey, launchMeepleFlights]);
+  }, [recordMatchUpdate, clearLog, clearFlights, clearScoreEvents, enqueueScoreEvents, setTurnDeadline, lastPlacedStorageKey, launchMeepleFlights, showMatchResult]);
 
   const { sendMessage } = useRoomSocket(room?.id, handleMessage);
 
@@ -469,10 +705,41 @@ const GameRoom = () => {
   const gamePlayers = match?.gameState?.players || [];
   const matchPlayers = match?.players || [];
   const matchPlayerByActor = new Map(matchPlayers.map((p) => [p.actorId, p]));
+  const visibleReturnedMeeples = scoreEventQueue.flatMap((event) => (
+    departedScoreEventIds.has(event.id) ? [] : (event.payload.returnedMeeples ?? [])
+  ));
+  const unavailableReturnedMeeples = scoreEventQueue.flatMap((event) => (
+    arrivedScoreEventIds.has(event.id) ? [] : (event.payload.returnedMeeples ?? [])
+  ));
+  const unavailableMeeplesByActor: Record<string, PendingMeepleCounts> = {};
+  for (const [actorId, pending] of Object.entries(pendingMeeples)) {
+    unavailableMeeplesByActor[actorId] = { ...pending };
+  }
+  const countedUnavailableMeeples = new Set<string>();
+  for (const meeple of unavailableReturnedMeeples) {
+    const key = `${meeple.tileInstanceId}:${meeple.zoneId}:${meeple.actorId}`;
+    if (countedUnavailableMeeples.has(key)) continue;
+    countedUnavailableMeeples.add(key);
+    const counts = unavailableMeeplesByActor[meeple.actorId]
+      ?? { regular: 0, big: 0 };
+    if (meeple.meepleType === 'big') counts.big += 1;
+    else counts.regular += 1;
+    unavailableMeeplesByActor[meeple.actorId] = counts;
+  }
+  const queuedAwardsByActor = new Map<string, number>();
+  for (const event of scoreEventQueue.slice(1)) {
+    for (const award of event.payload.awards) {
+      queuedAwardsByActor.set(
+        award.actorId,
+        (queuedAwardsByActor.get(award.actorId) ?? 0) + award.points,
+      );
+    }
+  }
   const players: SidebarPlayer[] = gamePlayers.map((gp) => {
     const mp = matchPlayerByActor.get(gp.actorId);
     return {
       ...gp,
+      score: Math.max(0, gp.score - (queuedAwardsByActor.get(gp.actorId) ?? 0)),
       avatarUrl: mp?.avatarUrl,
       actorType: mp?.actorType,
       botDifficulty: mp?.botDifficulty,
@@ -493,8 +760,23 @@ const GameRoom = () => {
   const currentColor = getPlayerColorBySeat(currentPlayer?.seat);
   const isYourTurn = Boolean(privateState?.isYourTurn);
   const isCurrentPlayerBot = currentPlayer?.actorType === 'bot' || (currentTurnId?.startsWith('bot:') ?? false);
+  const hasFinalScoringEvents = scoreEventQueue.some(
+    (event) => event.payload.scoringPhase === 'final',
+  );
 
   const lastPlacedTile = gameState?.currentTurn?.placedTile;
+  const displayedMeeples = [...(gameState?.meeples ?? [])];
+  const displayedMeepleKeys = new Set(
+    displayedMeeples.map(
+      (meeple) => `${meeple.tileInstanceId}:${meeple.zoneId}:${meeple.actorId}`,
+    ),
+  );
+  for (const meeple of visibleReturnedMeeples) {
+    const key = `${meeple.tileInstanceId}:${meeple.zoneId}:${meeple.actorId}`;
+    if (displayedMeepleKeys.has(key)) continue;
+    displayedMeepleKeys.add(key);
+    displayedMeeples.push(meeple);
+  }
 
   return (
     <main className={sidebarstyles.pageWrapper}>
@@ -504,7 +786,7 @@ const GameRoom = () => {
         ownerId={ownerId}
         currentTurnId={currentTurnId}
         onLeaveClick={() => setIsExitModalOpen(true)}
-        pendingMeeples={pendingMeeples}
+        pendingMeeples={unavailableMeeplesByActor}
         registerPlayerCardRef={registerPlayerCardRef}
         isMeeplePlacementPhase={phase === 'place_meeple' && isYourTurn}
         selectedMeepleType={selectedMeepleType}
@@ -527,11 +809,12 @@ const GameRoom = () => {
           lastPlacedTile={lastPlacedTile}
           lastPlacedByPlayer={lastPlacedByPlayer}
           players={players}
-          placedMeeples={gameState?.meeples || []}
+          placedMeeples={displayedMeeples}
           pendingPlacement={pendingPlacement}
+          scoreEvent={activeScoreEvent}
         />
 
-        {matchResult === null && (
+        {matchResult === null && match?.status !== 'finished' && !hasFinalScoringEvents && (
           <>
             <CurrentTurnPanel
               currentPlayerName={currentPlayer?.displayName || 'Ожидание...'}
@@ -563,18 +846,28 @@ const GameRoom = () => {
           </>
         )}
 
-        {phase === 'place_meeple' && privateState?.isYourTurn && (
+        {match?.status === 'active' && phase === 'place_meeple' && privateState?.isYourTurn && (
           <button className={styles.skipButton} onClick={handleSkipMeeple}>
             Не ставить подданного
           </button>
         )}
 
-        {phase === 'place_tile' && privateState?.isYourTurn && pendingPlacement !== null && (
+        {match?.status === 'active' && phase === 'place_tile' && privateState?.isYourTurn && pendingPlacement !== null && (
           <button
             className={styles.skipButton}
             onClick={handleConfirmPlaceTile}
           >
             Присоединить квадрат
+          </button>
+        )}
+
+        {matchResult === null && hasFinalScoringEvents && (
+          <button
+            type="button"
+            className={styles.finalScoreSkipButton}
+            onClick={handleSkipFinalScoring}
+          >
+            Пропустить подсчёт
           </button>
         )}
 

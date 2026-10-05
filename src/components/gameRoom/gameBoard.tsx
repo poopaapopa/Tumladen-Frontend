@@ -14,6 +14,8 @@ import { KonvaMeeple } from './matchPlayerCard/meeple.tsx';
 import { MeepleSlot } from './meepleSlot.tsx';
 import { getZoneOffset } from '@/utils/tileZones.ts';
 import { useIsMobile } from '@/hooks/useIsMobile';
+import type { FeatureScoredEvent } from '@/types/match';
+import { FeatureScoreOverlay } from './featureScoreOverlay';
 
 interface Player {
   actorId: string;
@@ -38,6 +40,7 @@ interface GameBoardProps {
   lastPlacedByPlayer?: Record<string, { x: number; y: number; color: string }>;
   placedMeeples?: Array<{ tileInstanceId: string, zoneId: string, actorId: string, seat?: number, featureType: string, meepleType?: string }>;
   players?: Player[];
+  scoreEvent?: FeatureScoredEvent;
 }
 
 /** Distance between two touch points */
@@ -99,6 +102,7 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
   lastPlacedByPlayer = {},
   placedMeeples = [],
   players = [],
+  scoreEvent,
 }, ref) => {
   const stageWidth = width || 800;
   const stageHeight = height || 600;
@@ -417,6 +421,19 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
           })}
         </Group>
       </Layer>
+
+      {scoreEvent && (
+        <Layer listening={false}>
+          <FeatureScoreOverlay
+            event={scoreEvent}
+            board={board}
+            players={players}
+            stageScale={stage.scale}
+            tileSize={TILE_SIZE}
+            tileStep={TILE_STEP}
+          />
+        </Layer>
+      )}
     </Stage>
   );
 });

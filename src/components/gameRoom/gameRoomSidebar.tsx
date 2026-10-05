@@ -9,8 +9,8 @@ interface GameRoomSidebarProps {
   ownerId?: string;
   currentTurnId?: string;
   onLeaveClick: () => void;
-  /** Кол-во подданных, которые сейчас в полёте (ещё не «приземлились» в карточку) */
-  pendingMeeples?: Record<string, number>;
+  /** Подданные, которые ещё показаны на поле либо летят к карточке игрока. */
+  pendingMeeples?: Record<string, { regular: number; big: number }>;
   /** Регистрация DOM-узла карточки игрока для координат анимации полёта */
   registerPlayerCardRef?: (actorId: string, el: HTMLDivElement | null) => void;
   isMeeplePlacementPhase?: boolean;
@@ -50,8 +50,16 @@ export const GameRoomSidebar = ({
 
       <div className={styles.playersList}>
         {sortedPlayers.map((player, index) => {
-          const pending = pendingMeeples?.[player.actorId] ?? 0;
-          const displayedMeeples = Math.max(0, player.meeplesLeft - pending);
+          const pending = pendingMeeples?.[player.actorId]
+            ?? { regular: 0, big: 0 };
+          const displayedMeeples = Math.max(
+            0,
+            player.meeplesLeft - pending.regular,
+          );
+          const displayedBigMeeples = Math.max(
+            0,
+            (player.bigMeeplesLeft ?? 0) - pending.big,
+          );
           return (
             <React.Fragment key={player.actorId}>
               <MatchPlayerCard
@@ -62,7 +70,7 @@ export const GameRoomSidebar = ({
                 isTurn={player.actorId === currentTurnId}
                 score={player.score}
                 meeplesLeft={displayedMeeples}
-                bigMeeplesLeft={player.bigMeeplesLeft}
+                bigMeeplesLeft={displayedBigMeeples}
                 seat={player.seat}
                 actorType={player.actorType}
                 botDifficulty={player.botDifficulty}
@@ -70,7 +78,7 @@ export const GameRoomSidebar = ({
                   isMeeplePlacementPhase &&
                   player.actorId === currentUserId &&
                   player.actorId === currentTurnId &&
-                  (player.bigMeeplesLeft ?? 0) > 0
+                  displayedBigMeeples > 0
                 }
                 selectedMeepleType={selectedMeepleType}
                 onSelectMeepleType={onSelectMeepleType}

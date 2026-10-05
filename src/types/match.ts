@@ -70,6 +70,57 @@ export interface GameState {
   };
 }
 
+export interface MatchEvent {
+  id: string;
+  type: string;
+  payload: unknown;
+}
+
+export interface FeatureScoreContribution {
+  tileInstanceId: string;
+  zoneId: string;
+  points: number;
+}
+
+export interface FeatureScoreAward {
+  actorId: string;
+  points: number;
+}
+
+export type ScoringPhase = 'turn' | 'final';
+
+export interface FeatureScoreMarker {
+  actorId: string;
+  tileInstanceId: string;
+  zoneId: string;
+  points: number;
+}
+
+export interface FeatureScoreContributingCity {
+  anchorTileInstanceId: string;
+  anchorZoneId: string;
+  tileInstanceIds: string[];
+}
+
+export interface FeatureScoredEvent extends MatchEvent {
+  type: 'feature_scored';
+  payload: {
+    turnNumber: number;
+    featureType: 'road' | 'city' | 'monastery' | 'field';
+    /** Missing on events produced by older backend versions; those are turn events. */
+    scoringPhase?: ScoringPhase;
+    anchorTileInstanceId: string;
+    contributions: FeatureScoreContribution[];
+    totalPoints: number;
+    awards: FeatureScoreAward[];
+    returnedMeeples?: PlacedMeeple[];
+    /** Explicit on-board positions for scores that cannot be attached to contributions. */
+    scoreMarkers?: FeatureScoreMarker[];
+    /** Completed cities used by a field score. Used only for board highlighting. */
+    contributingCities?: FeatureScoreContributingCity[];
+  };
+}
+
 export interface MatchStatePayload {
   id: string;
   roomId: string;
@@ -78,6 +129,7 @@ export interface MatchStatePayload {
   players: MatchPlayer[];
   gameType: string;
   gameState: GameState;
+  events?: MatchEvent[];
 }
 
 export interface ValidPlacement {
