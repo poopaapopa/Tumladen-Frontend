@@ -100,6 +100,11 @@ export interface FeatureScoreContributingCity {
   anchorTileInstanceId: string;
   anchorZoneId: string;
   tileInstanceIds: string[];
+  /** Exact city zones, used to select the contour on tiles with multiple cities. */
+  zones?: Array<{
+    tileInstanceId: string;
+    zoneId: string;
+  }>;
 }
 
 export interface FeatureScoredEvent extends MatchEvent {

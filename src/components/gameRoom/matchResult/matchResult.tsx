@@ -1,7 +1,14 @@
-import { Fragment, useMemo } from 'react';
+import { useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import clsx from 'clsx';
 import { Award } from 'lucide-react';
+import styles from './matchResult.module.scss';
+import type { MatchFinishedPayload } from '@/types/ws';
+import type { MatchPlayer } from '@/types/match';
+import { getPlayerColorBySeat } from '@/utils/playerColor';
+import { avatarSrc } from '@/utils/avatar.ts';
+import defaultAvatar from '@/assets/elf-avatar.svg';
+import elfGameImage from '@/assets/elf-game.png';
 
 const CONFETTI_COLORS = [
   '#F5C518',
@@ -50,29 +57,49 @@ const buildPieces = (
     };
   });
 };
-import styles from './matchResult.module.scss';
-import type { MatchFinishedPayload } from '@/types/ws';
-import type { MatchPlayer } from '@/types/match';
-import { getPlayerColorBySeat } from '@/utils/playerColor';
-import { avatarSrc } from '@/utils/avatar.ts';
-import defaultAvatar from '@/assets/elf-avatar.svg';
-import elfGameImage from '@/assets/elf-game.png';
+
+const formatScore = (score: number) => {
+  const absoluteScore = Math.abs(score);
+  const lastTwoDigits = absoluteScore % 100;
+  const lastDigit = absoluteScore % 10;
+
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+    return `${score} очков`;
+  }
+
+  if (lastDigit === 1) {
+    return `${score} очко`;
+  }
+
+  if (lastDigit >= 2 && lastDigit <= 4) {
+    return `${score} очка`;
+  }
+
+  return `${score} очков`;
+};
+
+export interface MatchResultAchievement {
+  id: string;
+  title: string;
+  description?: string;
+  icon?: string;
+}
 
 interface MatchResultModalProps {
   result: MatchFinishedPayload;
   players: MatchPlayer[];
   currentUserId?: string;
+  achievements?: MatchResultAchievement[];
+  onReturnToRoom: () => void;
   onConfirm: () => void;
   confirmText?: string;
 }
 
-interface RankedRow {
+interface WinnerViewModel {
   actorId: string;
   displayName: string;
   color: string;
   score: number;
-  isWinner: boolean;
-  place: number;
   avatarUrl?: string | null;
 }
 
@@ -80,90 +107,84 @@ export const MatchResultModal = ({
   result,
   players,
   currentUserId,
+  achievements = [],
+  onReturnToRoom,
   onConfirm,
-  confirmText = 'Вернуться в комнату',
+  confirmText = 'Посмотреть результаты',
 }: MatchResultModalProps) => {
-  const winnersSet = new Set(result.winners);
+  const playerById = new Map(players.map((player) => [player.actorId, player]));
+  const scoreByActorId = new Map(
+    result.finalScores.map(({ actorId, score }) => [actorId, score])
+  );
+  const winners: WinnerViewModel[] = result.winners.map((actorId) => {
+    const player = playerById.get(actorId);
 
-  const playerById = new Map(players.map((p) => [p.actorId, p]));
-
-  const merged = result.finalScores.map((entry) => {
-    const player = playerById.get(entry.actorId);
     return {
-      actorId: entry.actorId,
+      actorId,
       displayName: player?.displayName ?? 'Игрок',
       avatarUrl: player?.avatarUrl,
       color: getPlayerColorBySeat(player?.seat),
-      score: entry.score,
-      isWinner: winnersSet.has(entry.actorId),
+      score: scoreByActorId.get(actorId) ?? 0,
     };
   });
-
-  const sorted = [...merged].sort((a, b) => b.score - a.score);
-
-  let lastScore: number | null = null;
-  let lastPlace = 0;
-  const ranked: RankedRow[] = sorted.map((row, idx) => {
-    const place = row.score === lastScore ? lastPlace : idx + 1;
-    lastScore = row.score;
-    lastPlace = place;
-    return { ...row, place };
-  });
-
-  const winners = ranked.filter((r) => r.isWinner);
-  const isCurrentUserWinner = !!(
-    currentUserId && winners.some((w) => w.actorId === currentUserId)
+  const isCurrentUserWinner = Boolean(
+    currentUserId && winners.some(({ actorId }) => actorId === currentUserId)
   );
+  const hasSharedVictory = winners.length > 1;
+  const winningScore = winners.reduce(
+    (highestScore, winner) => Math.max(highestScore, winner.score),
+    0
+  );
+  const shouldShowConfetti = winners.length > 0;
 
   const leftPieces = useMemo(
-    () => (isCurrentUserWinner ? buildPieces('left', 60) : []),
-    [isCurrentUserWinner]
+    () => (shouldShowConfetti ? buildPieces('left', 60) : []),
+    [shouldShowConfetti]
   );
   const rightPieces = useMemo(
-    () => (isCurrentUserWinner ? buildPieces('right', 60) : []),
-    [isCurrentUserWinner]
+    () => (shouldShowConfetti ? buildPieces('right', 60) : []),
+    [shouldShowConfetti]
   );
 
-  const renderColoredName = (row: RankedRow) => (
-    <span
-      key={row.actorId}
-      className={styles.matchResult__highlight}
-      style={{ color: row.color }}
-    >
-      {row.displayName}
-    </span>
-  );
-
-  const renderSubtitle = () => {
+  const title = (() => {
     if (winners.length === 0) {
-      return null;
+      return 'Партия окончена';
     }
 
-    if (winners.length === 1) {
-      return (
-        <>
-          Браво, {renderColoredName(winners[0])}!{' '}
-          {isCurrentUserWinner ? 'Ваша' : 'Его'} стратегия
-          оказалась самой мудрой в этой партии. Славься победитель!
-        </>
-      );
+    if (isCurrentUserWinner && hasSharedVictory) {
+      return 'Вы разделили победу!';
     }
 
-    return (
-      <>
-        В коробке игры сегодня не одна золотая медаль!{' '}
-        {winners.map((w, i) => (
-          <Fragment key={w.actorId}>
-            {i > 0 && ', '}
-            {renderColoredName(w)}
-          </Fragment>
-        ))}{' '}
-        набрали одинаковое количество очков.{' '}
-        {isCurrentUserWinner ? 'Ваша' : 'Их'} стратегия была зеркально
-        безупречной!
-      </>
-    );
-  };
+    if (isCurrentUserWinner) {
+      return 'Вы победили!';
+    }
+
+    if (hasSharedVictory) {
+      return 'Ничья за первое место!';
+    }
+
+    return 'У нас есть победитель!';
+  })();
+
+  const subtitle = (() => {
+    if (winners.length === 0) {
+      return 'Спасибо за эту партию.';
+    }
+
+    if (isCurrentUserWinner && hasSharedVictory) {
+      return 'Поздравляем! Вы набрали лучший результат вместе с достойными соперниками.';
+    }
+
+    if (isCurrentUserWinner) {
+      return 'Поздравляем! Ваша стратегия оказалась самой сильной в этой партии.';
+    }
+
+    if (hasSharedVictory) {
+      return 'Сразу несколько игроков набрали лучший результат и разделили победу.';
+    }
+
+    return 'Лучший результат этой партии принадлежит этому игроку.';
+  })();
 
   const renderEmitter = (side: 'left' | 'right', pieces: ConfettiPiece[]) => (
     <div
@@ -173,22 +194,23 @@ export const MatchResultModal = ({
       )}
       aria-hidden="true"
     >
-      {pieces.map((p) => (
+      {pieces.map((piece) => (
         <span
-          key={p.id}
+          key={piece.id}
           className={clsx(
             styles.matchResult__confettiPiece,
-            p.shape === 'circle' && styles['matchResult__confettiPiece--circle']
+            piece.shape === 'circle' &&
+              styles['matchResult__confettiPiece--circle']
           )}
           style={{
-            backgroundColor: p.color,
-            width: `${p.width}px`,
-            height: `${p.height}px`,
-            animationDelay: `${p.delay}ms`,
-            animationDuration: `${p.duration}ms`,
-            ['--confetti-dx' as string]: `${p.dx}px`,
-            ['--confetti-dy' as string]: `${p.dy}px`,
-            ['--confetti-rotate' as string]: `${p.rotate}deg`,
+            backgroundColor: piece.color,
+            width: `${piece.width}px`,
+            height: `${piece.height}px`,
+            animationDelay: `${piece.delay}ms`,
+            animationDuration: `${piece.duration}ms`,
+            ['--confetti-dx' as string]: `${piece.dx}px`,
+            ['--confetti-dy' as string]: `${piece.dy}px`,
+            ['--confetti-rotate' as string]: `${piece.rotate}deg`,
           }}
         />
       ))}
@@ -196,7 +218,7 @@ export const MatchResultModal = ({
   );
 
   const confettiOverlay =
-    isCurrentUserWinner && typeof document !== 'undefined'
+    shouldShowConfetti && typeof document !== 'undefined'
       ? createPortal(
           <div className={styles.matchResult__confettiOverlay} aria-hidden="true">
             {renderEmitter('left', leftPieces)}
@@ -209,64 +231,120 @@ export const MatchResultModal = ({
   return (
     <div className={styles.matchResult}>
       {confettiOverlay}
-      <h2 className={styles.matchResult__title}>Партия окончена</h2>
-      <img
-        src={elfGameImage}
-        alt=""
-        className={styles.matchResult__image}
-      />
-      <p className={styles.matchResult__subtitle}>{renderSubtitle()}</p>
-      <ul className={styles.matchResult__list}>
-        {ranked.map((row) => (
-          <li
-            key={row.actorId}
+      <img src={elfGameImage} alt="" className={styles.matchResult__image} />
+
+      <h2 className={styles.matchResult__title}>{title}</h2>
+      <p className={styles.matchResult__subtitle}>{subtitle}</p>
+
+      {winners.length > 0 && (
+        <>
+          <div
             className={clsx(
-              styles.matchResult__row,
-              row.isWinner && styles['matchResult__row--winner']
+              styles.matchResult__winners,
+              winners.length === 1 && styles['matchResult__winners--single']
             )}
+            aria-label={hasSharedVictory ? 'Победители' : 'Победитель'}
           >
-            <span className={styles.matchResult__place}>{row.place}</span>
-            <span className={styles.matchResult__player}>
-              <span
-                className={styles.matchResult__avatar}
-                style={{ ['--player-color' as string]: row.color }}
-              >
-                {row.avatarUrl ? (
-                  <img
-                    src={avatarSrc(row.avatarUrl)}
-                    alt={row.displayName}
-                    className={styles.matchResult__avatarImg}
-                  />
-                ) : (
-                  <span
-                    className={styles.matchResult__avatarFallback}
-                    aria-label={row.displayName}
-                    role="img"
-                    style={{ ['--avatar-url' as string]: `url(${defaultAvatar})` }}
-                  />
-                )}
-              </span>
-              <span
-                className={styles.matchResult__name}
-                style={{ color: row.color }}
-              >
-                {row.displayName}
-                {row.isWinner && (
+            {winners.map((winner) => (
+              <div className={styles.matchResult__winner} key={winner.actorId}>
+                <span
+                  className={styles.matchResult__avatar}
+                  style={{ ['--player-color' as string]: winner.color }}
+                >
+                  {winner.avatarUrl ? (
+                    <img
+                      src={avatarSrc(winner.avatarUrl)}
+                      alt=""
+                      className={styles.matchResult__avatarImg}
+                    />
+                  ) : (
+                    <span
+                      className={styles.matchResult__avatarFallback}
+                      aria-hidden="true"
+                      style={{
+                        ['--avatar-url' as string]: `url(${defaultAvatar})`,
+                      }}
+                    />
+                  )}
                   <Award
-                    size={20}
+                    size={24}
                     strokeWidth={2.5}
                     className={styles.matchResult__awardIcon}
+                    aria-hidden="true"
                   />
-                )}
-              </span>
+                </span>
+                <span
+                  className={styles.matchResult__winnerName}
+                  style={{ color: winner.color }}
+                >
+                  {winner.displayName}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          <div className={styles.matchResult__score}>
+            <span className={styles.matchResult__scoreLabel}>
+              Победный результат
             </span>
-            <span className={styles.matchResult__score}>{row.score}</span>
-          </li>
-        ))}
-      </ul>
+            <strong className={styles.matchResult__scoreValue}>
+              {formatScore(winningScore)}
+            </strong>
+          </div>
+        </>
+      )}
+
+      {achievements.length > 0 && (
+        <section
+          className={styles.matchResult__achievements}
+          aria-labelledby="match-result-achievements-title"
+        >
+          <h3
+            id="match-result-achievements-title"
+            className={styles.matchResult__achievementsTitle}
+          >
+            Ваши достижения
+          </h3>
+          <ul className={styles.matchResult__achievementsList}>
+            {achievements.map((achievement) => (
+              <li
+                className={styles.matchResult__achievement}
+                key={achievement.id}
+              >
+                <span
+                  className={styles.matchResult__achievementIcon}
+                  aria-hidden="true"
+                >
+                  {achievement.icon ?? '🏅'}
+                </span>
+                <span className={styles.matchResult__achievementCopy}>
+                  <strong>{achievement.title}</strong>
+                  {achievement.description && (
+                    <span>{achievement.description}</span>
+                  )}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <div className={styles.matchResult__actions}>
-        <button className={styles.matchResult__btn} onClick={onConfirm}>
+        <button
+          type="button"
+          className={styles.matchResult__btn}
+          onClick={onReturnToRoom}
+        >
+          Вернуться в комнату
+        </button>
+        <button
+          type="button"
+          className={clsx(
+            styles.matchResult__btn,
+            styles['matchResult__btn--secondary']
+          )}
+          onClick={onConfirm}
+        >
           {confirmText}
         </button>
       </div>

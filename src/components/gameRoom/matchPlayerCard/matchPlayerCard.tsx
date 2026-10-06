@@ -43,6 +43,9 @@ interface MatchPlayerCardProps {
   canSelectMeeple?: boolean;
   selectedMeepleType?: MeepleType;
   onSelectMeepleType?: (type: MeepleType) => void;
+  mode?: 'playing' | 'ranking';
+  rank?: number;
+  isCurrentUser?: boolean;
 }
 
 export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(({
@@ -59,8 +62,12 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
   canSelectMeeple,
   selectedMeepleType,
   onSelectMeepleType,
+  mode = 'playing',
+  rank,
+  isCurrentUser = false,
 }, ref) => {
   const playerColor = getPlayerColorBySeat(seat);
+  const isRanking = mode === 'ranking';
   const [displayScore, setDisplayScore] = useState(score);
   const [isScoreAnimating, setIsScoreAnimating] = useState(false);
   const animationFrameRef = useRef<number | null>(null);
@@ -85,18 +92,29 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
     const startScore = displayedScoreRef.current;
 
     if (score <= startScore) {
-      setDisplayScore(score);
-      setIsScoreAnimating(false);
-      return;
+      animationFrameRef.current = requestAnimationFrame(() => {
+        setDisplayScore(score);
+        setIsScoreAnimating(false);
+      });
+
+      return () => {
+        if (animationFrameRef.current) {
+          cancelAnimationFrame(animationFrameRef.current);
+        }
+      };
     }
 
     const difference = score - startScore;
     const duration = Math.min(3400, Math.max(1500, difference * 270));
     const animationStart = performance.now();
-
-    setIsScoreAnimating(true);
+    let hasStarted = false;
 
     const animateScore = (timestamp: number) => {
+      if (!hasStarted) {
+        hasStarted = true;
+        setIsScoreAnimating(true);
+      }
+
       const progress = Math.min((timestamp - animationStart) / duration, 1);
       const easedProgress = 1 - Math.pow(1 - progress, 2.1);
       const nextScore = Math.round(startScore + difference * easedProgress);
@@ -139,12 +157,27 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
       ref={ref}
       className={clsx(
         styles.playerCard,
-        isTurn ? styles.playerCard_active : styles.playerCard_dimmed
+        isRanking && styles.playerCard_ranking,
+        !isRanking && (isTurn ? styles.playerCard_active : styles.playerCard_dimmed),
       )}
       style={{
         ['--player-color' as string]: playerColor
       }}
     >
+      {isRanking && (
+        <span
+          className={clsx(
+            styles.playerCard__rank,
+            rank === 1 && styles.playerCard__rank_first,
+            rank === 2 && styles.playerCard__rank_second,
+            rank === 3 && styles.playerCard__rank_third,
+          )}
+          aria-label={rank === undefined ? 'Место ещё не определено' : `Место ${rank}`}
+        >
+          {rank ?? '—'}
+        </span>
+      )}
+
       {isBot ? (
         <span
           className={styles.playerCard__imageFallback}
@@ -170,6 +203,9 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
             <div className={styles.playerCard__nicknameWrapper}>
               <MarqueeText text={displayName} />
             </div>
+            {isRanking && isCurrentUser && (
+              <span className={styles.playerCard__youBadge}>Вы</span>
+            )}
             {isBot && botDifficulty && (() => {
               const DiffIcon = DIFFICULTY_ICONS[botDifficulty];
               return (
@@ -186,20 +222,20 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
             })()}
             {isRoomOwner && !isBot && <Crown size={18} className={styles.playerCard__crown} />}
           </div>
-          <span className={countClassName}>
-            {displayScore}
-            <Star size={20} strokeWidth={2.5} className={styles.playerCard__starIcon} />
-          </span>
+          <div className={styles.playerCard__scoreGroup}>
+            <span className={countClassName}>
+              {displayScore}
+              <Star size={20} strokeWidth={2.5} className={styles.playerCard__starIcon} />
+            </span>
+          </div>
         </div>
 
-        <div
-          className={styles.playerCard__figurines}
-          style={{ ['--meeple-gap' as string]: `${meeplesLeft + bigMeeplesLeft > 7 ? -8 : -3}px` }}
-        >
+        <div className={styles.playerCard__figurines}>
           {bigMeeplesLeft > 0 && (
             <div
               className={clsx(
                 styles.playerCard__meepleWrapper,
+                styles.playerCard__meepleWrapper_big,
                 canSelectMeeple && styles.playerCard__meepleWrapper_selectable,
                 canSelectMeeple && selectedMeepleType === 'big' && styles.playerCard__meepleWrapper_selected,
               )}
@@ -217,6 +253,7 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
               key={i}
               className={clsx(
                 styles.playerCard__meepleWrapper,
+                styles.playerCard__meepleWrapper_regular,
                 canSelectMeeple && styles.playerCard__meepleWrapper_selectable,
                 canSelectMeeple && selectedMeepleType === 'regular' && styles.playerCard__meepleWrapper_selected,
               )}

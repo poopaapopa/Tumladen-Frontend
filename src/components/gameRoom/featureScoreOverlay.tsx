@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { Group, Rect, Text } from 'react-konva';
+import { Circle, Group, Rect, Text } from 'react-konva';
 import Konva from 'konva';
 import type { FeatureScoredEvent, Tile } from '@/types/match';
 import { getPlayerColorBySeat } from '@/utils/playerColor';
 import { getZoneOffset } from '@/utils/tileZones';
 import { getScoreEventDisplayMs } from './scoreEventTiming';
+import { getCityHighlightColor } from './cityHighlightColors';
 
 interface ScoreOverlayPlayer {
   actorId: string;
@@ -41,12 +42,20 @@ interface ScoreRenderItem {
   overlapCount: number;
 }
 
+interface CityHighlight {
+  key: string;
+  number: number;
+  color: string;
+  tiles: Tile[];
+  anchorTile?: Tile;
+  anchorZoneId: string;
+}
+
 const NORMAL_SCORE_ENTER_MS = 200;
 const NORMAL_SCORE_RISE_MS = 1650;
 const NORMAL_SCORE_VISUAL_END_OFFSET_MS = 560;
 const SCORE_MAX_HEIGHT_RATIO = 0.36;
 const SCORE_TILE_PADDING_RATIO = 0.08;
-const FIELD_HIGHLIGHT_COLOR = '#f3c95b';
 
 const formatPoints = (points: number): string => (
   points > 0 ? `+${points}` : `${points}`
@@ -148,14 +157,14 @@ const AnimatedScore = ({
 };
 
 interface CityHighlightsProps {
-  tiles: Tile[];
+  cities: CityHighlight[];
   tileSize: number;
   tileStep: number;
   displayDurationMs: number;
 }
 
 const CityHighlights = ({
-  tiles,
+  cities,
   tileSize,
   tileStep,
   displayDurationMs,
@@ -197,25 +206,73 @@ const CityHighlights = ({
 
   return (
     <Group ref={groupRef} listening={false}>
-      {tiles.map((tile) => (
-        <Rect
-          key={tile.instanceId}
-          x={tile.x * tileStep - tileSize / 2}
-          y={tile.y * tileStep - tileSize / 2}
-          width={tileSize}
-          height={tileSize}
-          cornerRadius={10}
-          fill="rgba(255, 214, 72, 0.26)"
-          stroke={FIELD_HIGHLIGHT_COLOR}
-          strokeWidth={6}
-          shadowColor={FIELD_HIGHLIGHT_COLOR}
-          shadowBlur={18}
-          shadowOpacity={0.9}
-          strokeScaleEnabled={false}
-          listening={false}
-          perfectDrawEnabled={false}
-        />
-      ))}
+      {cities.map((city) => {
+        const anchorOffset = city.anchorTile
+          ? getZoneOffset(
+              city.anchorTile.tileId,
+              city.anchorZoneId,
+              city.anchorTile.rotation,
+            )
+          : { x: 0, y: 0 };
+        const offsetScale = tileSize / 150;
+
+        return (
+          <Group key={city.key} listening={false}>
+            {city.tiles.map((tile) => (
+              <Rect
+                key={`${city.key}:${tile.instanceId}`}
+                x={tile.x * tileStep - tileSize / 2 + 3}
+                y={tile.y * tileStep - tileSize / 2 + 3}
+                width={tileSize - 6}
+                height={tileSize - 6}
+                cornerRadius={9}
+                stroke={city.color}
+                strokeWidth={4}
+                dash={[10, 6]}
+                shadowColor={city.color}
+                shadowBlur={12}
+                shadowOpacity={0.8}
+                strokeScaleEnabled={false}
+                listening={false}
+                perfectDrawEnabled={false}
+              />
+            ))}
+
+            {city.anchorTile && (
+              <Group
+                x={city.anchorTile.x * tileStep + anchorOffset.x * offsetScale}
+                y={city.anchorTile.y * tileStep + anchorOffset.y * offsetScale}
+                listening={false}
+              >
+                <Circle
+                  radius={15}
+                  fill={city.color}
+                  stroke="rgba(255, 255, 255, 0.95)"
+                  strokeWidth={2}
+                  shadowColor="rgba(0, 0, 0, 0.65)"
+                  shadowBlur={7}
+                  shadowOffsetY={2}
+                  listening={false}
+                />
+                <Text
+                  x={-15}
+                  y={-9}
+                  width={30}
+                  height={18}
+                  text={`${city.number}`}
+                  align="center"
+                  verticalAlign="middle"
+                  fill="#211b13"
+                  fontFamily="Arial, sans-serif"
+                  fontSize={15}
+                  fontStyle="bold"
+                  listening={false}
+                />
+              </Group>
+            )}
+          </Group>
+        );
+      })}
     </Group>
   );
 };
@@ -292,16 +349,18 @@ export const FeatureScoreOverlay = ({
       };
     });
   }, [event, tileByInstanceId]);
-  const highlightedCityTiles = useMemo(() => {
-    const tileIds = new Set(
-      (event.payload.contributingCities ?? []).flatMap(
-        (city) => city.tileInstanceIds,
-      ),
-    );
-    return [...tileIds].flatMap((tileId) => {
-      const tile = tileByInstanceId.get(tileId);
-      return tile ? [tile] : [];
-    });
+  const highlightedCities = useMemo<CityHighlight[]>(() => {
+    return (event.payload.contributingCities ?? []).map((city, index) => ({
+      key: `${city.anchorTileInstanceId}:${city.anchorZoneId}`,
+      number: index + 1,
+      color: getCityHighlightColor(index),
+      tiles: city.tileInstanceIds.flatMap((tileId) => {
+        const tile = tileByInstanceId.get(tileId);
+        return tile ? [tile] : [];
+      }),
+      anchorTile: tileByInstanceId.get(city.anchorTileInstanceId),
+      anchorZoneId: city.anchorZoneId,
+    }));
   }, [event.payload.contributingCities, tileByInstanceId]);
   const maxOverlapCount = Math.max(
     1,
@@ -358,9 +417,10 @@ export const FeatureScoreOverlay = ({
 
   return (
     <Group listening={false}>
-      {highlightedCityTiles.length > 0 && (
+      {highlightedCities.length > 0 && (
         <CityHighlights
-          tiles={highlightedCityTiles}
+          key={event.id}
+          cities={highlightedCities}
           tileSize={tileSize}
           tileStep={tileStep}
           displayDurationMs={displayDurationMs}

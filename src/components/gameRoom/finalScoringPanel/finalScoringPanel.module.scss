@@ -1,0 +1,291 @@
+@keyframes panelSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ledgerEntryIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.panel {
+  position: absolute;
+  top: 15px;
+  right: 0;
+  z-index: 10;
+  display: flex;
+  width: 250px;
+  height: min(340px, calc(100% - 30px));
+  padding: 0 12px 0 15px;
+  pointer-events: none;
+}
+
+.card {
+  --feature-accent: #{$forest-mid};
+
+  width: 100%;
+  min-height: 0;
+  max-height: 100%;
+  padding: 13px 12px;
+  overflow-y: auto;
+  color: $forest-dark;
+  background: rgba($beige-light, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba($forest-dark, 0.1);
+  border-left: 3px solid var(--feature-accent);
+  border-radius: 10px;
+  box-shadow:
+    0 2px 8px rgba($forest-dark, 0.1),
+    0 0 0 0.5px rgba($forest-dark, 0.04);
+  animation: panelSlideIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  pointer-events: auto;
+
+  &::-webkit-scrollbar {
+    width: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($forest-dark, 0.2);
+    border-radius: 2px;
+  }
+}
+
+.ledgerCard {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  padding: 12px 10px 10px;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.title {
+  margin: 0;
+  color: $forest-dark;
+  font-size: 16px;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.progressCount {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  color: $forest-mid;
+  background: rgba($forest-mid, 0.09);
+  border: 1px solid rgba($forest-mid, 0.17);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 750;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.progressTrack {
+  height: 4px;
+  margin-top: 8px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: rgba($forest-dark, 0.1);
+  border-radius: 999px;
+}
+
+.progressFill {
+  display: block;
+  height: 100%;
+  background: $forest-mid;
+  border-radius: inherit;
+  transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.awardList {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 6px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ledgerList {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px -3px 0 0;
+  padding: 0 3px 0 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba($forest-dark, 0.2) transparent;
+
+  &::-webkit-scrollbar {
+    width: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba($forest-dark, 0.2);
+    border-radius: 2px;
+  }
+}
+
+.ledgerEntry {
+  flex-shrink: 0;
+  padding: 7px;
+  background: rgba($cream, 0.46);
+  border: 1px solid rgba($forest-dark, 0.07);
+  border-left: 3px solid color-mix(in srgb, var(--feature-accent) 60%, transparent);
+  border-radius: 8px;
+  animation: ledgerEntryIn 0.24s ease-out both;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.currentEntry {
+  background: color-mix(in srgb, var(--feature-accent) 7%, $cream);
+  border-color: color-mix(in srgb, var(--feature-accent) 19%, transparent);
+  border-left-color: var(--feature-accent);
+  box-shadow: 0 1px 4px rgba($forest-dark, 0.07);
+}
+
+.entryHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.entryIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 23px;
+  height: 23px;
+  color: var(--feature-accent);
+  background: color-mix(in srgb, var(--feature-accent) 10%, $beige-light);
+  border-radius: 6px;
+}
+
+.entryTitle {
+  min-width: 0;
+  overflow: hidden;
+  color: $forest-dark;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.awardList {
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.awardRow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 22px;
+  padding: 2px 4px;
+  border-radius: 5px;
+}
+
+.playerDot {
+  width: 9px;
+  height: 9px;
+  flex-shrink: 0;
+  background: var(--player-color);
+  border: 1px solid rgba($forest-dark, 0.22);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--player-color) 16%, transparent);
+}
+
+.playerName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: $forest-dark;
+  font-size: 11px;
+  font-weight: 650;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.awardPoints {
+  flex-shrink: 0;
+  color: var(--player-color);
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.emptyAwards {
+  margin: 4px 0 0 29px;
+  color: rgba($forest-dark, 0.58);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.emptyLedger {
+  margin: 12px 0 2px;
+  color: rgba($forest-dark, 0.56);
+  font-size: 11px;
+  line-height: 1.35;
+  text-align: center;
+}
+
+@media (max-width: $mobile-breakpoint) {
+  .panel {
+    position: absolute;
+    top: 10px;
+    right: 8px;
+    width: min(220px, calc(100% - 16px));
+    height: min(340px, calc(100% - 110px));
+    padding: 0;
+    z-index: 20;
+  }
+
+  .card {
+    padding: 11px 10px;
+    background: rgba($beige-light, 0.94);
+  }
+
+  .title {
+    font-size: 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .ledgerEntry {
+    animation: none;
+  }
+
+  .progressFill {
+    transition: none;
+  }
+}

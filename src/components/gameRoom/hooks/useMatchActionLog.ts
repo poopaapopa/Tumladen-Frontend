@@ -1,12 +1,15 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { LogEntry, MatchPlayer, MatchStatePayload } from '@/types/match';
 import { getPlayerColorBySeat } from '@/utils/playerColor.ts';
-import { pluralizePoints } from '@/utils/pluralize.ts';
 
 type MatchAction =
   | { kind: 'tile_placed'; actorId: string; tileId?: string }
-  | { kind: 'meeple_placed'; actorId: string; featureType: string; tileId?: string }
-  | { kind: 'score_gained'; actorId: string; delta: number };
+  | { kind: 'meeple_placed'; actorId: string; featureType: string; tileId?: string };
+
+interface StoredActionLog {
+  matchId: string | null;
+  entries: LogEntry[];
+}
 
 const FEATURE_TYPE_LABELS: Record<string, string> = {
   city: 'в город',
@@ -24,34 +27,43 @@ const buildText = (action: MatchAction): string => {
       return 'поставил квадрат';
     case 'meeple_placed':
       return `поставил подданного ${describeFeature(action.featureType)}`;
-    case 'score_gained':
-      return `получил ${action.delta} ${pluralizePoints(action.delta)}`;
   }
 };
 
 export const useMatchActionLog = (inviteCode?: string) => {
-  const [actionLog, setActionLog] = useState<LogEntry[]>(() => {
-    if (!inviteCode) return [];
+  const [storedLog, setStoredLog] = useState<StoredActionLog>(() => {
+    if (!inviteCode) return { matchId: null, entries: [] };
 
     const saved = localStorage.getItem(`log_${inviteCode}`);
-    if (!saved) return [];
+    if (!saved) return { matchId: null, entries: [] };
 
     try {
-      const parsed = JSON.parse(saved);
-      return parsed.map((entry: LogEntry) => ({
-        ...entry,
-        timestamp: new Date(entry.timestamp),
-      }));
+      const parsed = JSON.parse(saved) as StoredActionLog;
+      if (!parsed.matchId || !Array.isArray(parsed.entries)) {
+        return { matchId: null, entries: [] };
+      }
+      return {
+        matchId: parsed.matchId,
+        entries: parsed.entries.map((entry) => ({
+          ...entry,
+          timestamp: new Date(entry.timestamp),
+        })),
+      };
     } catch {
-      return [];
+      return { matchId: null, entries: [] };
     }
   });
+  const activeMatchIdRef = useRef(storedLog.matchId);
+  const actionLog = storedLog.entries;
 
   useEffect(() => {
-    if (inviteCode && actionLog.length > 0) {
-      localStorage.setItem(`log_${inviteCode}`, JSON.stringify(actionLog));
+    if (inviteCode && storedLog.matchId) {
+      localStorage.setItem(`log_${inviteCode}`, JSON.stringify({
+        matchId: storedLog.matchId,
+        entries: storedLog.entries,
+      } satisfies StoredActionLog));
     }
-  }, [actionLog, inviteCode]);
+  }, [inviteCode, storedLog]);
 
   const pushEntry = useCallback((action: MatchAction, players: MatchPlayer[]) => {
     const player = players.find((item) => item.actorId === action.actorId);
@@ -68,18 +80,29 @@ export const useMatchActionLog = (inviteCode?: string) => {
       tileId: 'tileId' in action ? action.tileId : undefined,
     };
 
-    setActionLog((prev) => {
-      if (prev.length > 0 && prev[0].text === text && prev[0].nickname === nickname) {
-        const diff = newEntry.timestamp.getTime() - prev[0].timestamp.getTime();
-        if (diff < 1000) return prev;
+    setStoredLog((previous) => {
+      const entries = previous.entries;
+      if (entries.length > 0 && entries[0].text === text && entries[0].nickname === nickname) {
+        const diff = newEntry.timestamp.getTime() - entries[0].timestamp.getTime();
+        if (diff < 1000) return previous;
       }
-      return [newEntry, ...prev].slice(0, 50);
+      return {
+        ...previous,
+        entries: [newEntry, ...entries].slice(0, 50),
+      };
     });
   }, []);
 
   const recordMatchUpdate = useCallback(
     (prev: MatchStatePayload | null, next: MatchStatePayload) => {
-      if (!prev) return;
+      if (activeMatchIdRef.current !== next.id) {
+        activeMatchIdRef.current = next.id;
+        if (inviteCode) localStorage.removeItem(`log_${inviteCode}`);
+        setStoredLog({ matchId: next.id, entries: [] });
+        return;
+      }
+
+      if (!prev || prev.id !== next.id) return;
 
       const prevGs = prev.gameState;
       const nextGs = next.gameState;
@@ -161,27 +184,16 @@ export const useMatchActionLog = (inviteCode?: string) => {
         );
       }
 
-      // Дельты очков по каждому игроку — фиксируем закрытие фич/финальный скоринг
-      const prevScoreById = new Map(prevGs.players.map((p) => [p.actorId, p.score]));
-      for (const np of nextGs.players) {
-        const prevScore = prevScoreById.get(np.actorId) ?? np.score;
-        const delta = np.score - prevScore;
-        if (delta > 0) {
-          pushEntry(
-            { kind: 'score_gained', actorId: np.actorId, delta },
-            nextGs.players,
-          );
-        }
-      }
     },
-    [pushEntry],
+    [inviteCode, pushEntry],
   );
 
   const clearLog = useCallback(() => {
     if (inviteCode) {
       localStorage.removeItem(`log_${inviteCode}`);
     }
-    setActionLog([]);
+    activeMatchIdRef.current = null;
+    setStoredLog({ matchId: null, entries: [] });
   }, [inviteCode]);
 
   return {

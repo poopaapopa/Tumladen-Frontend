@@ -27,6 +27,9 @@ import { ConfirmModal } from '../confirmModal/confirmModal.tsx';
 import { MatchResultModal } from './matchResult/matchResult.tsx';
 import { GameRoomSidebar } from './gameRoomSidebar.tsx';
 import { CurrentTurnPanel } from './turnPanel/currentTurnPanel.tsx';
+import {
+  FinalScoringPanel,
+} from './finalScoringPanel';
 import { GameActionLog } from './latestActions/gameActionLog.tsx';
 import { useMatchActionLog } from './hooks/useMatchActionLog.ts';
 import { useTurnTimer } from './hooks/useTurnTimer.ts';
@@ -68,12 +71,15 @@ const GameRoom = () => {
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
   const [isRoomDeleted, setIsRoomDeleted] = useState(false);
   const [matchResult, setMatchResult] = useState<MatchFinishedPayload | null>(null);
+  const [isCelebrationOpen, setIsCelebrationOpen] = useState(false);
   const [pendingMatchResult, setPendingMatchResult] = useState<MatchFinishedPayload | null>(null);
   const [privateState, setPrivateState] = useState<PrivateState | null>(null);
   const [currentRotation, setCurrentRotation] = useState(0);
   const [pendingPlacement, setPendingPlacement] = useState<{ x: number; y: number; rotation: number } | null>(null);
   const [selectedMeepleType, setSelectedMeepleType] = useState<MeepleType>('regular');
   const [scoreEventQueue, setScoreEventQueue] = useState<FeatureScoredEvent[]>([]);
+  const scoreEventQueueRef = useRef<FeatureScoredEvent[]>([]);
+  const [finalScoreEvents, setFinalScoreEvents] = useState<FeatureScoredEvent[]>([]);
   const [departedScoreEventIds, setDepartedScoreEventIds] = useState<Set<string>>(
     () => new Set(),
   );
@@ -250,7 +256,9 @@ const GameRoom = () => {
       });
     if (unseen.length === 0) return;
 
-    setScoreEventQueue((previous) => [...previous, ...unseen]);
+    const nextQueue = [...scoreEventQueueRef.current, ...unseen];
+    scoreEventQueueRef.current = nextQueue;
+    setScoreEventQueue(nextQueue);
     scoreAnimationDeadlineRef.current = Math.max(
       Date.now(),
       scoreAnimationDeadlineRef.current,
@@ -261,6 +269,7 @@ const GameRoom = () => {
   }, []);
 
   const stopScorePlayback = useCallback(() => {
+    scoreEventQueueRef.current = [];
     setScoreEventQueue([]);
     setDepartedScoreEventIds(new Set());
     setArrivedScoreEventIds(new Set());
@@ -274,9 +283,11 @@ const GameRoom = () => {
 
   const clearScoreEvents = useCallback(() => {
     stopScorePlayback();
+    setFinalScoreEvents([]);
     seenScoreEventIdsRef.current.clear();
     skipFinalScoringRef.current = false;
     setPendingMatchResult(null);
+    setIsCelebrationOpen(false);
   }, [stopScorePlayback]);
 
   const showMatchResult = useCallback((payload: MatchFinishedPayload) => {
@@ -285,6 +296,7 @@ const GameRoom = () => {
     skipFinalScoringRef.current = false;
     setPendingMatchResult(null);
     setMatchResult(payload);
+    setIsCelebrationOpen(true);
   }, [clearFlights, stopScorePlayback]);
 
   const handleSkipFinalScoring = useCallback(() => {
@@ -301,7 +313,13 @@ const GameRoom = () => {
   useEffect(() => {
     if (!activeScoreEvent) return;
     const timeout = setTimeout(() => {
-      setScoreEventQueue((previous) => previous.slice(1));
+      const nextQueue = scoreEventQueueRef.current[0]?.id === activeScoreEvent.id
+        ? scoreEventQueueRef.current.slice(1)
+        : scoreEventQueueRef.current.filter(
+            (event) => event.id !== activeScoreEvent.id,
+          );
+      scoreEventQueueRef.current = nextQueue;
+      setScoreEventQueue(nextQueue);
     }, getScoreEventDisplayMs(activeScoreEvent));
     return () => clearTimeout(timeout);
   }, [activeScoreEvent]);
@@ -426,16 +444,29 @@ const GameRoom = () => {
     if (data.type === 'match_state') {
       const newMatch = data.payload;
       const prevMatch = matchRef.current;
+      const scoreEvents = (newMatch.events ?? []).filter(isFeatureScoredEvent);
       const isTurnChanged =
         prevMatch?.gameState?.turnNumber !== newMatch.gameState?.turnNumber;
       const eventReturnedMeepleKeys = new Set(
-        (newMatch.events ?? [])
-          .filter(isFeatureScoredEvent)
+        scoreEvents
           .flatMap((event) => event.payload.returnedMeeples ?? [])
           .map((meeple) => `${meeple.tileInstanceId}:${meeple.zoneId}:${meeple.actorId}`),
       );
 
       enqueueScoreEvents(newMatch.events);
+
+      if (newMatch.status === 'finished' && scoreEventQueueRef.current.length > 0) {
+        setFinalScoreEvents((previous) => {
+          const next = [...previous];
+          const knownIds = new Set(previous.map((event) => event.id));
+          scoreEventQueueRef.current.forEach((event) => {
+            if (knownIds.has(event.id)) return;
+            knownIds.add(event.id);
+            next.push(event);
+          });
+          return next;
+        });
+      }
       recordMatchUpdate(prevMatch, newMatch);
 
       // Диффим подданных — какие исчезли с доски (вернулись игроку)
@@ -600,7 +631,6 @@ const GameRoom = () => {
     }
 
     if (data.type === 'match_finished') {
-      clearLog();
       if (lastPlacedStorageKey) {
         try { localStorage.removeItem(lastPlacedStorageKey); } catch { /* ignore */ }
       }
@@ -613,6 +643,7 @@ const GameRoom = () => {
           setPendingMatchResult(payload);
         }
       } else {
+        clearLog();
         clearFlights();
         clearScoreEvents();
         setIsRoomDeleted(true);
@@ -693,6 +724,12 @@ const GameRoom = () => {
     }
   };
 
+  const handleReturnToRoom = () => {
+    setIsCelebrationOpen(false);
+    setMatchResult(null);
+    navigate(room?.inviteCode ? `/room/${room.inviteCode}` : '/');
+  };
+
   const gameState = match?.gameState;
   const currentTurnId = gameState?.currentPlayerId;
   const phase = gameState?.phase;
@@ -735,6 +772,15 @@ const GameRoom = () => {
       );
     }
   }
+  const unsettledAwardsByActor = new Map<string, number>();
+  for (const event of scoreEventQueue) {
+    for (const award of event.payload.awards) {
+      unsettledAwardsByActor.set(
+        award.actorId,
+        (unsettledAwardsByActor.get(award.actorId) ?? 0) + award.points,
+      );
+    }
+  }
   const players: SidebarPlayer[] = gamePlayers.map((gp) => {
     const mp = matchPlayerByActor.get(gp.actorId);
     return {
@@ -745,6 +791,15 @@ const GameRoom = () => {
       botDifficulty: mp?.botDifficulty,
     };
   });
+  const displayedRankingScoresByActor = Object.fromEntries(
+    players.map((player) => [player.actorId, player.score]),
+  );
+  const rankingOrderScoresByActor = Object.fromEntries(
+    gamePlayers.map((player) => [
+      player.actorId,
+      Math.max(0, player.score - (unsettledAwardsByActor.get(player.actorId) ?? 0)),
+    ]),
+  );
   const drawnTile = gameState?.currentTurn?.drawnTile;
   const remainingTiles = gameState?.deck?.remainingCount;
   const boardTilesCount = gameState?.board?.tiles?.length ?? 0;
@@ -754,15 +809,33 @@ const GameRoom = () => {
     remainingTiles !== undefined && totalTiles && totalTiles > 0
       ? Math.max(0, Math.min(100, (remainingTiles / totalTiles) * 100))
       : undefined;
-  const currentTileId = drawnTile?.tileId || '1';
+  const currentTileId = drawnTile?.tileId;
 
   const currentPlayer = players.find((player) => player.actorId === currentTurnId);
   const currentColor = getPlayerColorBySeat(currentPlayer?.seat);
   const isYourTurn = Boolean(privateState?.isYourTurn);
   const isCurrentPlayerBot = currentPlayer?.actorType === 'bot' || (currentTurnId?.startsWith('bot:') ?? false);
-  const hasFinalScoringEvents = scoreEventQueue.some(
-    (event) => event.payload.scoringPhase === 'final',
-  );
+  const activeFinalScoreIndex = activeScoreEvent
+    ? finalScoreEvents.findIndex((event) => event.id === activeScoreEvent.id)
+    : -1;
+  const visibleFinalScoreIndex = activeFinalScoreIndex >= 0
+    ? activeFinalScoreIndex
+    : finalScoreEvents.length - 1;
+  const isFinalScoringPlayback = activeFinalScoreIndex >= 0;
+  const isPostGameResults = matchResult !== null;
+  const isPlaying = match?.status === 'active'
+    && !isFinalScoringPlayback
+    && !isPostGameResults;
+  const isRankingMode = finalScoreEvents.length > 0 || isPostGameResults;
+  const finalRankingScores = matchResult
+    ? Object.fromEntries(
+        matchResult.finalScores.map((entry) => [entry.actorId, entry.score]),
+      )
+    : undefined;
+  const sidebarRankingScores = finalRankingScores
+    ?? displayedRankingScoresByActor;
+  const sidebarRankingOrderScores = finalRankingScores
+    ?? rankingOrderScoresByActor;
 
   const lastPlacedTile = gameState?.currentTurn?.placedTile;
   const displayedMeeples = [...(gameState?.meeples ?? [])];
@@ -778,6 +851,11 @@ const GameRoom = () => {
     displayedMeeples.push(meeple);
   }
 
+  const scoringPanelPlayers = players.map((player) => ({
+    actorId: player.actorId,
+    displayName: player.displayName,
+    color: getPlayerColorBySeat(player.seat),
+  }));
   return (
     <main className={sidebarstyles.pageWrapper}>
       <GameRoomSidebar
@@ -785,12 +863,22 @@ const GameRoom = () => {
         currentUserId={currentUser?.id}
         ownerId={ownerId}
         currentTurnId={currentTurnId}
-        onLeaveClick={() => setIsExitModalOpen(true)}
+        onLeaveClick={() => {
+          if (isPostGameResults) {
+            handleReturnToRoom();
+            return;
+          }
+          setIsExitModalOpen(true);
+        }}
         pendingMeeples={unavailableMeeplesByActor}
         registerPlayerCardRef={registerPlayerCardRef}
-        isMeeplePlacementPhase={phase === 'place_meeple' && isYourTurn}
+        isMeeplePlacementPhase={isPlaying && phase === 'place_meeple' && isYourTurn}
         selectedMeepleType={selectedMeepleType}
         onSelectMeepleType={setSelectedMeepleType}
+        mode={isRankingMode ? 'ranking' : 'playing'}
+        rankingScores={sidebarRankingScores}
+        rankingOrderScores={sidebarRankingOrderScores}
+        leaveButtonText={isPostGameResults ? 'Вернуться в комнату' : 'Покинуть игру'}
       />
 
       <div className={styles.boardContainer} ref={boardContainerRef}>
@@ -799,22 +887,22 @@ const GameRoom = () => {
           width={boardWidth}
           height={boardHeight}
           board={gameState?.board?.tiles || []}
-          validPlacements={privateState?.validPlacements || []}
+          validPlacements={isPlaying ? (privateState?.validPlacements || []) : []}
           onPlaceTile={handlePlaceTile}
           onRotateTile={handleRotateTile}
-          currentTileId={currentTileId}
-          phase={phase}
-          validMeeplePlacements={privateState?.validMeeplePlacements || []}
+          currentTileId={isPlaying ? currentTileId : undefined}
+          phase={isPlaying ? phase : undefined}
+          validMeeplePlacements={isPlaying ? (privateState?.validMeeplePlacements || []) : []}
           onPlaceMeeple={handlePlaceMeeple}
           lastPlacedTile={lastPlacedTile}
           lastPlacedByPlayer={lastPlacedByPlayer}
           players={players}
           placedMeeples={displayedMeeples}
-          pendingPlacement={pendingPlacement}
+          pendingPlacement={isPlaying ? pendingPlacement : null}
           scoreEvent={activeScoreEvent}
         />
 
-        {matchResult === null && match?.status !== 'finished' && !hasFinalScoringEvents && (
+        {isPlaying && (
           <>
             <CurrentTurnPanel
               currentPlayerName={currentPlayer?.displayName || 'Ожидание...'}
@@ -846,6 +934,14 @@ const GameRoom = () => {
           </>
         )}
 
+        {finalScoreEvents.length > 0 && (
+          <FinalScoringPanel
+            events={finalScoreEvents}
+            players={scoringPanelPlayers}
+            currentEventIndex={visibleFinalScoreIndex}
+          />
+        )}
+
         {match?.status === 'active' && phase === 'place_meeple' && privateState?.isYourTurn && (
           <button className={styles.skipButton} onClick={handleSkipMeeple}>
             Не ставить подданного
@@ -861,10 +957,10 @@ const GameRoom = () => {
           </button>
         )}
 
-        {matchResult === null && hasFinalScoringEvents && (
+        {matchResult === null && finalScoreEvents.length > 0 && scoreEventQueue.length > 0 && (
           <button
             type="button"
-            className={styles.finalScoreSkipButton}
+            className={styles.skipButton}
             onClick={handleSkipFinalScoring}
           >
             Пропустить подсчёт
@@ -895,28 +991,23 @@ const GameRoom = () => {
           title="Игра была завершена досрочно"
           text="К превеликому сожалению, один из нас решил с позором покинуть игру.
             В сообществе пойдёт молва о его трусливом дезертирстве."
-          onConfirm={() => { room?.inviteCode ? navigate(`/room/${room.inviteCode}`) : navigate('/'); }}
+          onConfirm={() => navigate(room?.inviteCode ? `/room/${room.inviteCode}` : '/')}
           onConfirmText="Вернуться в комнату"
           image={gameExitImage}
         />
       </Modal>
 
       <Modal
-        isOpen={matchResult !== null}
-        onClose={() => {
-          setMatchResult(null);
-          room?.inviteCode ? navigate(`/room/${room.inviteCode}`) : navigate('/');
-        }}
+        isOpen={matchResult !== null && isCelebrationOpen}
+        onClose={() => setIsCelebrationOpen(false)}
       >
         {matchResult && (
           <MatchResultModal
             result={matchResult}
             players={players}
             currentUserId={currentUser?.id}
-            onConfirm={() => {
-              setMatchResult(null);
-              room?.inviteCode ? navigate(`/room/${room.inviteCode}`) : navigate('/');
-            }}
+            onConfirm={() => setIsCelebrationOpen(false)}
+            onReturnToRoom={handleReturnToRoom}
           />
         )}
       </Modal>

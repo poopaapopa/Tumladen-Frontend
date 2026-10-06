@@ -80,6 +80,7 @@ export const CurrentTurnPanel = ({
   const remaining = remainingTiles ?? 0;
   const barPercent = Math.max(0, Math.min(100, deckPercent ?? 0));
   const tilesWord = pluralizeRu(remaining, ['квадрат', 'квадрата', 'квадратов']);
+  const currentTileImage = currentTileId ? TILE_IMAGES[currentTileId] : undefined;
 
   return (
     <div
@@ -106,7 +107,7 @@ export const CurrentTurnPanel = ({
         )}
       </div>
 
-      {currentTileId && (
+      {currentTileImage && (
         <div className={styles.phaseCard}>
           <div className={styles.phaseStepper}>
             <span
@@ -128,7 +129,7 @@ export const CurrentTurnPanel = ({
 
           <div className={styles.tileWrapper}>
             <img
-              src={TILE_IMAGES[currentTileId]}
+              src={currentTileImage}
               className={styles.tileImage}
               alt="Текущий квадрат"
             />

@@ -46,7 +46,7 @@ export const GameActionLog = ({ entries }: GameActionLogProps) => {
                 </span>
                 <span className={styles.latestActions__text}>{entry.text}</span>
               </div>
-              {entry.tileId && (
+              {entry.tileId && TILE_IMAGES[entry.tileId] && (
                 <div className={styles.latestActions__image}>
                   <img src={TILE_IMAGES[entry.tileId]} alt="tile" />
                 </div>
