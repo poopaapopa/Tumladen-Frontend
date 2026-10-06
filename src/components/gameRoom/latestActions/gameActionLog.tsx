@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollText } from 'lucide-react';
+import { ScrollText, X } from 'lucide-react';
 import clsx from 'clsx';
 import styles from './latestAction.module.scss';
 import { TILE_IMAGES } from '@/utils/tiles.config.ts';
@@ -7,29 +7,61 @@ import type { LogEntry } from '@/types/match.ts';
 
 interface GameActionLogProps {
   entries: LogEntry[];
+  mobileOpen?: boolean;
+  onMobileOpenChange?: (open: boolean) => void;
+  elevateMobilePanel?: boolean;
 }
 
-export const GameActionLog = ({ entries }: GameActionLogProps) => {
-  const [mobileOpen, setMobileOpen] = useState(false);
+export const GameActionLog = ({
+  entries,
+  mobileOpen,
+  onMobileOpenChange,
+  elevateMobilePanel = false,
+}: GameActionLogProps) => {
+  const [internalMobileOpen, setInternalMobileOpen] = useState(false);
+  const isMobileOpen = mobileOpen ?? internalMobileOpen;
+
+  const setMobilePanelOpen = (nextOpen: boolean) => {
+    if (mobileOpen === undefined) {
+      setInternalMobileOpen(nextOpen);
+    }
+    onMobileOpenChange?.(nextOpen);
+  };
+
+  const toggleMobilePanel = () => setMobilePanelOpen(!isMobileOpen);
 
   return (
     <>
       {/* Mobile toggle button — visible only on small screens via CSS */}
       <button
         className={styles.logToggle}
-        onClick={() => setMobileOpen((prev) => !prev)}
-        aria-label="Показать лог действий"
+        onClick={toggleMobilePanel}
+        aria-label={isMobileOpen ? 'Скрыть лог действий' : 'Показать лог действий'}
+        aria-expanded={isMobileOpen}
+        aria-controls="game-action-log"
       >
         <ScrollText size={18} />
       </button>
 
       <div
+        id="game-action-log"
         className={clsx(
           styles.latestActions,
-          mobileOpen && styles['latestActions--mobileOpen'],
+          isMobileOpen && styles['latestActions--mobileOpen'],
+          elevateMobilePanel && styles['latestActions--aboveFinalScoring'],
         )}
       >
-        <h4 className={styles.latestActions__title}>Последние действия</h4>
+        <div className={styles.latestActions__header}>
+          <h4 className={styles.latestActions__title}>Последние действия</h4>
+          <button
+            type="button"
+            className={styles.latestActions__close}
+            onClick={() => setMobilePanelOpen(false)}
+            aria-label="Закрыть лог действий"
+          >
+            <X size={17} />
+          </button>
+        </div>
         <div className={styles.latestActions__list}>
           {entries.map((entry) => (
             <div

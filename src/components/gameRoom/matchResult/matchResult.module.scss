@@ -10,6 +10,7 @@
   border: 6px solid $forest-mid;
   border-radius: 20px;
   padding: 26px 40px 34px;
+  margin-inline: auto;
   text-align: center;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 
@@ -290,7 +291,9 @@
 
   @media (max-width: 560px) {
     width: calc(100vw - 24px);
+    width: min(520px, calc(100dvw - 24px));
     max-height: calc(100vh - 24px);
+    max-height: calc(100dvh - 24px);
     padding: 22px 20px 26px;
     border-width: 4px;
 

@@ -21,14 +21,23 @@
   display: flex;
   flex-direction: column;
 
+  &__header {
+    position: relative;
+    flex-shrink: 0;
+  }
+
   &__title {
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: rgba($forest-dark, 0.5);
-    margin-bottom: 8px;
+    margin: 0 0 8px;
     text-align: center;
+  }
+
+  &__close {
+    display: none;
   }
 
   &__list {
@@ -147,6 +156,34 @@
 
     &--mobileOpen {
       display: flex;
+    }
+
+    &--aboveFinalScoring {
+      bottom: calc(
+        var(--mobile-final-scoring-sheet-offset, 150px)
+        + env(safe-area-inset-bottom, 0px)
+      );
+    }
+
+    &__close {
+      position: absolute;
+      top: -5px;
+      right: -3px;
+      display: flex;
+      width: 28px;
+      height: 28px;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      color: rgba($forest-dark, 0.72);
+      background: transparent;
+      border: 0;
+      border-radius: 7px;
+      cursor: pointer;
+
+      &:active {
+        background: rgba($forest-dark, 0.08);
+      }
     }
   }
 }

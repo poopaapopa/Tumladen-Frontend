@@ -19,6 +19,7 @@ import { FeatureScoreOverlay } from './featureScoreOverlay';
 
 interface Player {
   actorId: string;
+  displayName: string;
   seat: number;
 }
 
@@ -64,7 +65,7 @@ const TILE_SIZE = 150;
 const TILE_STEP = 152;
 const DESKTOP_BLUR_START_SCALE = 0.95;
 const DESKTOP_BLUR_FULL_SCALE = 0.5;
-const DESKTOP_MAX_BLUR_PX = 0.75;
+const DESKTOP_MAX_BLUR_PX = 0.6;
 
 function applyZoomBlur(stage: Konva.Stage, scale: number, isMobile: boolean): void {
   const blurProgress = Math.min(

@@ -329,23 +329,51 @@
 
     &__figurines {
       margin-top: -5px;
-      width: 100%;
-      max-width: 100%;
+      margin-left: -7px;
+      width: calc(100% + 7px);
+      max-width: none;
       height: 40px;
       min-height: 40px;
     }
 
     &__meepleWrapper {
       height: 40px;
+      flex: 0 0 14px;
+      margin-right: 0;
 
       &_big {
-        flex-basis: 40px;
+        flex-basis: 20px;
       }
 
       &_regular {
-        flex-basis: 34px;
+        flex-basis: 14px;
         min-width: 0;
       }
+    }
+
+    &__meepleWrapper_regular:last-child {
+      flex-basis: 34px;
+    }
+
+    &__meepleWrapper_big:last-child {
+      flex-basis: 40px;
+    }
+
+    &__figurines_full &__meepleWrapper {
+      flex: 1 1 0;
+    }
+
+    &__figurines_full &__meepleWrapper:last-child {
+      flex: 0 0 34px;
+    }
+
+    &__figurines_full &__meepleWrapper_big:last-child {
+      flex-basis: 40px;
+    }
+
+    &__meepleWrapper:last-child:not(:only-child) &__figurinesIcon {
+      right: auto;
+      left: 0;
     }
 
     &__meepleWrapper_big &__figurinesIcon {

@@ -205,6 +205,12 @@
 // ─── Mobile overrides ───────────────────────────────────────────────
 
 @media (max-width: $mobile-breakpoint) {
+  .boardContainer {
+    --mobile-final-scoring-height: 88px;
+    --mobile-final-scoring-action-offset: 98px;
+    --mobile-final-scoring-sheet-offset: 150px;
+  }
+
   .skipButton {
     position: fixed;
     bottom: calc(90px + env(safe-area-inset-bottom, 0px));
@@ -214,6 +220,13 @@
     font-weight: 600;
     width: 220px;
     z-index: 21;
+  }
+
+  .finalScoringSkipButton {
+    bottom: calc(
+      var(--mobile-final-scoring-action-offset, 98px)
+      + env(safe-area-inset-bottom, 0px)
+    );
   }
 
   .waitingBadge {

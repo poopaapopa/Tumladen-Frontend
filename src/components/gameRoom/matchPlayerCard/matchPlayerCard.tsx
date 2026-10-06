@@ -29,6 +29,8 @@ const DIFFICULTY_ICONS: Record<BotDifficulty, LucideIcon> = {
   hard: Flame,
 };
 
+const FULL_REGULAR_MEEPLE_COUNT = 7;
+
 interface MatchPlayerCardProps {
   displayName: string;
   isRoomOwner: boolean;
@@ -230,7 +232,12 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
           </div>
         </div>
 
-        <div className={styles.playerCard__figurines}>
+        <div
+          className={clsx(
+            styles.playerCard__figurines,
+            meeplesLeft === FULL_REGULAR_MEEPLE_COUNT && styles.playerCard__figurines_full,
+          )}
+        >
           {bigMeeplesLeft > 0 && (
             <div
               className={clsx(

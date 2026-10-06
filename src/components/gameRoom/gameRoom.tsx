@@ -59,6 +59,8 @@ interface LaunchMeepleFlightOptions {
   onComplete?: () => void;
 }
 
+type MobileInfoPanel = 'actions' | 'finalScores' | null;
+
 const GameRoom = () => {
   const { id: inviteCode } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -72,6 +74,7 @@ const GameRoom = () => {
   const [isRoomDeleted, setIsRoomDeleted] = useState(false);
   const [matchResult, setMatchResult] = useState<MatchFinishedPayload | null>(null);
   const [isCelebrationOpen, setIsCelebrationOpen] = useState(false);
+  const [mobileInfoPanel, setMobileInfoPanel] = useState<MobileInfoPanel>(null);
   const [pendingMatchResult, setPendingMatchResult] = useState<MatchFinishedPayload | null>(null);
   const [privateState, setPrivateState] = useState<PrivateState | null>(null);
   const [currentRotation, setCurrentRotation] = useState(0);
@@ -288,6 +291,7 @@ const GameRoom = () => {
     skipFinalScoringRef.current = false;
     setPendingMatchResult(null);
     setIsCelebrationOpen(false);
+    setMobileInfoPanel(null);
   }, [stopScorePlayback]);
 
   const showMatchResult = useCallback((payload: MatchFinishedPayload) => {
@@ -297,6 +301,7 @@ const GameRoom = () => {
     setPendingMatchResult(null);
     setMatchResult(payload);
     setIsCelebrationOpen(true);
+    setMobileInfoPanel(null);
   }, [clearFlights, stopScorePlayback]);
 
   const handleSkipFinalScoring = useCallback(() => {
@@ -939,6 +944,11 @@ const GameRoom = () => {
             events={finalScoreEvents}
             players={scoringPanelPlayers}
             currentEventIndex={visibleFinalScoreIndex}
+            mobileHistoryOpen={mobileInfoPanel === 'finalScores'}
+            onMobileHistoryToggle={() => setMobileInfoPanel((currentPanel) => (
+              currentPanel === 'finalScores' ? null : 'finalScores'
+            ))}
+            hasActionLog={actionLog.length !== 0}
           />
         )}
 
@@ -960,7 +970,7 @@ const GameRoom = () => {
         {matchResult === null && finalScoreEvents.length > 0 && scoreEventQueue.length > 0 && (
           <button
             type="button"
-            className={styles.skipButton}
+            className={`${styles.skipButton} ${styles.finalScoringSkipButton}`}
             onClick={handleSkipFinalScoring}
           >
             Пропустить подсчёт
@@ -968,7 +978,12 @@ const GameRoom = () => {
         )}
 
         {actionLog.length !== 0 && (
-          <GameActionLog entries={actionLog} />
+          <GameActionLog
+            entries={actionLog}
+            mobileOpen={mobileInfoPanel === 'actions'}
+            onMobileOpenChange={(open) => setMobileInfoPanel(open ? 'actions' : null)}
+            elevateMobilePanel={finalScoreEvents.length > 0}
+          />
         )}
       </div>
 
