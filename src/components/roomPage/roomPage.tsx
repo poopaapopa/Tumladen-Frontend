@@ -16,6 +16,10 @@ import { GAME_TYPE_LABELS } from '@/types/user';
 import type { RoomResponse, SettingValue, UpdateRoomSettingsPayload } from '@/types/room';
 import { useIsMobile } from '@/hooks/useIsMobile';
 import { SegmentedTabs } from '../segmentedTabs/segmentedTabs.tsx';
+import {
+  scheduleGameTilePreload,
+  shouldLimitBackgroundPreload,
+} from '@/utils/tiles.config.ts';
 
 type RoomTab = 'players' | 'settings' | 'rules';
 
@@ -139,6 +143,39 @@ const RoomPage = () => {
       navigate(`/room/game/${id}`);
     }
   }, [room?.status, navigate, id]);
+
+  const expansionPreloadKey = Array.isArray(room?.settings?.expansions)
+    ? [...room.settings.expansions].sort().join(',')
+    : '';
+
+  useEffect(() => {
+    if (room?.gameType !== 'carcassonne' || shouldLimitBackgroundPreload()) return;
+
+    const expansions = expansionPreloadKey ? expansionPreloadKey.split(',') : [];
+    const cancelTilePreload = scheduleGameTilePreload(expansions);
+    const warmGameClient = () => void import('../gameRoom/gameRoom.tsx');
+
+    let cancelClientWarmup: () => void = () => undefined;
+    const requestIdleCallback = Reflect.get(window, 'requestIdleCallback') as
+      | Window['requestIdleCallback']
+      | undefined;
+    const cancelIdleCallback = Reflect.get(window, 'cancelIdleCallback') as
+      | Window['cancelIdleCallback']
+      | undefined;
+
+    if (requestIdleCallback && cancelIdleCallback) {
+      const idleCallbackId = requestIdleCallback(warmGameClient, { timeout: 1_500 });
+      cancelClientWarmup = () => cancelIdleCallback(idleCallbackId);
+    } else {
+      const timeoutId = setTimeout(warmGameClient, 300);
+      cancelClientWarmup = () => clearTimeout(timeoutId);
+    }
+
+    return () => {
+      cancelTilePreload();
+      cancelClientWarmup();
+    };
+  }, [room?.gameType, expansionPreloadKey]);
 
   useEffect(() => {
     if (!isStarting) return;

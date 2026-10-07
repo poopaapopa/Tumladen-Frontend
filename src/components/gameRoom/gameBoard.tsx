@@ -7,6 +7,7 @@ export interface GameBoardHandle {
   getTileStep: () => number;
 }
 import { GameTile } from './tile.tsx';
+import { useTileImage } from './hooks/useTileImage';
 import type { Tile } from "./gameRoom.tsx";
 import { getPlayerColorBySeat } from "@/utils/playerColor.ts";
 import { PendingTileSlot } from './pendingTileSlot';
@@ -60,7 +61,7 @@ function getTouchCenter(t1: Touch, t2: Touch): { x: number; y: number } {
 }
 
 const MIN_SCALE = 0.3;
-const MAX_SCALE = 3.5;
+const MAX_SCALE = 2;
 const TILE_SIZE = 150;
 const TILE_STEP = 152;
 const DESKTOP_BLUR_START_SCALE = 0.95;
@@ -108,6 +109,7 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
   const stageWidth = width || 800;
   const stageHeight = height || 600;
   const isMobile = useIsMobile();
+  const currentTileImage = useTileImage(currentTileId);
   const playerColors = players
     .slice()
     .sort((a, b) => a.seat - b.seat)
@@ -385,16 +387,18 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
 
         {/* 3. ПОДСВЕТКА ДЛЯ НОВЫХ КВАДРАТОВ */}
         <Group>
-          {validPlacements.map((pos, i) => {
+          {validPlacements.map((pos) => {
             const isPending = pendingPlacement?.x === pos.x && pendingPlacement?.y === pos.y;
             const displayRotation = isPending ? pendingPlacement!.rotation : pos.rotations[0];
             return (
               <PendingTileSlot
-                key={`v-${i}`}
+                key={`v-${pos.x}-${pos.y}`}
                 pos={pos}
                 isPending={isPending}
+                isMobile={isMobile}
                 displayRotation={displayRotation}
                 currentTileId={currentTileId}
+                currentTileImage={currentTileImage}
                 TILE_SIZE={TILE_SIZE}
                 TILE_STEP={TILE_STEP}
                 onPlaceTile={onPlaceTile}

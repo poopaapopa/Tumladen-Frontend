@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Group, Path, Rect } from 'react-konva';
 import { GameTile } from './tile';
-import { useIsMobile } from '@/hooks/useIsMobile';
 
 const PLACEMENT_OUTLINE_COLOR = "#27AE60";
 const PLACEMENT_FILL_COLOR = "rgba(39, 174, 96, 0.1)";
@@ -17,8 +16,10 @@ const ROTATE_CW_ICON_PATHS = [
 interface PendingTileSlotProps {
   pos: { x: number; y: number; rotations: number[] };
   isPending: boolean;
+  isMobile: boolean;
   displayRotation: number;
   currentTileId?: string;
+  currentTileImage?: HTMLImageElement;
   TILE_SIZE: number;
   TILE_STEP: number;
   onPlaceTile?: (x: number, y: number) => void;
@@ -27,10 +28,10 @@ interface PendingTileSlotProps {
 }
 
 export const PendingTileSlot: React.FC<PendingTileSlotProps> = ({
-  pos, isPending, displayRotation, currentTileId, TILE_SIZE, TILE_STEP, onPlaceTile, onRotateTile, setCursor
+  pos, isPending, isMobile, displayRotation, currentTileId, currentTileImage,
+  TILE_SIZE, TILE_STEP, onPlaceTile, onRotateTile, setCursor
 }) => {
   const [hovered, setHovered] = useState(false);
-  const isMobile = useIsMobile();
 
   const handleClick = () => {
     if (isPending) {
@@ -60,9 +61,10 @@ export const PendingTileSlot: React.FC<PendingTileSlotProps> = ({
         cornerRadius={10}
         fill="transparent"
       />
-      {currentTileId && (
+      {currentTileId && currentTileImage ? (
         <GameTile
           tileId={currentTileId}
+          sourceImage={currentTileImage}
           x={0}
           y={0}
           rotation={displayRotation}
@@ -72,7 +74,21 @@ export const PendingTileSlot: React.FC<PendingTileSlotProps> = ({
           highlightDashed={!isPending}
           highlightFill={isPending ? undefined : PLACEMENT_FILL_COLOR}
         />
-      )}
+      ) : currentTileId ? (
+        <Rect
+          width={TILE_SIZE}
+          height={TILE_SIZE}
+          offsetX={TILE_SIZE / 2}
+          offsetY={TILE_SIZE / 2}
+          cornerRadius={10}
+          stroke={isPending ? PENDING_OUTLINE_COLOR : PLACEMENT_OUTLINE_COLOR}
+          strokeWidth={4}
+          dash={isPending ? undefined : [10, 10]}
+          fill={isPending ? undefined : PLACEMENT_FILL_COLOR}
+          opacity={isPending ? 1 : 0.4}
+          listening={false}
+        />
+      ) : null}
       {isPending && (isMobile || hovered) && (
         <>
           <Rect

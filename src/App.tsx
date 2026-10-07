@@ -6,14 +6,16 @@ import Modal from "./components/modal/modal.tsx";
 import GuestAuth from './components/guestAuth/guestAuth.tsx';
 import RoomPage from "./components/roomPage/roomPage.tsx";
 import ProfilePage from "./components/profilePage/profilePage.tsx";
-import { useState, useEffect } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useUserStore } from './store/useUserStore';
-import GameRoom from "./components/gameRoom/gameRoom.tsx";
 import { roomService } from './api/room.ts';
 import { authService } from './api/auth.ts';
 import { ConfirmModal } from './components/confirmModal/confirmModal.tsx';
 import elfCampfireImg from './assets/elf-campfire.png';
+import { GameLoadingScreen } from './components/gameRoom/gameLoadingScreen/gameLoadingScreen.tsx';
+
+const GameRoom = lazy(() => import('./components/gameRoom/gameRoom.tsx'));
 
 function App() {
   const [activeModal, setActiveModal] = useState<boolean>(false);
@@ -97,7 +99,11 @@ function App() {
               <MainPage onPlayClick={openModal} />
             } />
             <Route path="/room/:id" element={<RoomPage />} />
-            <Route path="/room/game/:id" element={<GameRoom />} />
+            <Route path="/room/game/:id" element={
+              <Suspense fallback={<GameLoadingScreen stage="interface" />}>
+                <GameRoom />
+              </Suspense>
+            } />
             <Route path="/profile/:id" element={<ProfilePage />} />
           </Routes>
 

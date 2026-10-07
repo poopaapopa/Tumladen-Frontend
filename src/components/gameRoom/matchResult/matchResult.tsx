@@ -8,7 +8,6 @@ import type { MatchPlayer } from '@/types/match';
 import { getPlayerColorBySeat } from '@/utils/playerColor';
 import { avatarSrc } from '@/utils/avatar.ts';
 import defaultAvatar from '@/assets/elf-avatar.svg';
-import elfGameImage from '@/assets/elf-game.png';
 
 const CONFETTI_COLORS = [
   '#F5C518',
@@ -231,7 +230,6 @@ export const MatchResultModal = ({
   return (
     <div className={styles.matchResult}>
       {confettiOverlay}
-      <img src={elfGameImage} alt="" className={styles.matchResult__image} />
 
       <h2 className={styles.matchResult__title}>{title}</h2>
       <p className={styles.matchResult__subtitle}>{subtitle}</p>

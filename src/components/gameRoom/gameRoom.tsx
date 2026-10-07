@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Bot, Hourglass } from 'lucide-react';
-import { preloadTileImages } from '@/utils/tiles.config';
+import {
+  preloadTileImages,
+  scheduleGameTilePreload,
+} from '@/utils/tiles.config';
 import { useNavigate, useParams } from 'react-router-dom';
 import styles from './gameRoom.module.scss';
 import sidebarstyles from '../mainPage/MainPage.module.scss';
@@ -44,11 +47,27 @@ import {
   getScoreEventDisplayMs,
   getScoreEventMeepleReturnDelayMs,
 } from './scoreEventTiming.ts';
+import { GameLoadingScreen, type GameLoadingStage } from './gameLoadingScreen/gameLoadingScreen.tsx';
 
 export type { Tile, MatchStatePayload, PrivateState } from '@/types/match';
 
 const isFeatureScoredEvent = (event: MatchEvent): event is FeatureScoredEvent =>
   event.type === 'feature_scored';
+
+const CRITICAL_ASSET_WAIT_TIMEOUT_MS = 12_000;
+const LEAVE_MATCH_FALLBACK_TIMEOUT_MS = 4_000;
+
+const getInitialMatchTileIds = (match: MatchStatePayload): string[] => {
+  const tileIds = new Set(
+    match.gameState.board.tiles.map((tile) => tile.tileId),
+  );
+  tileIds.add('start_tile');
+
+  const drawnTileId = match.gameState.currentTurn?.drawnTile?.tileId;
+  if (drawnTileId) tileIds.add(drawnTileId);
+
+  return [...tileIds];
+};
 
 interface PendingMeepleCounts {
   regular: number;
@@ -79,6 +98,8 @@ const GameRoom = () => {
   const [match, setMatch] = useState<MatchStatePayload | null>(null);
   const matchRef = useRef<MatchStatePayload | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [initialTileIds, setInitialTileIds] = useState<string[] | null>(null);
+  const [areInitialAssetsReady, setAreInitialAssetsReady] = useState(false);
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
   const [isRoomDeleted, setIsRoomDeleted] = useState(false);
   const [matchResult, setMatchResult] = useState<MatchFinishedPayload | null>(null);
@@ -104,6 +125,8 @@ const GameRoom = () => {
   const launchedScoreFlightEventIdsRef = useRef<Set<string>>(new Set());
   const scoreAnimationDeadlineRef = useRef(0);
   const matchResultTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const leaveMatchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isLeavingMatchRef = useRef(false);
   const skipFinalScoringRef = useRef(false);
   // Карта последних поставленных квадратов по каждому игроку: actorId -> { x, y, color }
   const lastPlacedStorageKey = inviteCode ? `lastPlacedByPlayer:${inviteCode}` : null;
@@ -436,16 +459,66 @@ const GameRoom = () => {
     if (matchResultTimeoutRef.current) {
       clearTimeout(matchResultTimeoutRef.current);
     }
+    if (leaveMatchTimeoutRef.current) {
+      clearTimeout(leaveMatchTimeoutRef.current);
+    }
   }, []);
 
   useEffect(() => {
-    preloadTileImages();
-  }, []);
+    if (!initialTileIds) return;
+
+    const controller = new AbortController();
+    let isActive = true;
+    let isReleased = false;
+    setAreInitialAssetsReady(false);
+
+    const releaseGame = () => {
+      if (!isActive || isReleased) return;
+      isReleased = true;
+      setAreInitialAssetsReady(true);
+    };
+
+    // A stalled image must never keep the player on the loading screen forever.
+    // Pending images continue warming the browser cache after the game is shown.
+    const waitTimeout = window.setTimeout(
+      releaseGame,
+      CRITICAL_ASSET_WAIT_TIMEOUT_MS,
+    );
+
+    void preloadTileImages(initialTileIds, {
+      concurrency: 4,
+      signal: controller.signal,
+    }).then(() => {
+      if (controller.signal.aborted) return;
+      window.clearTimeout(waitTimeout);
+      releaseGame();
+    });
+
+    return () => {
+      isActive = false;
+      controller.abort();
+      window.clearTimeout(waitTimeout);
+    };
+  }, [initialTileIds]);
+
+  const expansionPreloadKey = Array.isArray(room?.settings?.expansions)
+    ? [...room.settings.expansions].sort().join(',')
+    : '';
+
+  useEffect(() => {
+    if (!areInitialAssetsReady || room?.gameType !== 'carcassonne') return;
+    const expansions = expansionPreloadKey ? expansionPreloadKey.split(',') : [];
+    return scheduleGameTilePreload(expansions);
+  }, [areInitialAssetsReady, room?.gameType, expansionPreloadKey]);
 
   const fetchInitialData = useCallback(async () => {
     if (!inviteCode) return;
     try {
       const data = await roomService.getRoomById(inviteCode);
+      if (data.room.status !== 'playing') {
+        navigate(`/room/${data.room.inviteCode ?? inviteCode}`, { replace: true });
+        return;
+      }
       setRoom(data.room);
     } catch (err) {
       console.error('Ошибка:', err);
@@ -459,6 +532,17 @@ const GameRoom = () => {
     fetchInitialData();
   }, [fetchInitialData]);
 
+  const completeLeaveNavigation = useCallback(() => {
+    if (!isLeavingMatchRef.current) return;
+
+    isLeavingMatchRef.current = false;
+    if (leaveMatchTimeoutRef.current) {
+      clearTimeout(leaveMatchTimeoutRef.current);
+      leaveMatchTimeoutRef.current = null;
+    }
+    navigate(inviteCode ? `/room/${inviteCode}` : '/', { replace: true });
+  }, [inviteCode, navigate]);
+
   const sendMessageRef = useRef<ReturnType<typeof useRoomSocket>['sendMessage'] | null>(null);
 
   const clearPendingMeeplePlacement = useCallback(() => {
@@ -467,10 +551,25 @@ const GameRoom = () => {
   }, []);
 
   const handleMessage = useCallback((data: WebSocketMessage) => {
+    if (data.type === 'match_finished' && isLeavingMatchRef.current) {
+      const payload = data.payload;
+      if (
+        payload?.terminationReason === 'player_left' &&
+        payload.terminatedByActorId === currentUser?.id
+      ) {
+        completeLeaveNavigation();
+        return;
+      }
+    }
+
     if (data.type === 'match_state') {
       const newMatch = data.payload;
       const prevMatch = matchRef.current;
       const pendingMeeplePlacement = pendingMeeplePlacementRef.current;
+
+      setInitialTileIds((currentTileIds) => (
+        currentTileIds ?? getInitialMatchTileIds(newMatch)
+      ));
 
       if (pendingMeeplePlacement) {
         const hasAdvancedTurn =
@@ -496,6 +595,8 @@ const GameRoom = () => {
       const scoreEvents = (newMatch.events ?? []).filter(isFeatureScoredEvent);
       const isTurnChanged =
         prevMatch?.gameState?.turnNumber !== newMatch.gameState?.turnNumber;
+      const isPhaseChanged =
+        prevMatch?.gameState?.phase !== newMatch.gameState?.phase;
       const eventReturnedMeepleKeys = new Set(
         scoreEvents
           .flatMap((event) => event.payload.returnedMeeples ?? [])
@@ -652,6 +753,12 @@ const GameRoom = () => {
       setMatch(newMatch);
       matchRef.current = newMatch;
 
+      if (isTurnChanged || isPhaseChanged) {
+        // Public and private match state arrive in separate messages. Never
+        // render a new tile/phase using placement hints from the previous one.
+        setPrivateState(null);
+      }
+
       if (isTurnChanged) {
         setCurrentRotation(0);
         setPendingPlacement(null);
@@ -715,11 +822,19 @@ const GameRoom = () => {
     }
 
     if (data.type === 'error') {
+      if (isLeavingMatchRef.current) {
+        isLeavingMatchRef.current = false;
+        if (leaveMatchTimeoutRef.current) {
+          clearTimeout(leaveMatchTimeoutRef.current);
+          leaveMatchTimeoutRef.current = null;
+        }
+        setIsExitModalOpen(true);
+      }
       clearPendingMeeplePlacement();
     }
-  }, [recordMatchUpdate, clearLog, clearFlights, clearScoreEvents, enqueueScoreEvents, setTurnDeadline, lastPlacedStorageKey, launchMeepleFlights, showMatchResult, clearPendingMeeplePlacement]);
+  }, [recordMatchUpdate, clearLog, clearFlights, clearScoreEvents, enqueueScoreEvents, setTurnDeadline, lastPlacedStorageKey, launchMeepleFlights, showMatchResult, clearPendingMeeplePlacement, completeLeaveNavigation, currentUser?.id]);
 
-  const { sendMessage } = useRoomSocket(
+  const { sendMessage, connectionStatus, reconnect } = useRoomSocket(
     room?.id,
     handleMessage,
     undefined,
@@ -798,18 +913,23 @@ const GameRoom = () => {
   };
 
   const handleLeftGame = () => {
-    if (room?.inviteCode) {
-      clearLog();
-      sendMessage('leave_match', {
-        roomId: room.id,
-      });
-      navigate(`/room/${room.inviteCode}`);
-    }
+    if (!room?.inviteCode || isLeavingMatchRef.current) return;
+
+    const wasSent = sendMessage('leave_match', {
+      roomId: room.id,
+    });
+    if (!wasSent) return;
+
+    clearLog();
+    isLeavingMatchRef.current = true;
+    setIsExitModalOpen(false);
+    leaveMatchTimeoutRef.current = setTimeout(
+      completeLeaveNavigation,
+      LEAVE_MATCH_FALLBACK_TIMEOUT_MS,
+    );
   };
 
   const handleReturnToRoom = () => {
-    setIsCelebrationOpen(false);
-    setMatchResult(null);
     navigate(room?.inviteCode ? `/room/${room.inviteCode}` : '/');
   };
 
@@ -817,7 +937,28 @@ const GameRoom = () => {
   const currentTurnId = gameState?.currentPlayerId;
   const phase = gameState?.phase;
 
-  if (isLoading) return <div className={sidebarstyles.pageWrapper}>Загрузка...</div>;
+  if (isLoading || !match || !areInitialAssetsReady) {
+    let loadingStage: GameLoadingStage = 'room';
+
+    if (!isLoading && !match) {
+      loadingStage = 'match';
+    } else if (match && !areInitialAssetsReady) {
+      loadingStage = 'assets';
+    }
+
+    return (
+      <GameLoadingScreen
+        stage={loadingStage}
+        connectionStatus={connectionStatus}
+        onRetry={loadingStage === 'room'
+          ? fetchInitialData
+          : loadingStage === 'match'
+            ? reconnect
+            : undefined}
+        onBack={() => navigate(`/room/${room?.inviteCode ?? inviteCode ?? ''}`)}
+      />
+    );
+  }
 
   const ownerId = room?.ownerActorId;
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useUserStore } from '@/store/useUserStore';
 import { WS_BASE_URL } from './config.ts';
 import { roomService, UnauthorizedError } from './room.ts';
@@ -23,6 +23,13 @@ const RECONNECT_BASE_DELAY_MS = 1_000;
 const RECONNECT_MAX_DELAY_MS = 30_000;
 const RECONNECT_MAX_ATTEMPTS = 10;
 
+export type RoomSocketStatus =
+  | 'idle'
+  | 'connecting'
+  | 'connected'
+  | 'reconnecting'
+  | 'disconnected';
+
 export const useRoomSocket = (
   roomId: string | undefined,
   onMessage: (data: WebSocketMessage) => void,
@@ -31,10 +38,11 @@ export const useRoomSocket = (
 ) => {
   const socket = useRef<WebSocket | null>(null);
   const token = useUserStore((state) => state.token);
-  const isComponentMounted = useRef(true);
   const reconnectAttempt = useRef(0);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const heartbeatTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<RoomSocketStatus>('idle');
+  const [connectionGeneration, setConnectionGeneration] = useState(0);
 
   const onMessageRef = useRef(onMessage);
   useEffect(() => {
@@ -54,7 +62,7 @@ export const useRoomSocket = (
   useEffect(() => {
     if (!roomId || !token) return;
 
-    isComponentMounted.current = true;
+    let cancelled = false;
     reconnectAttempt.current = 0;
 
     const clearHeartbeat = () => {
@@ -73,8 +81,10 @@ export const useRoomSocket = (
 
     const connect = async () => {
       try {
-        if (!isComponentMounted.current) return;
+        if (cancelled) return;
+        setConnectionStatus(reconnectAttempt.current > 0 ? 'reconnecting' : 'connecting');
         const { ticket } = await roomService.getWsTicket();
+        if (cancelled) return;
 
         const url = new URL(WS_BASE_URL);
         url.searchParams.set('ticket', ticket);
@@ -84,9 +94,14 @@ export const useRoomSocket = (
         socket.current = ws;
 
         ws.onopen = () => {
+          if (cancelled) {
+            ws.close();
+            return;
+          }
           if (ws.readyState !== WebSocket.OPEN) return;
 
           reconnectAttempt.current = 0;
+          setConnectionStatus('connected');
 
           ws.send(JSON.stringify({ id: 1, connect: {} }));
           ws.send(JSON.stringify({
@@ -107,6 +122,7 @@ export const useRoomSocket = (
         };
 
         ws.onmessage = (event) => {
+          if (cancelled) return;
           const lines = event.data.split('\n').filter((line: string) => line.trim() !== '');
 
           for (const line of lines) {
@@ -137,11 +153,16 @@ export const useRoomSocket = (
         ws.onclose = () => {
           clearHeartbeat();
 
-          if (!isComponentMounted.current) return;
+          if (cancelled) return;
 
           onDisconnectedRef.current?.();
 
-          if (reconnectAttempt.current >= RECONNECT_MAX_ATTEMPTS) return;
+          if (reconnectAttempt.current >= RECONNECT_MAX_ATTEMPTS) {
+            setConnectionStatus('disconnected');
+            return;
+          }
+
+          setConnectionStatus('reconnecting');
 
           const delay = Math.min(
             RECONNECT_BASE_DELAY_MS * 2 ** reconnectAttempt.current,
@@ -157,7 +178,14 @@ export const useRoomSocket = (
 
         if (err instanceof UnauthorizedError) return;
 
-        if (!isComponentMounted.current) return;
+        if (cancelled) return;
+
+        if (reconnectAttempt.current >= RECONNECT_MAX_ATTEMPTS) {
+          setConnectionStatus('disconnected');
+          return;
+        }
+
+        setConnectionStatus('reconnecting');
 
         const delay = Math.min(
           RECONNECT_BASE_DELAY_MS * 2 ** reconnectAttempt.current,
@@ -171,7 +199,7 @@ export const useRoomSocket = (
     connect();
 
     return () => {
-      isComponentMounted.current = false;
+      cancelled = true;
       clearHeartbeat();
       clearReconnectTimer();
       if (socket.current) {
@@ -179,7 +207,11 @@ export const useRoomSocket = (
         socket.current = null;
       }
     };
-  }, [roomId, token]);
+  }, [roomId, token, connectionGeneration]);
+
+  const reconnect = useCallback(() => {
+    setConnectionGeneration((generation) => generation + 1);
+  }, []);
 
   const sendMessage = (type: string, payload: Record<string, unknown>) => {
     const activeSocket = socket.current;
@@ -201,5 +233,9 @@ export const useRoomSocket = (
     }
   };
 
-  return { sendMessage };
+  return {
+    sendMessage,
+    connectionStatus: roomId && token ? connectionStatus : 'idle',
+    reconnect,
+  };
 };

@@ -71,16 +71,6 @@
     line-height: 1.4;
   }
 
-  &__image {
-    display: block;
-    width: 148px;
-    max-width: 50%;
-    height: auto;
-    margin: 0 auto 8px;
-    user-select: none;
-    pointer-events: none;
-  }
-
   &__winners {
     display: flex;
     flex-wrap: wrap;
@@ -296,10 +286,6 @@
     max-height: calc(100dvh - 24px);
     padding: 22px 20px 26px;
     border-width: 4px;
-
-    &__image {
-      width: 125px;
-    }
 
     &__title {
       font-size: 26px;

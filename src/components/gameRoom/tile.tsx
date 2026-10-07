@@ -1,8 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Group, Image, Rect } from 'react-konva';
 import type Konva from 'konva';
-import useImage from 'use-image';
-import { TILE_IMAGES } from '@/utils/tiles.config';
+import { useTileImage } from './hooks/useTileImage';
 
 interface GameTileProps {
   tileId: string;
@@ -16,13 +15,16 @@ interface GameTileProps {
   highlightDashed?: boolean;
   highlightFill?: string;
   cacheRendering?: boolean;
+  sourceImage?: HTMLImageElement;
 }
 
 const GameTileComponent: React.FC<GameTileProps> = ({
-  tileId, x, y, rotation, tileSize, tileStep, opacity = 1, highlightColor, highlightDashed, highlightFill, cacheRendering = false
+  tileId, x, y, rotation, tileSize, tileStep, opacity = 1, highlightColor,
+  highlightDashed, highlightFill, cacheRendering = false, sourceImage
 }) => {
   const step = tileStep ?? tileSize;
-  const [image] = useImage(TILE_IMAGES[tileId]);
+  const loadedImage = useTileImage(sourceImage ? undefined : tileId);
+  const image = sourceImage ?? loadedImage;
   const CORNER_RADIUS = 10;
   const BEVEL_SIZE = 4;
 
@@ -61,6 +63,10 @@ const GameTileComponent: React.FC<GameTileProps> = ({
       node.clearCache();
     };
   }, [image, tileSize, rotation, highlightColor, highlightDashed, highlightFill, opacity, cacheRendering]);
+
+  // Never paint the dark frame before its texture is decoded. Initial board
+  // images are normally already available from the game preloader.
+  if (!image) return null;
 
   return (
     <Group

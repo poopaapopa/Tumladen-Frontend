@@ -10,6 +10,7 @@
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -b --pretty false",
     "check": "npm run typecheck && npm run lint",
+    "assets:tiles:optimize": "node scripts/optimize-tile-images.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -22,7 +23,6 @@
     "react-dom": "^19.2.4",
     "react-konva": "^19.2.3",
     "react-router-dom": "^7.13.2",
-    "use-image": "^1.1.4",
     "zustand": "^5.0.12"
   },
   "devDependencies": {
@@ -36,6 +36,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.4.0",
     "sass": "^1.98.0",
+    "sharp": "^0.35.5",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.57.0",
     "vite": "^8.0.1"
