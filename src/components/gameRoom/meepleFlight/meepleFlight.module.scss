@@ -4,6 +4,10 @@
   pointer-events: none;
   z-index: 1500;
   overflow: visible;
+
+  @media (max-width: $mobile-breakpoint) {
+    display: none;
+  }
 }
 
 .flight {

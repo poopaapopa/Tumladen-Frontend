@@ -25,6 +25,8 @@ const ROOM_TABS = [
   { key: 'rules' as const, label: 'Правила', icon: BookOpen },
 ];
 
+const START_GAME_TIMEOUT_MS = 10_000;
+
 const RoomPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -39,6 +41,7 @@ const RoomPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [isKicked, setIsKicked] = useState(false);
   const [isRoomDeleted, setIsRoomDeleted] = useState(false);
+  const [isStarting, setIsStarting] = useState(false);
 
   const checkAvailableSlots = useCallback((roomData: RoomResponse) => {
     if (!currentUser) return false;
@@ -80,6 +83,10 @@ const RoomPage = () => {
 
     if (data.type === 'room_deleted') {
       setIsRoomDeleted(true);
+    }
+
+    if (data.type === 'error') {
+      setIsStarting(false);
     }
   }, [checkAvailableSlots, navigate]);
 
@@ -133,10 +140,23 @@ const RoomPage = () => {
     }
   }, [room?.status, navigate, id]);
 
+  useEffect(() => {
+    if (!isStarting) return;
+
+    const timeout = setTimeout(() => setIsStarting(false), START_GAME_TIMEOUT_MS);
+    return () => clearTimeout(timeout);
+  }, [isStarting]);
+
   if (isLoading) return <RoomPageSkeleton />;
   if (error || !room) return <div className={styles.error}>{error || "Комната исчезла"}</div>;
 
   const isOwner = currentUser?.id === room.ownerActorId;
+  const handleStartGame = () => {
+    if (!isOwner || !room.canStart || isStarting) return;
+
+    const wasSent = sendMessage('start_room', { roomId: room.id });
+    if (wasSent) setIsStarting(true);
+  };
 
   if (isMobile) {
     return (
@@ -167,6 +187,9 @@ const RoomPage = () => {
               isOwner={isOwner}
               sendMessage={sendMessage}
               isKicked={isKicked}
+              showStartAction
+              isStarting={isStarting}
+              onStartGame={handleStartGame}
             />
           )}
           {activeTab === 'settings' && (
@@ -176,6 +199,9 @@ const RoomPage = () => {
               isRoomDeleted={isRoomDeleted}
               onSaveSetting={handleSaveSetting}
               sendMessage={sendMessage}
+              showStartAction={false}
+              isStarting={isStarting}
+              onStartGame={handleStartGame}
             />
           )}
           {activeTab === 'rules' && (
@@ -196,6 +222,9 @@ const RoomPage = () => {
         isRoomDeleted={isRoomDeleted}
         onSaveSetting={handleSaveSetting}
         sendMessage={sendMessage}
+        showStartAction
+        isStarting={isStarting}
+        onStartGame={handleStartGame}
       />
 
       <main className={styles.roomPage__main}>
@@ -214,6 +243,9 @@ const RoomPage = () => {
         isOwner={currentUser?.id === room.ownerActorId}
         sendMessage={sendMessage}
         isKicked={isKicked}
+        showStartAction={false}
+        isStarting={isStarting}
+        onStartGame={handleStartGame}
       />
     </div>
   );

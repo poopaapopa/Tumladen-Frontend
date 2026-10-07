@@ -17,14 +17,25 @@ interface RoomSidebarProps {
   isRoomDeleted: boolean;
   onSaveSetting: (key: string, newValue: SettingValue) => void;
   sendMessage: (type: string, payload: Record<string, unknown>) => void;
+  showStartAction: boolean;
+  isStarting: boolean;
+  onStartGame: () => void;
 }
 
-export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendMessage }: RoomSidebarProps) => {
+export const RoomSidebar = ({
+  room,
+  isOwner,
+  isRoomDeleted,
+  onSaveSetting,
+  sendMessage,
+  showStartAction,
+  isStarting,
+  onStartGame,
+}: RoomSidebarProps) => {
   const navigate = useNavigate();
   const clearCurrentRoom = useUserStore((s) => s.clearCurrentRoom);
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState("");
-  const [isStarting, setIsStarting] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
   const currentSettings = room?.settings || {};
@@ -38,13 +49,6 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
       setIsDeleteConfirmOpen(false);
       clearCurrentRoom();
       navigate('/');
-    }
-  };
-
-  const handleStartGame = () => {
-    if (isOwner && room.canStart) {
-      setIsStarting(true);
-      sendMessage('start_room', { roomId: room.id });
     }
   };
 
@@ -197,18 +201,20 @@ export const RoomSidebar = ({ room, isOwner, isRoomDeleted, onSaveSetting, sendM
         </label>
       </div>
 
-      {isOwner ? (
-        <button
-          className={styles.roomSidebar__btnStart}
-          disabled={!room.canStart || isStarting}
-          onClick={handleStartGame}
-        >
-          {isStarting ? 'Запуск...' : 'Начать игру'}
-        </button>
-      ) : (
-        <div className={styles.roomSidebar__waitMessage}>
-          Ожидаем, пока организатор завершит подготовку
-        </div>
+      {showStartAction && (
+        isOwner ? (
+          <button
+            className={styles.roomSidebar__btnStart}
+            disabled={!room.canStart || isStarting}
+            onClick={onStartGame}
+          >
+            {isStarting ? 'Запуск...' : 'Начать игру'}
+          </button>
+        ) : (
+          <div className={styles.roomSidebar__waitMessage}>
+            Ожидаем, пока организатор завершит подготовку
+          </div>
+        )
       )}
       <Modal isOpen={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)}>
         <ConfirmModal

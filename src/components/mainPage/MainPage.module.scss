@@ -185,6 +185,14 @@
     flex-shrink: 0;
   }
 
+  &__filterToggle {
+    display: none;
+  }
+
+  &__filterPanel {
+    flex-shrink: 0;
+  }
+
   &__rangeFilters {
     display: flex;
     gap: 20px;
@@ -288,12 +296,42 @@
       display: none;
     }
 
+    &__filterToggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border: 1px solid rgba($metal-gray, 0.35);
+      border-radius: 10px;
+      background-color: rgba($sage-gray, 0.45);
+      color: $forest-dark;
+      font-family: $font-main;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    &__filterToggleLabel {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    &__filterToggleIcon {
+      transition: transform 0.2s ease;
+
+      &_open {
+        transform: rotate(180deg);
+      }
+    }
+
     &__filters {
-      flex-wrap: nowrap;
-      overflow-x: auto;
+      flex-wrap: wrap;
+      overflow-x: visible;
       padding-bottom: 4px;
       margin-bottom: 12px;
-      -webkit-overflow-scrolling: touch;
     }
 
     &__filterChip {

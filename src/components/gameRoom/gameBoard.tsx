@@ -10,7 +10,7 @@ import { GameTile } from './tile.tsx';
 import type { Tile } from "./gameRoom.tsx";
 import { getPlayerColorBySeat } from "@/utils/playerColor.ts";
 import { PendingTileSlot } from './pendingTileSlot';
-import { KonvaMeeple } from './matchPlayerCard/meeple.tsx';
+import { KonvaMeeple, MeepleImagePreloader } from './matchPlayerCard/meeple.tsx';
 import { MeepleSlot } from './meepleSlot.tsx';
 import { getZoneOffset } from '@/utils/tileZones.ts';
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -108,6 +108,10 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
   const stageWidth = width || 800;
   const stageHeight = height || 600;
   const isMobile = useIsMobile();
+  const playerColors = players
+    .slice()
+    .sort((a, b) => a.seat - b.seat)
+    .map((player) => getPlayerColorBySeat(player.seat));
 
   const [stage, setStage] = useState({ x: stageWidth / 2, y: stageHeight / 2, scale: 1 });
   const stageRef = useRef<Konva.Stage | null>(null);
@@ -308,7 +312,9 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
   }, [commitStage]);
 
   return (
-    <Stage
+    <>
+      <MeepleImagePreloader colors={playerColors} />
+      <Stage
       ref={stageRef}
       width={stageWidth}
       height={stageHeight}
@@ -401,7 +407,7 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
 
         {/* 4. УСТАНОВЛЕННЫЕ ПОДДАННЫЕ: последними, чтобы лежали поверх квадратов и подсветок */}
         <Group listening={false}>
-          {placedMeeples.map((meeple, index) => {
+          {placedMeeples.map((meeple) => {
             const tile = board.find(t => 'instanceId' in t && t.instanceId === meeple.tileInstanceId);
             if (!tile) return null;
             const offset = getZoneOffset(tile.tileId, meeple.zoneId, tile.rotation);
@@ -411,7 +417,7 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
             const isBig = meeple.meepleType === 'big';
             return (
               <KonvaMeeple
-                key={`m-${index}`}
+                key={`m-${meeple.tileInstanceId}-${meeple.zoneId}-${meeple.actorId}-${meeple.meepleType ?? 'regular'}`}
                 x={tile.x * TILE_STEP + offset.x}
                 y={tile.y * TILE_STEP + offset.y}
                 color={color}
@@ -435,7 +441,8 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
           />
         </Layer>
       )}
-    </Stage>
+      </Stage>
+    </>
   );
 });
 

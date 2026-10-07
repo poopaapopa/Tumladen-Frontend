@@ -26,7 +26,8 @@ const RECONNECT_MAX_ATTEMPTS = 10;
 export const useRoomSocket = (
   roomId: string | undefined,
   onMessage: (data: WebSocketMessage) => void,
-  onKicked?: () => void
+  onKicked?: () => void,
+  onDisconnected?: () => void,
 ) => {
   const socket = useRef<WebSocket | null>(null);
   const token = useUserStore((state) => state.token);
@@ -44,6 +45,11 @@ export const useRoomSocket = (
   useEffect(() => {
     onKickedRef.current = onKicked;
   }, [onKicked]);
+
+  const onDisconnectedRef = useRef(onDisconnected);
+  useEffect(() => {
+    onDisconnectedRef.current = onDisconnected;
+  }, [onDisconnected]);
 
   useEffect(() => {
     if (!roomId || !token) return;
@@ -131,10 +137,11 @@ export const useRoomSocket = (
         ws.onclose = () => {
           clearHeartbeat();
 
-          if (
-            !isComponentMounted.current ||
-            reconnectAttempt.current >= RECONNECT_MAX_ATTEMPTS
-          ) return;
+          if (!isComponentMounted.current) return;
+
+          onDisconnectedRef.current?.();
+
+          if (reconnectAttempt.current >= RECONNECT_MAX_ATTEMPTS) return;
 
           const delay = Math.min(
             RECONNECT_BASE_DELAY_MS * 2 ** reconnectAttempt.current,
@@ -175,8 +182,11 @@ export const useRoomSocket = (
   }, [roomId, token]);
 
   const sendMessage = (type: string, payload: Record<string, unknown>) => {
-    if (socket.current?.readyState === WebSocket.OPEN) {
-      socket.current.send(JSON.stringify({
+    const activeSocket = socket.current;
+    if (activeSocket?.readyState !== WebSocket.OPEN) return false;
+
+    try {
+      activeSocket.send(JSON.stringify({
         send: {
           data: {
             type,
@@ -184,6 +194,10 @@ export const useRoomSocket = (
           }
         }
       }));
+      return true;
+    } catch (err) {
+      console.error('WebSocket send error:', err);
+      return false;
     }
   };
 

@@ -18,21 +18,6 @@
   }
 }
 
-@keyframes glowPulse {
-  0% {
-    text-shadow: 0 0 5px var(--player-color);
-    filter: brightness(1);
-  }
-  50% {
-    text-shadow: 0 0 25px var(--player-color);
-    filter: brightness(1.1);
-  }
-  100% {
-    text-shadow: 0 0 5px var(--player-color);
-    filter: brightness(1);
-  }
-}
-
 @keyframes urgentPulse {
   0%, 100% {
     transform: scale(1);
@@ -121,7 +106,6 @@
     color: var(--player-color);
     word-break: break-word;
     padding: 2px 0;
-    animation: glowPulse 3s infinite ease-in-out;
     display: inline-block;
     vertical-align: middle;
     flex: 1;

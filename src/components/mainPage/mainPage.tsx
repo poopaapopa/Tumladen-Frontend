@@ -8,7 +8,7 @@ import { roomService, UnauthorizedError } from "@/api/room.ts";
 import type { RoomResponse } from '@/types/room.ts';
 import { useUserStore } from "@/store/useUserStore.ts";
 import sadElfImg from '@/assets/sad-elf.png';
-import { AlertTriangle, X, Gamepad2, DoorOpen } from 'lucide-react';
+import { AlertTriangle, X, Gamepad2, DoorOpen, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import RangeSlider from '../rangeSlider/rangeSlider.tsx';
@@ -64,6 +64,7 @@ function MainPage({ onPlayClick }: MainPageProps) {
 
   const isMobile = useIsMobile();
   const [mobileView, setMobileView] = useState<MobileView>('games');
+  const [areMobileFiltersOpen, setAreMobileFiltersOpen] = useState(false);
 
   const [rooms, setRooms] = useState<RoomResponse[]>([]);
   const [isLoadingRooms, setIsLoadingRooms] = useState(true);
@@ -278,54 +279,81 @@ function MainPage({ onPlayClick }: MainPageProps) {
       <div className={styles.sidebar}>
         <div className={styles.sidebar__title}>Комнаты</div>
 
-        <div className={styles.sidebar__filters} role="tablist" aria-label="Фильтр комнат по игре">
+        {isMobile && (
           <button
             type="button"
-            role="tab"
-            aria-selected={gameFilter === ALL_GAMES_FILTER}
-            className={clsx(
-              styles.sidebar__filterChip,
-              gameFilter === ALL_GAMES_FILTER && styles.sidebar__filterChip_active,
-            )}
-            onClick={() => setGameFilter(ALL_GAMES_FILTER)}
+            className={styles.sidebar__filterToggle}
+            aria-expanded={areMobileFiltersOpen}
+            aria-controls="room-filters"
+            onClick={() => setAreMobileFiltersOpen((isOpen) => !isOpen)}
           >
-            Все
+            <span className={styles.sidebar__filterToggleLabel}>
+              <SlidersHorizontal size={18} aria-hidden="true" />
+              Фильтры
+            </span>
+            <ChevronDown
+              size={20}
+              aria-hidden="true"
+              className={clsx(
+                styles.sidebar__filterToggleIcon,
+                areMobileFiltersOpen && styles.sidebar__filterToggleIcon_open,
+              )}
+            />
           </button>
-          {games.map((game) => (
+        )}
+
+        <div
+          id="room-filters"
+          className={styles.sidebar__filterPanel}
+          hidden={isMobile && !areMobileFiltersOpen}
+        >
+          <div className={styles.sidebar__filters} role="group" aria-label="Фильтр комнат по игре">
             <button
-              key={game.gameType}
               type="button"
-              role="tab"
-              aria-selected={gameFilter === game.gameType}
+              aria-pressed={gameFilter === ALL_GAMES_FILTER}
               className={clsx(
                 styles.sidebar__filterChip,
-                gameFilter === game.gameType && styles.sidebar__filterChip_active,
+                gameFilter === ALL_GAMES_FILTER && styles.sidebar__filterChip_active,
               )}
-              onClick={() => setGameFilter(game.gameType)}
+              onClick={() => setGameFilter(ALL_GAMES_FILTER)}
             >
-              {game.title}
+              Все
             </button>
-          ))}
-        </div>
+            {games.map((game) => (
+              <button
+                key={game.gameType}
+                type="button"
+                aria-pressed={gameFilter === game.gameType}
+                className={clsx(
+                  styles.sidebar__filterChip,
+                  gameFilter === game.gameType && styles.sidebar__filterChip_active,
+                )}
+                onClick={() => setGameFilter(game.gameType)}
+              >
+                {game.title}
+              </button>
+            ))}
+          </div>
 
-        <div className={styles.sidebar__rangeFilters}>
-          <RangeSlider
-            label="Игроков в комнате"
-            min={PLAYERS_MIN}
-            max={PLAYERS_MAX}
-            step={1}
-            value={playersRange}
-            onChange={setPlayersRange}
-          />
-          <RangeSlider
-            label="Время на ход"
-            min={TURN_TIME_MIN_INDEX}
-            max={TURN_TIME_MAX_INDEX}
-            step={1}
-            value={turnTimeRange}
-            onChange={setTurnTimeRange}
-            formatValue={formatTurnTime}
-          />
+          <div className={styles.sidebar__rangeFilters}>
+            <RangeSlider
+              label="Игроков в комнате"
+              min={PLAYERS_MIN}
+              max={PLAYERS_MAX}
+              step={1}
+              value={playersRange}
+              onChange={setPlayersRange}
+            />
+            <RangeSlider
+              label="Время на ход"
+              min={TURN_TIME_MIN_INDEX}
+              max={TURN_TIME_MAX_INDEX}
+              step={1}
+              value={turnTimeRange}
+              onChange={setTurnTimeRange}
+              formatValue={formatTurnTime}
+            />
+          </div>
         </div>
 
         <div className={styles.sidebar__list}>

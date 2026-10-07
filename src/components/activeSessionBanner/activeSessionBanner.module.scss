@@ -112,7 +112,9 @@
     }
   }
 
-    @media (max-width: $mobile-breakpoint) {
+  @media (max-width: $mobile-breakpoint) {
+    top: auto;
+    bottom: calc(16px + env(safe-area-inset-bottom, 0px));
     width: 290px;
     padding: 10px 20px 10px 25px;
 

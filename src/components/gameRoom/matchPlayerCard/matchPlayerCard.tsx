@@ -151,6 +151,13 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
     styles.playerCard__count,
     isScoreAnimating && styles.playerCard__count_animating
   ), [isScoreAnimating]);
+  const rankClassName = clsx(
+    styles.playerCard__rank,
+    rank === 1 && styles.playerCard__rank_first,
+    rank === 2 && styles.playerCard__rank_second,
+    rank === 3 && styles.playerCard__rank_third,
+  );
+  const rankAriaLabel = rank === undefined ? 'Место ещё не определено' : `Место ${rank}`;
 
   const hasAvatar = Boolean(avatarUrl);
 
@@ -168,13 +175,8 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
     >
       {isRanking && (
         <span
-          className={clsx(
-            styles.playerCard__rank,
-            rank === 1 && styles.playerCard__rank_first,
-            rank === 2 && styles.playerCard__rank_second,
-            rank === 3 && styles.playerCard__rank_third,
-          )}
-          aria-label={rank === undefined ? 'Место ещё не определено' : `Место ${rank}`}
+          className={clsx(rankClassName, styles.playerCard__rank_desktop)}
+          aria-label={rankAriaLabel}
         >
           {rank ?? '—'}
         </span>
@@ -229,6 +231,14 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
               {displayScore}
               <Star size={20} strokeWidth={2.5} className={styles.playerCard__starIcon} />
             </span>
+            {isRanking && (
+              <span
+                className={clsx(rankClassName, styles.playerCard__rank_mobile)}
+                aria-label={rankAriaLabel}
+              >
+                {rank ?? '—'}
+              </span>
+            )}
           </div>
         </div>
 

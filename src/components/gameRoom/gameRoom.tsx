@@ -5,6 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import styles from './gameRoom.module.scss';
 import sidebarstyles from '../mainPage/MainPage.module.scss';
 import { useContainerSize } from '@/hooks/useContainerSize';
+import { useIsMobile } from '@/hooks/useIsMobile';
 import { useRoomSocket } from '@/api/ws';
 import type { MatchFinishedPayload, WebSocketMessage } from '@/types/ws';
 import {
@@ -59,12 +60,20 @@ interface LaunchMeepleFlightOptions {
   onComplete?: () => void;
 }
 
-type MobileInfoPanel = 'actions' | 'finalScores' | null;
+type MobileInfoPanel = 'actions' | null;
+
+interface PendingMeeplePlacement {
+  turnNumber?: number;
+  zoneId: string;
+  actorId?: string;
+  tileInstanceId?: string;
+}
 
 const GameRoom = () => {
   const { id: inviteCode } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const currentUser = useUserStore((state) => state.actor);
+  const isMobile = useIsMobile();
 
   const [room, setRoom] = useState<RoomResponse | null>(null);
   const [match, setMatch] = useState<MatchStatePayload | null>(null);
@@ -80,6 +89,8 @@ const GameRoom = () => {
   const [currentRotation, setCurrentRotation] = useState(0);
   const [pendingPlacement, setPendingPlacement] = useState<{ x: number; y: number; rotation: number } | null>(null);
   const [selectedMeepleType, setSelectedMeepleType] = useState<MeepleType>('regular');
+  const [isMeeplePlacementPending, setIsMeeplePlacementPending] = useState(false);
+  const pendingMeeplePlacementRef = useRef<PendingMeeplePlacement | null>(null);
   const [scoreEventQueue, setScoreEventQueue] = useState<FeatureScoredEvent[]>([]);
   const scoreEventQueueRef = useRef<FeatureScoredEvent[]>([]);
   const [finalScoreEvents, setFinalScoreEvents] = useState<FeatureScoredEvent[]>([]);
@@ -146,9 +157,14 @@ const GameRoom = () => {
     options: LaunchMeepleFlightOptions = {},
   ) => {
     const { trackInventory = true, onComplete } = options;
+    if (isMobile || removed.length === 0) {
+      onComplete?.();
+      return;
+    }
+
     const stage = boardHandleRef.current?.getStage();
     const tileStep = boardHandleRef.current?.getTileStep() ?? 152;
-    if (!stage || removed.length === 0) {
+    if (!stage) {
       onComplete?.();
       return;
     }
@@ -240,7 +256,7 @@ const GameRoom = () => {
       flightTimeoutsRef.current.delete(timeout);
     }, FLIGHT_DURATION_MS);
     flightTimeoutsRef.current.add(timeout);
-  }, []);
+  }, [isMobile]);
 
   const clearFlights = useCallback(() => {
     flightTimeoutsRef.current.forEach((t) => clearTimeout(t));
@@ -445,10 +461,38 @@ const GameRoom = () => {
 
   const sendMessageRef = useRef<ReturnType<typeof useRoomSocket>['sendMessage'] | null>(null);
 
+  const clearPendingMeeplePlacement = useCallback(() => {
+    pendingMeeplePlacementRef.current = null;
+    setIsMeeplePlacementPending(false);
+  }, []);
+
   const handleMessage = useCallback((data: WebSocketMessage) => {
     if (data.type === 'match_state') {
       const newMatch = data.payload;
       const prevMatch = matchRef.current;
+      const pendingMeeplePlacement = pendingMeeplePlacementRef.current;
+
+      if (pendingMeeplePlacement) {
+        const hasAdvancedTurn =
+          pendingMeeplePlacement.turnNumber !== undefined &&
+          newMatch.gameState.turnNumber !== pendingMeeplePlacement.turnNumber;
+        const hasLeftMeeplePhase =
+          newMatch.status !== 'active' || newMatch.gameState.phase !== 'place_meeple';
+        const hasPlacedRequestedMeeple = Boolean(
+          pendingMeeplePlacement.actorId &&
+          pendingMeeplePlacement.tileInstanceId &&
+          newMatch.gameState.meeples.some(
+            (meeple) =>
+              meeple.actorId === pendingMeeplePlacement.actorId &&
+              meeple.tileInstanceId === pendingMeeplePlacement.tileInstanceId &&
+              meeple.zoneId === pendingMeeplePlacement.zoneId,
+          ),
+        );
+
+        if (hasAdvancedTurn || hasLeftMeeplePhase || hasPlacedRequestedMeeple) {
+          clearPendingMeeplePlacement();
+        }
+      }
       const scoreEvents = (newMatch.events ?? []).filter(isFeatureScoredEvent);
       const isTurnChanged =
         prevMatch?.gameState?.turnNumber !== newMatch.gameState?.turnNumber;
@@ -617,6 +661,21 @@ const GameRoom = () => {
 
     if (data.type === 'match_private_state') {
       const privatePayload = data.payload;
+      const pendingMeeplePlacement = pendingMeeplePlacementRef.current;
+
+      if (
+        pendingMeeplePlacement &&
+        (
+          privatePayload.phase !== 'place_meeple' ||
+          !privatePayload.isYourTurn ||
+          !privatePayload.validMeeplePlacements.some(
+            (placement) => placement.zoneId === pendingMeeplePlacement.zoneId,
+          )
+        )
+      ) {
+        clearPendingMeeplePlacement();
+      }
+
       setPrivateState(privatePayload);
 
       if (
@@ -654,9 +713,18 @@ const GameRoom = () => {
         setIsRoomDeleted(true);
       }
     }
-  }, [recordMatchUpdate, clearLog, clearFlights, clearScoreEvents, enqueueScoreEvents, setTurnDeadline, lastPlacedStorageKey, launchMeepleFlights, showMatchResult]);
 
-  const { sendMessage } = useRoomSocket(room?.id, handleMessage);
+    if (data.type === 'error') {
+      clearPendingMeeplePlacement();
+    }
+  }, [recordMatchUpdate, clearLog, clearFlights, clearScoreEvents, enqueueScoreEvents, setTurnDeadline, lastPlacedStorageKey, launchMeepleFlights, showMatchResult, clearPendingMeeplePlacement]);
+
+  const { sendMessage } = useRoomSocket(
+    room?.id,
+    handleMessage,
+    undefined,
+    clearPendingMeeplePlacement,
+  );
 
   useEffect(() => {
     sendMessageRef.current = sendMessage;
@@ -698,8 +766,8 @@ const GameRoom = () => {
   };
 
   const handlePlaceMeeple = (zoneId: string) => {
-    if (!room?.id) return;
-    sendMessage('match_action', {
+    if (!room?.id || pendingMeeplePlacementRef.current) return;
+    const wasSent = sendMessage('match_action', {
       roomId: room.id,
       action: 'place_meeple',
       payload: {
@@ -708,6 +776,16 @@ const GameRoom = () => {
         meepleType: selectedMeepleType,
       },
     });
+    if (wasSent) {
+      const currentMatch = matchRef.current;
+      pendingMeeplePlacementRef.current = {
+        turnNumber: currentMatch?.gameState.turnNumber,
+        zoneId,
+        actorId: currentUser?.id,
+        tileInstanceId: currentMatch?.gameState.currentTurn?.placedTile?.instanceId,
+      };
+      setIsMeeplePlacementPending(true);
+    }
   };
 
   const handleSkipMeeple = () => {
@@ -877,7 +955,7 @@ const GameRoom = () => {
         }}
         pendingMeeples={unavailableMeeplesByActor}
         registerPlayerCardRef={registerPlayerCardRef}
-        isMeeplePlacementPhase={isPlaying && phase === 'place_meeple' && isYourTurn}
+        isMeeplePlacementPhase={isPlaying && phase === 'place_meeple' && isYourTurn && !isMeeplePlacementPending}
         selectedMeepleType={selectedMeepleType}
         onSelectMeepleType={setSelectedMeepleType}
         mode={isRankingMode ? 'ranking' : 'playing'}
@@ -897,7 +975,11 @@ const GameRoom = () => {
           onRotateTile={handleRotateTile}
           currentTileId={isPlaying ? currentTileId : undefined}
           phase={isPlaying ? phase : undefined}
-          validMeeplePlacements={isPlaying ? (privateState?.validMeeplePlacements || []) : []}
+          validMeeplePlacements={
+            isPlaying && !isMeeplePlacementPending
+              ? (privateState?.validMeeplePlacements || [])
+              : []
+          }
           onPlaceMeeple={handlePlaceMeeple}
           lastPlacedTile={lastPlacedTile}
           lastPlacedByPlayer={lastPlacedByPlayer}
@@ -944,15 +1026,10 @@ const GameRoom = () => {
             events={finalScoreEvents}
             players={scoringPanelPlayers}
             currentEventIndex={visibleFinalScoreIndex}
-            mobileHistoryOpen={mobileInfoPanel === 'finalScores'}
-            onMobileHistoryToggle={() => setMobileInfoPanel((currentPanel) => (
-              currentPanel === 'finalScores' ? null : 'finalScores'
-            ))}
-            hasActionLog={actionLog.length !== 0}
           />
         )}
 
-        {match?.status === 'active' && phase === 'place_meeple' && privateState?.isYourTurn && (
+        {match?.status === 'active' && phase === 'place_meeple' && privateState?.isYourTurn && !isMeeplePlacementPending && (
           <button className={styles.skipButton} onClick={handleSkipMeeple}>
             Не ставить подданного
           </button>

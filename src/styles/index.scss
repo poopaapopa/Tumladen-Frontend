@@ -30,3 +30,21 @@ img {
   user-select: none;
   pointer-events: none;
 }
+
+@media (max-width: $mobile-breakpoint) {
+  *, *::before, *::after {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  :where(
+    a,
+    button,
+    summary,
+    select,
+    [role='button'],
+    [role='link'],
+    [tabindex]
+  ):focus:not(:focus-visible) {
+    outline: none;
+  }
+}

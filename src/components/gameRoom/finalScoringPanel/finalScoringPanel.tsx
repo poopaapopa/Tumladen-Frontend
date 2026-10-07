@@ -1,11 +1,11 @@
-import { useEffect, useRef, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import {
   Castle,
+  ChevronLeft,
+  ChevronRight,
   Church,
-  ListChecks,
   Route,
   Wheat,
-  X,
   type LucideIcon,
 } from 'lucide-react';
 import type { FeatureScoredEvent } from '@/types/match';
@@ -25,9 +25,6 @@ export interface FinalScoringPanelProps {
   players: FinalScoringPanelPlayer[];
   /** Zero-based index of the event currently being animated. */
   currentEventIndex: number;
-  mobileHistoryOpen?: boolean;
-  onMobileHistoryToggle?: () => void;
-  hasActionLog?: boolean;
 }
 
 interface FeaturePresentation {
@@ -67,9 +64,6 @@ export const FinalScoringPanel = ({
   events,
   players,
   currentEventIndex,
-  mobileHistoryOpen = false,
-  onMobileHistoryToggle,
-  hasActionLog = false,
 }: FinalScoringPanelProps) => {
   const ledgerRef = useRef<HTMLOListElement>(null);
   const playersById = new Map(players.map((player) => [player.actorId, player]));
@@ -77,17 +71,39 @@ export const FinalScoringPanel = ({
   const safeCurrentIndex = totalEvents > 0
     ? Math.min(Math.max(0, currentEventIndex), totalEvents - 1)
     : -1;
-  const currentEventNumber = safeCurrentIndex + 1;
+  const latestEventIndexRef = useRef(safeCurrentIndex);
+  const [selectedEventIndex, setSelectedEventIndex] = useState(
+    Math.max(0, safeCurrentIndex),
+  );
   const visibleEvents = safeCurrentIndex >= 0
     ? events
         .slice(0, safeCurrentIndex + 1)
         .map((event, originalIndex) => ({ event, originalIndex }))
         .reverse()
     : [];
+  const selectedVisibleEvent = selectedEventIndex <= safeCurrentIndex
+    ? {
+        event: events[selectedEventIndex],
+        originalIndex: selectedEventIndex,
+      }
+    : undefined;
+  const selectedEventNumber = selectedVisibleEvent ? selectedEventIndex + 1 : 0;
   const progressPercent = totalEvents > 0
-    ? (currentEventNumber / totalEvents) * 100
+    ? (selectedEventNumber / totalEvents) * 100
     : 0;
-  const currentVisibleEvent = visibleEvents[0];
+
+  useEffect(() => {
+    const previousLatestIndex = latestEventIndexRef.current;
+    latestEventIndexRef.current = safeCurrentIndex;
+
+    setSelectedEventIndex((previousIndex) => {
+      if (safeCurrentIndex < 0) return 0;
+      if (previousIndex === previousLatestIndex || previousIndex > safeCurrentIndex) {
+        return safeCurrentIndex;
+      }
+      return previousIndex;
+    });
+  }, [safeCurrentIndex]);
 
   useEffect(() => {
     const ledger = ledgerRef.current;
@@ -101,13 +117,21 @@ export const FinalScoringPanel = ({
     });
   }, [safeCurrentIndex]);
 
+  const showPreviousEvent = () => {
+    setSelectedEventIndex((index) => Math.max(0, index - 1));
+  };
+
+  const showNextEvent = () => {
+    setSelectedEventIndex((index) => Math.min(safeCurrentIndex, index + 1));
+  };
+
   const renderLedgerEntry = ({
     event,
     originalIndex,
   }: (typeof visibleEvents)[number]) => {
     const feature = FEATURE_PRESENTATION[event.payload.featureType];
     const FeatureIcon = feature.icon;
-    const isCurrent = originalIndex === safeCurrentIndex;
+    const isCurrent = originalIndex === selectedEventIndex;
 
     return (
       <li
@@ -164,9 +188,9 @@ export const FinalScoringPanel = ({
           <h2 className={styles.title}>Итоговый подсчёт</h2>
           <span
             className={styles.progressCount}
-            aria-label={`Объект ${currentEventNumber} из ${totalEvents}`}
+            aria-label={`Объект ${selectedEventNumber} из ${totalEvents}`}
           >
-            {currentEventNumber} / {totalEvents}
+            {selectedEventNumber} / {totalEvents}
           </span>
         </header>
 
@@ -175,7 +199,7 @@ export const FinalScoringPanel = ({
           role="progressbar"
           aria-valuemin={0}
           aria-valuemax={totalEvents}
-          aria-valuenow={currentEventNumber}
+          aria-valuenow={selectedEventNumber}
         >
           <span
             className={styles.progressFill}
@@ -183,14 +207,36 @@ export const FinalScoringPanel = ({
           />
         </div>
 
-        <div className={styles.currentSummary}>
-          {currentVisibleEvent ? (
-            <ol className={styles.currentSummaryList}>
-              {renderLedgerEntry(currentVisibleEvent)}
-            </ol>
-          ) : (
-            <p className={styles.emptyLedger}>Начислений пока нет</p>
-          )}
+        <div className={styles.mobilePager}>
+          <button
+            type="button"
+            className={styles.pagerButton}
+            onClick={showPreviousEvent}
+            disabled={selectedEventIndex <= 0}
+            aria-label="Предыдущий объект подсчёта"
+          >
+            <ChevronLeft size={24} aria-hidden="true" />
+          </button>
+
+          <div className={styles.currentSummary}>
+            {selectedVisibleEvent?.event ? (
+              <ol className={styles.currentSummaryList}>
+                {renderLedgerEntry(selectedVisibleEvent)}
+              </ol>
+            ) : (
+              <p className={styles.emptyLedger}>Начислений пока нет</p>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className={styles.pagerButton}
+            onClick={showNextEvent}
+            disabled={selectedEventIndex >= safeCurrentIndex}
+            aria-label="Следующий объект подсчёта"
+          >
+            <ChevronRight size={24} aria-hidden="true" />
+          </button>
         </div>
 
         {visibleEvents.length > 0 ? (
@@ -201,49 +247,6 @@ export const FinalScoringPanel = ({
           <p className={styles.emptyLedger}>Начислений пока нет</p>
         )}
       </section>
-
-      <button
-        type="button"
-        className={`${styles.historyToggle} ${!hasActionLog ? styles.historyToggleFirst : ''}`}
-        onClick={onMobileHistoryToggle}
-        aria-label={mobileHistoryOpen
-          ? 'Скрыть весь итоговый подсчёт'
-          : 'Показать весь итоговый подсчёт'}
-        aria-expanded={mobileHistoryOpen}
-        aria-controls="final-scoring-history"
-      >
-        <ListChecks size={18} />
-      </button>
-
-      {mobileHistoryOpen && (
-        <section
-          id="final-scoring-history"
-          className={styles.historySheet}
-          aria-label="Журнал итогового подсчёта"
-        >
-          <header className={styles.historyHeader}>
-            <h3 className={styles.historyTitle}>Все начисления</h3>
-            <div className={styles.historyControls}>
-              <span className={styles.historyCount}>{visibleEvents.length}</span>
-              <button
-                type="button"
-                className={styles.historyClose}
-                onClick={onMobileHistoryToggle}
-                aria-label="Закрыть журнал итогового подсчёта"
-              >
-                <X size={17} />
-              </button>
-            </div>
-          </header>
-          {visibleEvents.length > 0 ? (
-            <ol className={styles.historyList}>
-              {visibleEvents.map(renderLedgerEntry)}
-            </ol>
-          ) : (
-            <p className={styles.emptyLedger}>Начислений пока нет</p>
-          )}
-        </section>
-      )}
     </aside>
   );
 };

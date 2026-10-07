@@ -59,6 +59,10 @@
       background: linear-gradient(145deg, #f3c29d, #bd7d4e);
       color: #633b20;
     }
+
+    &_mobile {
+      display: none;
+    }
   }
 
   &__image,
@@ -274,15 +278,24 @@
     min-width: 200px;
 
     &_ranking {
-      min-width: 260px;
-      padding-left: 8px;
-      gap: 8px;
+      width: 160px;
+      padding: 8px 10px;
+      gap: 10px;
     }
 
     &__rank {
-      width: 27px;
-      height: 27px;
-      font-size: 13px;
+      width: 22px;
+      height: 22px;
+      font-size: 11px;
+
+      &_desktop {
+        display: none;
+      }
+
+      &_mobile {
+        display: inline-flex;
+        order: -1;
+      }
     }
 
     &__image,
@@ -299,12 +312,28 @@
       gap: 6px;
     }
 
+    &_ranking &__header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+    }
+
+    &_ranking &__scoreGroup {
+      justify-content: flex-start;
+      gap: 6px;
+    }
+
     &__nickname {
       font-size: 13px;
       max-width: 100px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
+    }
+
+    &_ranking &__nickname {
+      width: 100%;
+      max-width: 100%;
     }
 
     &__nicknameMarquee {
@@ -334,6 +363,10 @@
       max-width: none;
       height: 40px;
       min-height: 40px;
+    }
+
+    &_ranking &__figurines {
+      display: none;
     }
 
     &__meepleWrapper {

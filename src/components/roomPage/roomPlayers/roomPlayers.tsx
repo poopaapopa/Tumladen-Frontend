@@ -17,6 +17,9 @@ interface RoomPlayersProps {
   isOwner: boolean;
   sendMessage: (type: string, payload: Record<string, unknown>) => void;
   isKicked: boolean;
+  showStartAction: boolean;
+  isStarting: boolean;
+  onStartGame: () => void;
 }
 
 const copyToClipboard = async (text: string) => {
@@ -51,6 +54,9 @@ export const RoomPlayers = ({
   isOwner,
   sendMessage,
   isKicked,
+  showStartAction,
+  isStarting,
+  onStartGame,
 }: RoomPlayersProps) => {
   const navigate = useNavigate();
   const clearCurrentRoom = useUserStore((s) => s.clearCurrentRoom);
@@ -158,11 +164,31 @@ export const RoomPlayers = ({
         </div>
 
         <div className={styles.roomPlayers__actions}>
-          <button className={styles.roomPlayers__btnInvite}
-            onClick={(handleCopyLink)}>
+          {showStartAction && (
+            isOwner ? (
+              <button
+                type="button"
+                className={styles.roomPlayers__btnStart}
+                disabled={!room.canStart || isStarting}
+                onClick={onStartGame}
+              >
+                {isStarting ? 'Запуск...' : 'Начать игру'}
+              </button>
+            ) : (
+              <div className={styles.roomPlayers__waitMessage}>
+                Ожидаем, пока организатор завершит подготовку
+              </div>
+            )
+          )}
+          <button
+            type="button"
+            className={styles.roomPlayers__btnInvite}
+            onClick={handleCopyLink}
+          >
             <Share2 size={20} /> Пригласить
           </button>
           <button
+            type="button"
             className={styles.roomPlayers__btnExit}
             onClick={handleLeftGame}
           >
