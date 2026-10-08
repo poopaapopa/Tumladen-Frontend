@@ -61,6 +61,20 @@ const isFeatureScoredEvent = (event: MatchEvent): event is FeatureScoredEvent =>
 const CRITICAL_ASSET_WAIT_TIMEOUT_MS = 12_000;
 const LEAVE_MATCH_FALLBACK_TIMEOUT_MS = 4_000;
 
+const getAvailableMeepleType = (
+  preferredType: MeepleType,
+  regularMeeplesLeft: number,
+  bigMeeplesLeft: number,
+): MeepleType => {
+  if (preferredType === 'regular' && regularMeeplesLeft <= 0 && bigMeeplesLeft > 0) {
+    return 'big';
+  }
+  if (preferredType === 'big' && bigMeeplesLeft <= 0 && regularMeeplesLeft > 0) {
+    return 'regular';
+  }
+  return preferredType;
+};
+
 const getInitialMatchTileIds = (match: MatchStatePayload): string[] => {
   const tileIds = new Set(
     match.gameState.board.tiles.map((tile) => tile.tileId),
@@ -871,7 +885,14 @@ const GameRoom = () => {
       if (isTurnChanged) {
         setCurrentRotation(0);
         setPendingPlacement(null);
-        setSelectedMeepleType('regular');
+        const nextPlayer = newMatch.gameState.players.find(
+          (player) => player.actorId === newMatch.gameState.currentPlayerId,
+        );
+        setSelectedMeepleType(getAvailableMeepleType(
+          'regular',
+          nextPlayer?.meeplesLeft ?? 0,
+          nextPlayer?.bigMeeplesLeft ?? 0,
+        ));
       }
 
       if (!isLeavingMatchRef.current) {
@@ -987,6 +1008,9 @@ const GameRoom = () => {
   const handlePlaceMeeple = (zoneId: string) => {
     const currentMatch = matchRef.current;
     const placedTile = currentMatch?.gameState.currentTurn?.placedTile;
+    const currentPlayer = currentMatch?.gameState.players.find(
+      (player) => player.actorId === currentUser?.id,
+    );
     const placement = privateState?.validMeeplePlacements.find(
       (candidate) => candidate.zoneId === zoneId,
     );
@@ -998,12 +1022,18 @@ const GameRoom = () => {
       || !placement
     ) return;
 
+    const meepleType = getAvailableMeepleType(
+      selectedMeepleType,
+      currentPlayer?.meeplesLeft ?? 0,
+      currentPlayer?.bigMeeplesLeft ?? 0,
+    );
+
     reliableMatchActions.enqueue(currentMatch, {
       action: 'place_meeple',
       payload: {
         roomId: room.id,
         zoneId,
-        meepleType: selectedMeepleType,
+        meepleType,
       },
       optimistic: {
         kind: 'meeple',

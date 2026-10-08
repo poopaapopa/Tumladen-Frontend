@@ -260,8 +260,11 @@
     text-align: center;
     transition: background-color 0.3s;
 
-    &:hover {
+    &:hover,
+    &:active {
       background-color: color.adjust($forest-mid, $lightness: -5%);
+      box-shadow: none;
+      transform: none;
     }
 
     &:focus-visible {
@@ -273,8 +276,11 @@
       background-color: $sage-gray;
       color: $forest-dark;
 
-      &:hover {
+      &:hover,
+      &:active {
         background-color: color.adjust($sage-gray, $lightness: -5%);
+        box-shadow: none;
+        transform: none;
       }
     }
   }

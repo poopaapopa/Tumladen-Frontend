@@ -1,5 +1,3 @@
-@use "sass:color";
-
 @keyframes marquee {
   0% {
     transform: translateX(0);
@@ -171,14 +169,15 @@
 
   &__figurines  {
     margin-top: 5px;
-    width: 100%;
+    margin-left: -7px;
+    width: calc(100% + 7px);
     min-width: 0;
-    max-width: 100%;
+    max-width: none;
     height: 48px;
     display: flex;
     align-items: flex-end;
     justify-content: flex-start;
-    overflow: hidden;
+    overflow: visible;
   }
 
   &__meepleWrapper {
@@ -187,17 +186,15 @@
     height: 48px;
     min-width: 0;
     flex: 0 1 40px;
-    margin-right: -3px;
+    margin-right: 0;
     border-radius: 6px;
     transition: all 0.15s ease;
 
     &_big {
       flex-basis: 48px;
+      // 40 / 48: lose the same number of pixels as a regular meeple when compressed.
+      flex-shrink: 0.833333;
       z-index: 1;
-    }
-
-    &:last-child {
-      margin-right: 0;
     }
 
     &_selectable {
@@ -215,16 +212,19 @@
     }
   }
 
+  &__meepleWrapper_regular:last-child {
+    flex: 0 0 40px;
+  }
+
+  &__meepleWrapper_big:last-child {
+    flex: 0 0 48px;
+  }
+
   &__figurinesIcon {
     position: absolute;
     left: 0;
     bottom: 0;
     pointer-events: none;
-  }
-
-  &__meepleWrapper:last-child:not(:only-child) &__figurinesIcon {
-    right: 0;
-    left: auto;
   }
 
   &__scoreGroup {
@@ -239,26 +239,62 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    font-weight: 600;
+    color: $forest-dark;
+    font-weight: 750;
     font-size: 18px;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
     padding: 4px 10px;
+    border: 1px solid rgba($forest-dark, 0.1);
     border-radius: 999px;
+    background: linear-gradient(
+      145deg,
+      rgba(#ffffff, 0.78),
+      rgba($beige-light, 0.46)
+    );
+    box-shadow:
+      inset 0 1px 0 rgba(#ffffff, 0.75),
+      0 1px 3px rgba($forest-dark, 0.08);
+    text-shadow: 0 1px 0 rgba(#ffffff, 0.8);
     transition:
       color 0.3s ease,
+      border-color 0.4s ease,
       box-shadow 0.4s ease,
-      background-color 0.4s ease,
+      background 0.4s ease,
       transform 0.3s ease,
       text-shadow 0.4s ease;
 
     &_animating {
-      color: var(--player-color);
-      background-color: color.adjust(#ffffff, $alpha: -0.18);
+      color: $forest-dark;
+      border-color: color-mix(
+        in srgb,
+        var(--player-color) 58%,
+        rgba($forest-dark, 0.16)
+      );
+      background: linear-gradient(
+        145deg,
+        rgba(#ffffff, 0.96),
+        color-mix(in srgb, var(--player-color) 12%, $beige-light)
+      );
       box-shadow:
-        0 0 0 1px color.adjust(#ffffff, $alpha: -0.35),
-        0 0 14px color.adjust(#ffffff, $alpha: -0.2),
-        0 0 22px var(--player-color);
-      transform: scale(1.06);
+        inset 0 1px 0 rgba(#ffffff, 0.9),
+        0 2px 7px rgba($forest-dark, 0.16),
+        0 0 10px color-mix(in srgb, var(--player-color) 24%, transparent);
+      text-shadow: 0 1px 0 rgba(#ffffff, 0.95);
+      transform: scale(1.04);
     }
+  }
+
+  &__starIcon {
+    color: var(--player-color);
+    filter: drop-shadow(0 1px 0 rgba($forest-dark, 0.24));
+    transition: color 0.3s ease, filter 0.4s ease, transform 0.3s ease;
+  }
+
+  &__count_animating &__starIcon {
+    filter:
+      drop-shadow(0 1px 0 rgba($forest-dark, 0.28))
+      drop-shadow(0 0 3px color-mix(in srgb, var(--player-color) 42%, transparent));
   }
 
   &_active {
@@ -278,9 +314,7 @@
     min-width: 200px;
 
     &_ranking {
-      width: 160px;
-      padding: 8px 10px;
-      gap: 10px;
+      width: 120px;
     }
 
     &__rank {
@@ -358,9 +392,6 @@
 
     &__figurines {
       margin-top: -5px;
-      margin-left: -7px;
-      width: calc(100% + 7px);
-      max-width: none;
       height: 40px;
       min-height: 40px;
     }
@@ -372,7 +403,6 @@
     &__meepleWrapper {
       height: 40px;
       flex: 0 0 14px;
-      margin-right: 0;
 
       &_big {
         flex-basis: 20px;

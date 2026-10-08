@@ -134,7 +134,7 @@
   {
     "tileId": "tavern-with-pond-near-road",
     "zones": [
-      { "zoneId": "road_1", "segment": "center" },
+      { "zoneId": "road_1", "segment": "top_center" },
       { "zoneId": "field_1", "segment": "top_left" },
       { "zoneId": "field_2", "segment": "bottom_center" }
     ]

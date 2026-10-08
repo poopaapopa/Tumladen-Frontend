@@ -138,14 +138,14 @@ const AnimatedScore = ({
               fontFamily="Arial, sans-serif"
               fontSize={fontSize}
               fontStyle="bold"
-              fill={color}
-              stroke="rgba(18, 14, 10, 0.9)"
-              strokeWidth={2.5}
+              fill="#fff9e8"
+              stroke={color}
+              strokeWidth={3.5}
               fillAfterStrokeEnabled
-              shadowColor={color}
-              shadowBlur={9}
-              shadowOpacity={0.72}
-              shadowOffsetY={1}
+              shadowColor="rgba(18, 14, 10, 0.92)"
+              shadowBlur={4}
+              shadowOpacity={0.9}
+              shadowOffsetY={2}
               listening={false}
               perfectDrawEnabled={false}
             />

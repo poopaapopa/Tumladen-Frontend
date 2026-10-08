@@ -160,7 +160,7 @@
 
     &--aboveFinalScoring {
       bottom: calc(
-        var(--mobile-final-scoring-log-offset, 167px)
+        var(--mobile-final-scoring-log-offset, 163px)
         + env(safe-area-inset-bottom, 0px)
       );
     }

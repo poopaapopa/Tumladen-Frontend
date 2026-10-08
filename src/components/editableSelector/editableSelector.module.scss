@@ -29,6 +29,14 @@
   }
 }
 
+.value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  line-height: 1;
+}
+
 .arrow {
   position: absolute;
   top: 12px;

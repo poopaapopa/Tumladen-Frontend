@@ -258,9 +258,9 @@
 
 @media (max-width: $mobile-breakpoint) {
   .boardContainer {
-    --mobile-final-scoring-height: 103px;
-    --mobile-final-scoring-action-offset: 113px;
-    --mobile-final-scoring-log-offset: 167px;
+    --mobile-final-scoring-height: 99px;
+    --mobile-final-scoring-action-offset: 109px;
+    --mobile-final-scoring-log-offset: 163px;
   }
 
   .skipButton {
@@ -290,7 +290,7 @@
   .finalScoringSkipButton {
     min-height: 44px;
     bottom: calc(
-      var(--mobile-final-scoring-action-offset, 113px)
+      var(--mobile-final-scoring-action-offset, 109px)
       + env(safe-area-inset-bottom, 0px)
     );
   }

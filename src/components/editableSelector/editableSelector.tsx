@@ -114,8 +114,8 @@ export const EditableSelector = ({ value, icon: Icon, options, onSelect, isOwner
         onClick={handleToggle}
       >
         <Icon size={20} />
-        <span>
-          {value === 0 ? <InfinityValue size={26} /> : `${value}${stringSuffix}`}
+        <span className={styles.value}>
+          {value === 0 ? <InfinityValue /> : `${value}${stringSuffix}`}
         </span>
         {isOwner && (
           <ChevronDown
@@ -154,7 +154,7 @@ export const EditableSelector = ({ value, icon: Icon, options, onSelect, isOwner
                   onClick={() => handlePick(opt)}
                 >
                   <Icon size={20} />
-                  {opt.value === 0 ? <InfinityValue size={26} /> : opt.label}
+                  {opt.value === 0 ? <InfinityValue /> : opt.label}
                 </div>
               ))}
             </motion.div>
