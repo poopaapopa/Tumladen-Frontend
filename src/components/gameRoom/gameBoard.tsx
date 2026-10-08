@@ -39,7 +39,6 @@ interface GameBoardProps {
   validMeeplePlacements?: Array<{ zoneId: string, featureType: string }>;
   onPlaceMeeple?: (zoneId: string) => void;
   lastPlacedTile?: Tile | null;
-  lastPlacedByPlayer?: Record<string, { x: number; y: number; color: string }>;
   placedMeeples?: Array<{ tileInstanceId: string, zoneId: string, actorId: string, seat?: number, featureType: string, meepleType?: string }>;
   players?: Player[];
   scoreEvent?: FeatureScoredEvent;
@@ -101,7 +100,6 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
   validMeeplePlacements = [],
   onPlaceMeeple,
   lastPlacedTile,
-  lastPlacedByPlayer = {},
   placedMeeples = [],
   players = [],
   scoreEvent,
@@ -211,6 +209,31 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
     players.forEach(p => { map[p.actorId] = getPlayerColorBySeat(p.seat); });
     return map;
   }, [players]);
+
+  const latestPlacedTileByPosition = useMemo(() => {
+    const latestByActor = new Map<string, Tile>();
+
+    board.forEach((tile) => {
+      if (
+        tile.tileId === 'start_tile'
+        || !tile.placedBy
+        || typeof tile.turnNumber !== 'number'
+      ) return;
+      const previous = latestByActor.get(tile.placedBy);
+      if (!previous || (previous.turnNumber ?? -1) <= tile.turnNumber) {
+        latestByActor.set(tile.placedBy, tile);
+      }
+    });
+
+    const colorByPosition = new Map<string, string>();
+    latestByActor.forEach((tile, actorId) => {
+      colorByPosition.set(
+        `${tile.x}:${tile.y}`,
+        playerColorMap[actorId] ?? getPlayerColorBySeat(undefined),
+      );
+    });
+    return colorByPosition;
+  }, [board, playerColorMap]);
 
   const wheelCommitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -346,9 +369,7 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
       <Layer listening={false}>
         <Group>
           {tilesToRender.map((tile, index) => {
-            const highlight = Object.values(lastPlacedByPlayer).find(
-              (info) => info.x === tile.x && info.y === tile.y
-            );
+            const highlightColor = latestPlacedTileByPosition.get(`${tile.x}:${tile.y}`);
             return (
               <GameTile
                 key={`tile-${index}-${tile.x}-${tile.y}`}
@@ -358,7 +379,7 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
                 rotation={tile.rotation}
                 tileSize={TILE_SIZE}
                 tileStep={TILE_STEP}
-                highlightColor={highlight?.color}
+                highlightColor={highlightColor}
                 cacheRendering={isMobile}
               />
             );

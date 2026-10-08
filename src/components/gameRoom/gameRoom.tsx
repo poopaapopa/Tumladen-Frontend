@@ -35,7 +35,6 @@ import {
   FinalScoringPanel,
 } from './finalScoringPanel';
 import { GameActionLog } from './latestActions/gameActionLog.tsx';
-import { useMatchActionLog } from './hooks/useMatchActionLog.ts';
 import { useTurnTimer } from './hooks/useTurnTimer.ts';
 import {
   MeepleFlightLayer,
@@ -160,30 +159,6 @@ const GameRoom = () => {
   const leaveMatchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isLeavingMatchRef = useRef(false);
   const skipFinalScoringRef = useRef(false);
-  // Карта последних поставленных квадратов по каждому игроку: actorId -> { x, y, color }
-  const lastPlacedStorageKey = inviteCode ? `lastPlacedByPlayer:${inviteCode}` : null;
-  const [lastPlacedByPlayer, setLastPlacedByPlayer] = useState<
-    Record<string, { x: number; y: number; color: string }>
-  >(() => {
-    if (!lastPlacedStorageKey) return {};
-    try {
-      const raw = localStorage.getItem(lastPlacedStorageKey);
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  useEffect(() => {
-    if (!lastPlacedStorageKey) return;
-    try {
-      localStorage.setItem(lastPlacedStorageKey, JSON.stringify(lastPlacedByPlayer));
-    } catch {
-      // ignore
-    }
-  }, [lastPlacedByPlayer, lastPlacedStorageKey]);
-
-  const { actionLog, recordMatchUpdate, clearLog } = useMatchActionLog(inviteCode);
   const { timeLeft, setTurnDeadline } = useTurnTimer(match?.status === 'active');
 
   // Measure board container for responsive Stage sizing
@@ -380,10 +355,6 @@ const GameRoom = () => {
     handledFinishedMatchIdRef.current = payload.matchId;
 
     reliableMatchActionsRef.current?.discard();
-    if (lastPlacedStorageKey) {
-      try { localStorage.removeItem(lastPlacedStorageKey); } catch { /* ignore */ }
-    }
-    setLastPlacedByPlayer({});
 
     if (payload.terminationReason === 'normal_completion') {
       if (skipFinalScoringRef.current) {
@@ -394,17 +365,15 @@ const GameRoom = () => {
       return;
     }
 
-    clearLog();
     clearFlights();
     clearScoreEvents();
     setIsRoomDeleted(true);
-  }, [clearFlights, clearLog, clearScoreEvents, lastPlacedStorageKey, showMatchResult]);
+  }, [clearFlights, clearScoreEvents, showMatchResult]);
 
   const resetMatchScopedUI = useCallback(() => {
     reliableMatchActionsRef.current?.discard();
     handledFinishedMatchIdRef.current = null;
     bufferedPrivateStateRef.current = null;
-    clearLog();
     clearFlights();
     clearScoreEvents();
     setMatchResult(null);
@@ -415,11 +384,7 @@ const GameRoom = () => {
     setCurrentRotation(0);
     setPendingPlacement(null);
     setSelectedMeepleType('regular');
-    setLastPlacedByPlayer({});
-    if (lastPlacedStorageKey) {
-      try { localStorage.removeItem(lastPlacedStorageKey); } catch { /* ignore */ }
-    }
-  }, [clearFlights, clearLog, clearScoreEvents, lastPlacedStorageKey]);
+  }, [clearFlights, clearScoreEvents]);
 
   const handleSkipFinalScoring = useCallback(() => {
     skipFinalScoringRef.current = true;
@@ -666,7 +631,7 @@ const GameRoom = () => {
     }
 
     if (data.type === 'match_state') {
-      const newMatch = data.payload;
+      let newMatch = data.payload;
       let prevMatch = matchRef.current;
 
       if (prevMatch && newMatch.id !== prevMatch.id) {
@@ -691,6 +656,15 @@ const GameRoom = () => {
         && newMatch.gameState.version < prevMatch.gameState.version
       ) {
         return;
+      }
+      if (
+        (newMatch.recentActions === undefined || newMatch.recentActions === null)
+        && prevMatch?.id === newMatch.id
+      ) {
+        newMatch = {
+          ...newMatch,
+          recentActions: prevMatch.recentActions,
+        };
       }
 
       reliableMatchActionsRef.current?.reconcile(newMatch);
@@ -723,8 +697,6 @@ const GameRoom = () => {
           return next;
         });
       }
-      recordMatchUpdate(prevMatch, newMatch);
-
       // Диффим подданных — какие исчезли с доски (вернулись игроку)
       if (prevMatch) {
         const prevMeeples = prevMatch.gameState?.meeples ?? [];
@@ -753,102 +725,6 @@ const GameRoom = () => {
             seat: m.seat ?? seatById.get(m.actorId),
           }));
           launchMeepleFlights(enriched, boardTiles);
-        }
-      }
-
-      // Track last placed tile per player for board highlights (обводка).
-      // For the current player's turn we use currentTurn.placedTile.
-      // For bot turns (which the server may consolidate), we also diff the board
-      // to find newly added tiles and attribute them to their players.
-      const newPlacedTile = newMatch.gameState?.currentTurn?.placedTile;
-      const placerId = newMatch.gameState?.currentPlayerId;
-      if (newPlacedTile && placerId) {
-        const placer = newMatch.gameState?.players?.find(
-          (p) => p.actorId === placerId
-        );
-        const color = getPlayerColorBySeat(placer?.seat);
-        setLastPlacedByPlayer((prev) => {
-          const existing = prev[placerId];
-          if (
-            existing &&
-            existing.x === newPlacedTile.x &&
-            existing.y === newPlacedTile.y &&
-            existing.color === color
-          ) {
-            return prev;
-          }
-          return {
-            ...prev,
-            [placerId]: { x: newPlacedTile.x, y: newPlacedTile.y, color },
-          };
-        });
-      }
-
-      // Detect tiles placed by bots (or during consolidated turns) by diffing the board.
-      // When turns are skipped (bot turns processed server-side), placedTile won't reflect them.
-      if (prevMatch) {
-        const prevTileKeys = new Set(
-          (prevMatch.gameState?.board?.tiles ?? []).map(
-            (t) => `${t.x}:${t.y}`
-          )
-        );
-        const newTiles = (newMatch.gameState?.board?.tiles ?? []).filter(
-          (t) => !prevTileKeys.has(`${t.x}:${t.y}`)
-        );
-        // Filter out the tile already handled via currentTurn.placedTile above.
-        const unattributedTiles = newTiles.filter(
-          (t) => !(newPlacedTile && t.x === newPlacedTile.x && t.y === newPlacedTile.y)
-        );
-
-        if (unattributedTiles.length > 0) {
-          // Determine intermediate players by walking through turn order.
-          // The server consolidates bot turns, so prevMatch.turnNumber → newMatch.turnNumber
-          // can skip multiple turns. Each intermediate turn was played by the next player in seat order.
-          const allPlayers = newMatch.gameState?.players ?? [];
-          const numPlayers = allPlayers.length;
-          const prevTurnNumber = prevMatch.gameState?.turnNumber ?? 0;
-          const newTurnNumber = newMatch.gameState?.turnNumber ?? 0;
-          const turnDelta = newTurnNumber - prevTurnNumber;
-
-          // Find the previous player's seat to determine the starting offset
-          const prevPlayerId = prevMatch.gameState?.currentPlayerId;
-          const prevPlayerSeat = allPlayers.find((p) => p.actorId === prevPlayerId)?.seat ?? 0;
-
-          // Build seat→player lookup
-          const playerBySeat = new Map(allPlayers.map((p) => [p.seat, p]));
-
-          // If the previous phase was place_tile, the previous player's tile is also new in the diff,
-          // so we skip one offset (their tile is attributed via currentTurn.placedTile or the
-          // earlier block). If prevPhase was place_meeple, their tile was already on the board.
-          const prevPhase = prevMatch.gameState?.phase;
-          const startOffset = prevPhase === 'place_tile' ? 0 : 1;
-
-          // Build a list of {actorId, color} for intermediate turns.
-          // i represents the turn offset from prevPlayer: i=0 is prevPlayer's own turn,
-          // i=1 is the next player, etc. startOffset skips turns already on the board.
-          const intermediateInfo: { actorId: string; color: string }[] = [];
-          for (let i = startOffset; i < turnDelta; i++) {
-            const seat = (prevPlayerSeat + i) % numPlayers;
-            const player = playerBySeat.get(seat);
-            intermediateInfo.push({
-              actorId: player?.actorId ?? `bot-seat-${seat}`,
-              color: getPlayerColorBySeat(seat),
-            });
-          }
-
-          setLastPlacedByPlayer((prev) => {
-            const updates: Record<string, { x: number; y: number; color: string }> = {};
-            unattributedTiles.forEach((tile, idx) => {
-              // Use the intermediate player's actorId as key so only their LAST tile is highlighted
-              // (same behavior as human players). Fall back to position-based key if no mapping.
-              const info = idx < intermediateInfo.length
-                ? intermediateInfo[idx]
-                : { actorId: `bot-tile-${tile.x}-${tile.y}`, color: getPlayerColorBySeat(undefined) };
-              updates[info.actorId] = { x: tile.x, y: tile.y, color: info.color };
-            });
-            if (Object.keys(updates).length === 0) return prev;
-            return { ...prev, ...updates };
-          });
         }
       }
 
@@ -934,7 +810,7 @@ const GameRoom = () => {
         setIsExitModalOpen(true);
       }
     }
-  }, [recordMatchUpdate, enqueueScoreEvents, setTurnDeadline, launchMeepleFlights, completeLeaveNavigation, currentUser?.id, applyPrivateMatchState, handleFinishedMatch, resetMatchScopedUI]);
+  }, [enqueueScoreEvents, setTurnDeadline, launchMeepleFlights, completeLeaveNavigation, currentUser?.id, applyPrivateMatchState, handleFinishedMatch, resetMatchScopedUI]);
 
   const { sendMessage, connectionStatus, reconnect } = useRoomSocket(
     room?.id,
@@ -1065,7 +941,6 @@ const GameRoom = () => {
     if (!wasSent) return;
 
     reliableMatchActions.discard();
-    clearLog();
     isLeavingMatchRef.current = true;
     setIsExitModalOpen(false);
     leaveMatchTimeoutRef.current = setTimeout(
@@ -1314,7 +1189,6 @@ const GameRoom = () => {
           }
           onPlaceMeeple={handlePlaceMeeple}
           lastPlacedTile={lastPlacedTile}
-          lastPlacedByPlayer={lastPlacedByPlayer}
           players={players}
           placedMeeples={displayedMeeples}
           pendingPlacement={isPlaying && !hasPendingMatchAction ? pendingPlacement : null}
@@ -1401,9 +1275,10 @@ const GameRoom = () => {
           </button>
         )}
 
-        {actionLog.length !== 0 && (
+        {(match.recentActions?.length ?? 0) > 0 && (
           <GameActionLog
-            entries={actionLog}
+            activities={match.recentActions ?? []}
+            players={match.players}
             mobileOpen={mobileInfoPanel === 'actions'}
             onMobileOpenChange={(open) => setMobileInfoPanel(open ? 'actions' : null)}
             elevateMobilePanel={finalScoreEvents.length > 0}

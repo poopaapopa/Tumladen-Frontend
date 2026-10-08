@@ -9,6 +9,8 @@ export interface Tile {
   y: number;
   rotation: number;
   instanceId?: string;
+  placedBy?: string;
+  turnNumber?: number;
 }
 
 export type MeepleType = 'regular' | 'big';
@@ -75,6 +77,32 @@ export interface MatchEvent {
   id: string;
   type: string;
   payload: unknown;
+}
+
+export type MatchActivityType =
+  | 'tile_placed'
+  | 'meeple_placed';
+
+export interface MatchActivityPayload extends Record<string, unknown> {
+  tileId?: string;
+  tileInstanceId?: string;
+  x?: number;
+  y?: number;
+  rotation?: number;
+  zoneId?: string;
+  featureType?: string;
+  meepleType?: MeepleType;
+}
+
+/** A durable, server-authored entry in the match activity log. */
+export interface MatchActivity {
+  id: string;
+  stateVersion: number;
+  turnNumber: number;
+  actorId: string;
+  type: MatchActivityType;
+  payload: MatchActivityPayload;
+  createdAt: string;
 }
 
 export interface FeatureScoreContribution {
@@ -148,6 +176,7 @@ export interface MatchStatePayload {
   gameType: string;
   gameState: GameState;
   events?: MatchEvent[];
+  recentActions?: MatchActivity[];
 }
 
 export interface ValidPlacement {
@@ -173,12 +202,3 @@ export interface PrivateState {
 
 /** GamePlayer enriched with identity fields from MatchPlayer (avatarUrl, actorType, botDifficulty). */
 export type SidebarPlayer = GamePlayer & Pick<MatchPlayer, 'avatarUrl' | 'actorType' | 'botDifficulty'>;
-
-export interface LogEntry {
-  id: string;
-  text: string;
-  color: string;
-  timestamp: Date;
-  nickname: string;
-  tileId?: string;
-}
