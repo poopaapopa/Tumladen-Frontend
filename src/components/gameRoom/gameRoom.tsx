@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bot, Hourglass } from 'lucide-react';
+import { Bot, Hourglass, WifiOff } from 'lucide-react';
 import {
   preloadTileImages,
   scheduleGameTilePreload,
@@ -48,6 +48,10 @@ import {
   getScoreEventMeepleReturnDelayMs,
 } from './scoreEventTiming.ts';
 import { GameLoadingScreen, type GameLoadingStage } from './gameLoadingScreen/gameLoadingScreen.tsx';
+import {
+  useReliableMatchActions,
+  type ReliableMatchActionsController,
+} from './hooks/useReliableMatchActions.ts';
 
 export type { Tile, MatchStatePayload, PrivateState } from '@/types/match';
 
@@ -69,6 +73,25 @@ const getInitialMatchTileIds = (match: MatchStatePayload): string[] => {
   return [...tileIds];
 };
 
+const finishedPayloadFromMatchState = (
+  match: MatchStatePayload,
+): MatchFinishedPayload | null => {
+  if (
+    match.status !== 'finished'
+    || (!match.result && !match.terminationReason)
+  ) return null;
+
+  return {
+    matchId: match.id,
+    roomId: match.roomId,
+    winners: match.result?.winners ?? [],
+    finalScores: match.result?.finalScores ?? [],
+    terminationReason: match.terminationReason ?? 'normal_completion',
+    terminatedByActorId: match.terminatedByActorId,
+    terminatedAt: match.terminatedAt,
+  };
+};
+
 interface PendingMeepleCounts {
   regular: number;
   big: number;
@@ -80,13 +103,6 @@ interface LaunchMeepleFlightOptions {
 }
 
 type MobileInfoPanel = 'actions' | null;
-
-interface PendingMeeplePlacement {
-  turnNumber?: number;
-  zoneId: string;
-  actorId?: string;
-  tileInstanceId?: string;
-}
 
 const GameRoom = () => {
   const { id: inviteCode } = useParams<{ id: string }>();
@@ -105,13 +121,15 @@ const GameRoom = () => {
   const [matchResult, setMatchResult] = useState<MatchFinishedPayload | null>(null);
   const [isCelebrationOpen, setIsCelebrationOpen] = useState(false);
   const [mobileInfoPanel, setMobileInfoPanel] = useState<MobileInfoPanel>(null);
+  const [showConnectionBanner, setShowConnectionBanner] = useState(false);
   const [pendingMatchResult, setPendingMatchResult] = useState<MatchFinishedPayload | null>(null);
   const [privateState, setPrivateState] = useState<PrivateState | null>(null);
   const [currentRotation, setCurrentRotation] = useState(0);
   const [pendingPlacement, setPendingPlacement] = useState<{ x: number; y: number; rotation: number } | null>(null);
   const [selectedMeepleType, setSelectedMeepleType] = useState<MeepleType>('regular');
-  const [isMeeplePlacementPending, setIsMeeplePlacementPending] = useState(false);
-  const pendingMeeplePlacementRef = useRef<PendingMeeplePlacement | null>(null);
+  const bufferedPrivateStateRef = useRef<PrivateState | null>(null);
+  const reliableMatchActionsRef = useRef<ReliableMatchActionsController | null>(null);
+  const handledFinishedMatchIdRef = useRef<string | null>(null);
   const [scoreEventQueue, setScoreEventQueue] = useState<FeatureScoredEvent[]>([]);
   const scoreEventQueueRef = useRef<FeatureScoredEvent[]>([]);
   const [finalScoreEvents, setFinalScoreEvents] = useState<FeatureScoredEvent[]>([]);
@@ -343,6 +361,52 @@ const GameRoom = () => {
     setMobileInfoPanel(null);
   }, [clearFlights, stopScorePlayback]);
 
+  const handleFinishedMatch = useCallback((payload: MatchFinishedPayload) => {
+    if (handledFinishedMatchIdRef.current === payload.matchId) return;
+    handledFinishedMatchIdRef.current = payload.matchId;
+
+    reliableMatchActionsRef.current?.discard();
+    if (lastPlacedStorageKey) {
+      try { localStorage.removeItem(lastPlacedStorageKey); } catch { /* ignore */ }
+    }
+    setLastPlacedByPlayer({});
+
+    if (payload.terminationReason === 'normal_completion') {
+      if (skipFinalScoringRef.current) {
+        showMatchResult(payload);
+      } else {
+        setPendingMatchResult(payload);
+      }
+      return;
+    }
+
+    clearLog();
+    clearFlights();
+    clearScoreEvents();
+    setIsRoomDeleted(true);
+  }, [clearFlights, clearLog, clearScoreEvents, lastPlacedStorageKey, showMatchResult]);
+
+  const resetMatchScopedUI = useCallback(() => {
+    reliableMatchActionsRef.current?.discard();
+    handledFinishedMatchIdRef.current = null;
+    bufferedPrivateStateRef.current = null;
+    clearLog();
+    clearFlights();
+    clearScoreEvents();
+    setMatchResult(null);
+    setIsRoomDeleted(false);
+    setInitialTileIds(null);
+    setAreInitialAssetsReady(false);
+    setPrivateState(null);
+    setCurrentRotation(0);
+    setPendingPlacement(null);
+    setSelectedMeepleType('regular');
+    setLastPlacedByPlayer({});
+    if (lastPlacedStorageKey) {
+      try { localStorage.removeItem(lastPlacedStorageKey); } catch { /* ignore */ }
+    }
+  }, [clearFlights, clearLog, clearScoreEvents, lastPlacedStorageKey]);
+
   const handleSkipFinalScoring = useCallback(() => {
     skipFinalScoringRef.current = true;
     stopScorePlayback();
@@ -543,14 +607,39 @@ const GameRoom = () => {
     navigate(inviteCode ? `/room/${inviteCode}` : '/', { replace: true });
   }, [inviteCode, navigate]);
 
-  const sendMessageRef = useRef<ReturnType<typeof useRoomSocket>['sendMessage'] | null>(null);
+  const applyPrivateMatchState = useCallback((privatePayload: PrivateState) => {
+    setPrivateState(privatePayload);
 
-  const clearPendingMeeplePlacement = useCallback(() => {
-    pendingMeeplePlacementRef.current = null;
-    setIsMeeplePlacementPending(false);
+    if (
+      privatePayload.phase === 'place_meeple'
+      && privatePayload.isYourTurn
+      && privatePayload.validMeeplePlacements.length === 0
+    ) {
+      const currentMatch = matchRef.current;
+      if (currentMatch?.roomId) {
+        reliableMatchActionsRef.current?.enqueue(currentMatch, {
+          action: 'skip_meeple',
+          payload: { roomId: currentMatch.roomId },
+        });
+      }
+    }
   }, []);
 
   const handleMessage = useCallback((data: WebSocketMessage) => {
+    if (data.type === 'match_action_result') {
+      reliableMatchActionsRef.current?.handleResult(data.payload);
+      return;
+    }
+
+    if (
+      data.type === 'match_finished'
+      && data.payload?.matchId
+      && matchRef.current
+      && data.payload.matchId !== matchRef.current.id
+    ) {
+      return;
+    }
+
     if (data.type === 'match_finished' && isLeavingMatchRef.current) {
       const payload = data.payload;
       if (
@@ -564,34 +653,37 @@ const GameRoom = () => {
 
     if (data.type === 'match_state') {
       const newMatch = data.payload;
-      const prevMatch = matchRef.current;
-      const pendingMeeplePlacement = pendingMeeplePlacementRef.current;
+      let prevMatch = matchRef.current;
+
+      if (prevMatch && newMatch.id !== prevMatch.id) {
+        const previousCreatedAt = Date.parse(prevMatch.createdAt);
+        const nextCreatedAt = Date.parse(newMatch.createdAt);
+        if (
+          (Number.isFinite(previousCreatedAt)
+            && Number.isFinite(nextCreatedAt)
+            && (
+              nextCreatedAt < previousCreatedAt
+              || (nextCreatedAt === previousCreatedAt && newMatch.status !== 'active')
+            ))
+          || (!Number.isFinite(nextCreatedAt) && newMatch.status !== 'active')
+        ) {
+          return;
+        }
+        resetMatchScopedUI();
+        prevMatch = null;
+      }
+      if (
+        prevMatch?.id === newMatch.id
+        && newMatch.gameState.version < prevMatch.gameState.version
+      ) {
+        return;
+      }
+
+      reliableMatchActionsRef.current?.reconcile(newMatch);
 
       setInitialTileIds((currentTileIds) => (
         currentTileIds ?? getInitialMatchTileIds(newMatch)
       ));
-
-      if (pendingMeeplePlacement) {
-        const hasAdvancedTurn =
-          pendingMeeplePlacement.turnNumber !== undefined &&
-          newMatch.gameState.turnNumber !== pendingMeeplePlacement.turnNumber;
-        const hasLeftMeeplePhase =
-          newMatch.status !== 'active' || newMatch.gameState.phase !== 'place_meeple';
-        const hasPlacedRequestedMeeple = Boolean(
-          pendingMeeplePlacement.actorId &&
-          pendingMeeplePlacement.tileInstanceId &&
-          newMatch.gameState.meeples.some(
-            (meeple) =>
-              meeple.actorId === pendingMeeplePlacement.actorId &&
-              meeple.tileInstanceId === pendingMeeplePlacement.tileInstanceId &&
-              meeple.zoneId === pendingMeeplePlacement.zoneId,
-          ),
-        );
-
-        if (hasAdvancedTurn || hasLeftMeeplePhase || hasPlacedRequestedMeeple) {
-          clearPendingMeeplePlacement();
-        }
-      }
       const scoreEvents = (newMatch.events ?? []).filter(isFeatureScoredEvent);
       const isTurnChanged =
         prevMatch?.gameState?.turnNumber !== newMatch.gameState?.turnNumber;
@@ -759,66 +851,56 @@ const GameRoom = () => {
         setPrivateState(null);
       }
 
+      const bufferedPrivateState = bufferedPrivateStateRef.current;
+      if (bufferedPrivateState) {
+        if (
+          bufferedPrivateState.matchId === newMatch.id
+          && bufferedPrivateState.version === newMatch.gameState.version
+          && bufferedPrivateState.turnNumber === newMatch.gameState.turnNumber
+        ) {
+          bufferedPrivateStateRef.current = null;
+          applyPrivateMatchState(bufferedPrivateState);
+        } else if (
+          bufferedPrivateState.matchId !== newMatch.id
+          || bufferedPrivateState.version <= newMatch.gameState.version
+        ) {
+          bufferedPrivateStateRef.current = null;
+        }
+      }
+
       if (isTurnChanged) {
         setCurrentRotation(0);
         setPendingPlacement(null);
         setSelectedMeepleType('regular');
       }
+
+      if (!isLeavingMatchRef.current) {
+        const finishedPayload = finishedPayloadFromMatchState(newMatch);
+        if (finishedPayload) handleFinishedMatch(finishedPayload);
+      }
     }
 
     if (data.type === 'match_private_state') {
       const privatePayload = data.payload;
-      const pendingMeeplePlacement = pendingMeeplePlacementRef.current;
+      const currentMatch = matchRef.current;
+      if (!currentMatch || privatePayload.matchId !== currentMatch.id) return;
 
-      if (
-        pendingMeeplePlacement &&
-        (
-          privatePayload.phase !== 'place_meeple' ||
-          !privatePayload.isYourTurn ||
-          !privatePayload.validMeeplePlacements.some(
-            (placement) => placement.zoneId === pendingMeeplePlacement.zoneId,
-          )
-        )
-      ) {
-        clearPendingMeeplePlacement();
+      if (privatePayload.version > currentMatch.gameState.version) {
+        bufferedPrivateStateRef.current = privatePayload;
+        return;
       }
-
-      setPrivateState(privatePayload);
-
       if (
-        privatePayload.phase === 'place_meeple' &&
-        privatePayload.isYourTurn &&
-        privatePayload.validMeeplePlacements.length === 0
-      ) {
-        const currentRoom = matchRef.current;
-        if (currentRoom?.roomId) {
-          sendMessageRef.current?.('match_action', {
-            roomId: currentRoom.roomId,
-            action: 'skip_meeple',
-            payload: { roomId: currentRoom.roomId },
-          });
-        }
-      }
+        privatePayload.version < currentMatch.gameState.version
+        || privatePayload.turnNumber !== currentMatch.gameState.turnNumber
+        || privatePayload.phase !== currentMatch.gameState.phase
+      ) return;
+
+      applyPrivateMatchState(privatePayload);
     }
 
     if (data.type === 'match_finished') {
-      if (lastPlacedStorageKey) {
-        try { localStorage.removeItem(lastPlacedStorageKey); } catch { /* ignore */ }
-      }
-      setLastPlacedByPlayer({});
       const payload = data.payload;
-      if (payload && payload.terminationReason === 'normal_completion') {
-        if (skipFinalScoringRef.current) {
-          showMatchResult(payload);
-        } else {
-          setPendingMatchResult(payload);
-        }
-      } else {
-        clearLog();
-        clearFlights();
-        clearScoreEvents();
-        setIsRoomDeleted(true);
-      }
+      if (payload) handleFinishedMatch(payload);
     }
 
     if (data.type === 'error') {
@@ -830,20 +912,36 @@ const GameRoom = () => {
         }
         setIsExitModalOpen(true);
       }
-      clearPendingMeeplePlacement();
     }
-  }, [recordMatchUpdate, clearLog, clearFlights, clearScoreEvents, enqueueScoreEvents, setTurnDeadline, lastPlacedStorageKey, launchMeepleFlights, showMatchResult, clearPendingMeeplePlacement, completeLeaveNavigation, currentUser?.id]);
+  }, [recordMatchUpdate, enqueueScoreEvents, setTurnDeadline, launchMeepleFlights, completeLeaveNavigation, currentUser?.id, applyPrivateMatchState, handleFinishedMatch, resetMatchScopedUI]);
 
   const { sendMessage, connectionStatus, reconnect } = useRoomSocket(
     room?.id,
     handleMessage,
     undefined,
-    clearPendingMeeplePlacement,
   );
 
+  const reliableMatchActions = useReliableMatchActions({
+    roomId: room?.id,
+    actorId: currentUser?.id,
+    match,
+    connectionStatus,
+    sendMessage,
+  });
+  reliableMatchActionsRef.current = reliableMatchActions;
+
+  const hasConnectionProblem = connectionStatus === 'reconnecting'
+    || connectionStatus === 'disconnected';
+
   useEffect(() => {
-    sendMessageRef.current = sendMessage;
-  }, [sendMessage]);
+    if (!hasConnectionProblem) {
+      setShowConnectionBanner(false);
+      return;
+    }
+
+    const timeout = window.setTimeout(() => setShowConnectionBanner(true), 500);
+    return () => window.clearTimeout(timeout);
+  }, [hasConnectionProblem]);
 
   const handlePlaceTile = (x: number, y: number) => {
     if (!room?.id) return;
@@ -866,10 +964,11 @@ const GameRoom = () => {
   };
 
   const handleConfirmPlaceTile = () => {
-    if (!room?.id || !pendingPlacement) return;
+    const currentMatch = matchRef.current;
+    const tileId = currentMatch?.gameState.currentTurn?.drawnTile?.tileId;
+    if (!room?.id || !pendingPlacement || !currentMatch || !tileId) return;
 
-    sendMessage('match_action', {
-      roomId: room.id,
+    const queued = reliableMatchActions.enqueue(currentMatch, {
       action: 'place_tile',
       payload: {
         roomId: room.id,
@@ -877,36 +976,51 @@ const GameRoom = () => {
         y: pendingPlacement.y,
         rotation: pendingPlacement.rotation,
       },
+      optimistic: {
+        kind: 'tile',
+        tileId,
+      },
     });
+    if (queued) setPendingPlacement(null);
   };
 
   const handlePlaceMeeple = (zoneId: string) => {
-    if (!room?.id || pendingMeeplePlacementRef.current) return;
-    const wasSent = sendMessage('match_action', {
-      roomId: room.id,
+    const currentMatch = matchRef.current;
+    const placedTile = currentMatch?.gameState.currentTurn?.placedTile;
+    const placement = privateState?.validMeeplePlacements.find(
+      (candidate) => candidate.zoneId === zoneId,
+    );
+    if (
+      !room?.id
+      || !currentMatch
+      || !currentUser?.id
+      || !placedTile?.instanceId
+      || !placement
+    ) return;
+
+    reliableMatchActions.enqueue(currentMatch, {
       action: 'place_meeple',
       payload: {
         roomId: room.id,
         zoneId,
         meepleType: selectedMeepleType,
       },
+      optimistic: {
+        kind: 'meeple',
+        actorId: currentUser.id,
+        tileInstanceId: placedTile.instanceId,
+        featureType: placement.featureType,
+        seat: currentMatch.gameState.players.find(
+          (player) => player.actorId === currentUser.id,
+        )?.seat,
+      },
     });
-    if (wasSent) {
-      const currentMatch = matchRef.current;
-      pendingMeeplePlacementRef.current = {
-        turnNumber: currentMatch?.gameState.turnNumber,
-        zoneId,
-        actorId: currentUser?.id,
-        tileInstanceId: currentMatch?.gameState.currentTurn?.placedTile?.instanceId,
-      };
-      setIsMeeplePlacementPending(true);
-    }
   };
 
   const handleSkipMeeple = () => {
-    if (!room?.id) return;
-    sendMessage('match_action', {
-      roomId: room.id,
+    const currentMatch = matchRef.current;
+    if (!room?.id || !currentMatch) return;
+    reliableMatchActions.enqueue(currentMatch, {
       action: 'skip_meeple',
       payload: { roomId: room.id },
     });
@@ -920,6 +1034,7 @@ const GameRoom = () => {
     });
     if (!wasSent) return;
 
+    reliableMatchActions.discard();
     clearLog();
     isLeavingMatchRef.current = true;
     setIsExitModalOpen(false);
@@ -961,6 +1076,13 @@ const GameRoom = () => {
   }
 
   const ownerId = room?.ownerActorId;
+  const pendingMatchAction = reliableMatchActions.pendingAction;
+  const optimisticAction = pendingMatchAction
+    && pendingMatchAction.expectedMatchId === match.id
+    && pendingMatchAction.expectedStateVersion === match.gameState.version
+      ? pendingMatchAction
+      : null;
+  const hasPendingMatchAction = pendingMatchAction !== null;
 
   // Merge GamePlayer (score, meeplesLeft) with MatchPlayer (avatarUrl, actorType, botDifficulty)
   const gamePlayers = match?.gameState?.players || [];
@@ -986,6 +1108,14 @@ const GameRoom = () => {
     if (meeple.meepleType === 'big') counts.big += 1;
     else counts.regular += 1;
     unavailableMeeplesByActor[meeple.actorId] = counts;
+  }
+  if (optimisticAction?.action === 'place_meeple') {
+    const actorId = optimisticAction.optimistic.actorId;
+    const counts = unavailableMeeplesByActor[actorId]
+      ?? { regular: 0, big: 0 };
+    if (optimisticAction.payload.meepleType === 'big') counts.big += 1;
+    else counts.regular += 1;
+    unavailableMeeplesByActor[actorId] = counts;
   }
   const queuedAwardsByActor = new Map<string, number>();
   for (const event of scoreEventQueue.slice(1)) {
@@ -1034,6 +1164,21 @@ const GameRoom = () => {
       ? Math.max(0, Math.min(100, (remainingTiles / totalTiles) * 100))
       : undefined;
   const currentTileId = drawnTile?.tileId;
+  const displayedBoard = [...(gameState?.board?.tiles ?? [])];
+  if (
+    optimisticAction?.action === 'place_tile'
+    && !displayedBoard.some(
+      (tile) => tile.x === optimisticAction.payload.x && tile.y === optimisticAction.payload.y,
+    )
+  ) {
+    displayedBoard.push({
+      instanceId: `optimistic:${optimisticAction.actionId}`,
+      tileId: optimisticAction.optimistic.tileId,
+      x: optimisticAction.payload.x,
+      y: optimisticAction.payload.y,
+      rotation: optimisticAction.payload.rotation,
+    });
+  }
 
   const currentPlayer = players.find((player) => player.actorId === currentTurnId);
   const currentColor = getPlayerColorBySeat(currentPlayer?.seat);
@@ -1074,6 +1219,18 @@ const GameRoom = () => {
     displayedMeepleKeys.add(key);
     displayedMeeples.push(meeple);
   }
+  if (optimisticAction?.action === 'place_meeple') {
+    const optimisticMeeple: PlacedMeeple = {
+      tileInstanceId: optimisticAction.optimistic.tileInstanceId,
+      zoneId: optimisticAction.payload.zoneId,
+      actorId: optimisticAction.optimistic.actorId,
+      seat: optimisticAction.optimistic.seat,
+      featureType: optimisticAction.optimistic.featureType,
+      meepleType: optimisticAction.payload.meepleType,
+    };
+    const key = `${optimisticMeeple.tileInstanceId}:${optimisticMeeple.zoneId}:${optimisticMeeple.actorId}`;
+    if (!displayedMeepleKeys.has(key)) displayedMeeples.push(optimisticMeeple);
+  }
 
   const scoringPanelPlayers = players.map((player) => ({
     actorId: player.actorId,
@@ -1096,7 +1253,7 @@ const GameRoom = () => {
         }}
         pendingMeeples={unavailableMeeplesByActor}
         registerPlayerCardRef={registerPlayerCardRef}
-        isMeeplePlacementPhase={isPlaying && phase === 'place_meeple' && isYourTurn && !isMeeplePlacementPending}
+        isMeeplePlacementPhase={isPlaying && phase === 'place_meeple' && isYourTurn && !hasPendingMatchAction}
         selectedMeepleType={selectedMeepleType}
         onSelectMeepleType={setSelectedMeepleType}
         mode={isRankingMode ? 'ranking' : 'playing'}
@@ -1110,14 +1267,18 @@ const GameRoom = () => {
           ref={boardHandleRef}
           width={boardWidth}
           height={boardHeight}
-          board={gameState?.board?.tiles || []}
-          validPlacements={isPlaying ? (privateState?.validPlacements || []) : []}
+          board={displayedBoard}
+          validPlacements={
+            isPlaying && !hasPendingMatchAction
+              ? (privateState?.validPlacements || [])
+              : []
+          }
           onPlaceTile={handlePlaceTile}
           onRotateTile={handleRotateTile}
           currentTileId={isPlaying ? currentTileId : undefined}
           phase={isPlaying ? phase : undefined}
           validMeeplePlacements={
-            isPlaying && !isMeeplePlacementPending
+            isPlaying && !hasPendingMatchAction
               ? (privateState?.validMeeplePlacements || [])
               : []
           }
@@ -1126,7 +1287,7 @@ const GameRoom = () => {
           lastPlacedByPlayer={lastPlacedByPlayer}
           players={players}
           placedMeeples={displayedMeeples}
-          pendingPlacement={isPlaying ? pendingPlacement : null}
+          pendingPlacement={isPlaying && !hasPendingMatchAction ? pendingPlacement : null}
           scoreEvent={activeScoreEvent}
         />
 
@@ -1170,15 +1331,30 @@ const GameRoom = () => {
           />
         )}
 
-        {match?.status === 'active' && phase === 'place_meeple' && privateState?.isYourTurn && !isMeeplePlacementPending && (
-          <button className={styles.skipButton} onClick={handleSkipMeeple}>
+        {match.status === 'active' && showConnectionBanner && (
+          <div
+            className={styles.connectionBanner}
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
+            <WifiOff size={19} aria-hidden="true" />
+            <span>Соединение потеряно. Восстанавливаем…</span>
+          </div>
+        )}
+
+        {match?.status === 'active' && phase === 'place_meeple' && privateState?.isYourTurn && !hasPendingMatchAction && (
+          <button
+            className={`${styles.skipButton} ${showConnectionBanner ? styles.skipButton_connectionOffset : ''}`}
+            onClick={handleSkipMeeple}
+          >
             Не ставить подданного
           </button>
         )}
 
-        {match?.status === 'active' && phase === 'place_tile' && privateState?.isYourTurn && pendingPlacement !== null && (
+        {match?.status === 'active' && phase === 'place_tile' && privateState?.isYourTurn && pendingPlacement !== null && !hasPendingMatchAction && (
           <button
-            className={styles.skipButton}
+            className={`${styles.skipButton} ${showConnectionBanner ? styles.skipButton_connectionOffset : ''}`}
             onClick={handleConfirmPlaceTile}
           >
             Присоединить квадрат
@@ -1188,7 +1364,7 @@ const GameRoom = () => {
         {matchResult === null && finalScoreEvents.length > 0 && scoreEventQueue.length > 0 && (
           <button
             type="button"
-            className={`${styles.skipButton} ${styles.finalScoringSkipButton}`}
+            className={`${styles.skipButton} ${styles.finalScoringSkipButton} ${showConnectionBanner ? styles.skipButton_connectionOffset : ''}`}
             onClick={handleSkipFinalScoring}
           >
             Пропустить подсчёт

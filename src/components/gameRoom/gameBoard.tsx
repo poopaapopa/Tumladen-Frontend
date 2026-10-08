@@ -123,7 +123,10 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
   useEffect(() => {
     if (width > 0 && height > 0 && !initializedRef.current) {
       initializedRef.current = true;
-      setStage((prev) => ({ ...prev, x: width / 2, y: height / 2 }));
+      const frame = requestAnimationFrame(() => {
+        setStage((prev) => ({ ...prev, x: width / 2, y: height / 2 }));
+      });
+      return () => cancelAnimationFrame(frame);
     }
   }, [width, height]);
 
@@ -376,6 +379,8 @@ const GameBoard = forwardRef<GameBoardHandle, GameBoardProps>(({
                   x={offset.x}
                   y={offset.y}
                   color={'black'}
+                  isMobile={isMobile}
+                  stageScale={stage.scale}
                   onClick={() => onPlaceMeeple?.(slot.zoneId)}
                   onMouseEnter={() => setCursor('pointer')}
                   onMouseLeave={() => setCursor('default')}

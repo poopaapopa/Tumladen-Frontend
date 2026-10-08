@@ -10,6 +10,13 @@ export interface ErrorPayload {
   code?: string;
 }
 
+export interface MatchActionResultPayload {
+  actionId: string;
+  status: 'accepted' | 'rejected';
+  stateVersion?: number;
+  error?: ErrorPayload;
+}
+
 export type MatchTerminationReason =
   | 'normal_completion'
   | 'player_left'
@@ -36,6 +43,7 @@ export type WebSocketMessage =
   | { type: 'participant_kicked'; payload: ParticipantKickedPayload }
   | { type: 'match_state'; payload: MatchStatePayload }
   | { type: 'match_private_state'; payload: PrivateState }
+  | { type: 'match_action_result'; payload: MatchActionResultPayload }
   | { type: 'match_finished'; payload?: MatchFinishedPayload }
   | { type: 'error'; payload: ErrorPayload };
 

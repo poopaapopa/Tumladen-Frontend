@@ -6,6 +6,8 @@ interface MeepleSlotProps {
   x: number;
   y: number;
   color?: string;
+  isMobile?: boolean;
+  stageScale?: number;
   onClick?: () => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
@@ -15,6 +17,8 @@ export const MeepleSlot: React.FC<MeepleSlotProps> = ({
   x,
   y,
   color = 'white',
+  isMobile = false,
+  stageScale = 1,
   onClick,
   onMouseEnter,
   onMouseLeave,
@@ -22,6 +26,9 @@ export const MeepleSlot: React.FC<MeepleSlotProps> = ({
   const pulseRef = useRef<Konva.Circle>(null);
   const ringRef = useRef<Konva.Circle>(null);
   const dashRef = useRef<Konva.Circle>(null);
+  const hitRadius = isMobile
+    ? Math.max(12, 22 / Math.max(stageScale, 0.01))
+    : 12;
 
   useEffect(() => {
     const layer = pulseRef.current?.getLayer();
@@ -91,7 +98,7 @@ export const MeepleSlot: React.FC<MeepleSlotProps> = ({
         opacity={0.8}
       />
       {/* Прозрачная зона клика */}
-      <Circle radius={12} fill="rgba(0,0,0,0.001)" />
+      <Circle radius={hitRadius} fill="rgba(0,0,0,0.001)" />
     </Group>
   );
 };

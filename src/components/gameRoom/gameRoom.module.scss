@@ -100,6 +100,8 @@
   position: fixed;
   bottom: 20px;
   left: 50%;
+  z-index: 21;
+  transform: translateX(-50%);
   padding: 10px 20px;
   background-color: $forest-mid;
   color: $beige-light;
@@ -114,6 +116,54 @@
   &:hover {
     background-color: $forest-dark;
   }
+}
+
+@keyframes connectionBannerIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.connectionBanner {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  z-index: 22;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 44px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 9px 18px;
+  box-sizing: border-box;
+  border: 1px solid rgba($beige-light, 0.2);
+  border-radius: 12px;
+  background: color.mix($decline, $forest-dark, 58%);
+  box-shadow:
+    0 8px 24px rgba(31, 54, 35, 0.28),
+    0 0 0 1px rgba($decline, 0.12);
+  color: $beige-light;
+  font-family: $font-main;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.25;
+  text-align: center;
+  animation: connectionBannerIn 0.22s ease-out both;
+
+  svg {
+    flex: 0 0 auto;
+  }
+}
+
+.skipButton_connectionOffset {
+  bottom: 76px;
 }
 
 @keyframes hourglassFlip {
@@ -222,6 +272,19 @@
     font-weight: 600;
     width: 220px;
     z-index: 21;
+  }
+
+  .connectionBanner {
+    bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+    width: min(320px, calc(100vw - 28px));
+    min-height: 42px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+  }
+
+  .skipButton_connectionOffset {
+    bottom: calc(144px + env(safe-area-inset-bottom, 0px));
   }
 
   .finalScoringSkipButton {

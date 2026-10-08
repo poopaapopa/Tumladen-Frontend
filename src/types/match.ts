@@ -53,6 +53,7 @@ export interface CurrentTurn {
 }
 
 export interface GameState {
+  version: number;
   currentPlayerId: string;
   players: GamePlayer[];
   turnNumber: number;
@@ -131,6 +132,18 @@ export interface MatchStatePayload {
   roomId: string;
   status: MatchStatus;
   serverTime?: string;
+  createdAt: string;
+  updatedAt: string;
+  result?: {
+    winners: string[];
+    finalScores: Array<{
+      actorId: string;
+      score: number;
+    }>;
+  };
+  terminationReason?: string;
+  terminatedByActorId?: string;
+  terminatedAt?: string;
   players: MatchPlayer[];
   gameType: string;
   gameState: GameState;
@@ -149,6 +162,9 @@ export interface ValidMeeplePlacement {
 }
 
 export interface PrivateState {
+  matchId: string;
+  version: number;
+  turnNumber: number;
   isYourTurn: boolean;
   phase: Phase;
   validPlacements: ValidPlacement[];

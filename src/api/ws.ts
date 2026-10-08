@@ -15,13 +15,14 @@ interface CentrifugeEnvelope {
     };
   };
   id?: number;
-  connect?: string;
+  connect?: Record<string, unknown>;
+  error?: unknown;
 }
 
-const HEARTBEAT_INTERVAL_MS = 30_000;
 const RECONNECT_BASE_DELAY_MS = 1_000;
 const RECONNECT_MAX_DELAY_MS = 30_000;
-const RECONNECT_MAX_ATTEMPTS = 10;
+const RECONNECT_BACKOFF_STEPS = 5;
+const CONNECT_HANDSHAKE_TIMEOUT_MS = 10_000;
 
 export type RoomSocketStatus =
   | 'idle'
@@ -37,10 +38,13 @@ export const useRoomSocket = (
   onDisconnected?: () => void,
 ) => {
   const socket = useRef<WebSocket | null>(null);
+  const isProtocolConnected = useRef(false);
   const token = useUserStore((state) => state.token);
   const reconnectAttempt = useRef(0);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const heartbeatTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const handshakeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasConnectedOnce = useRef(false);
+  const connectionTarget = useRef<{ roomId?: string; token?: string }>({});
   const [connectionStatus, setConnectionStatus] = useState<RoomSocketStatus>('idle');
   const [connectionGeneration, setConnectionGeneration] = useState(0);
 
@@ -60,17 +64,25 @@ export const useRoomSocket = (
   }, [onDisconnected]);
 
   useEffect(() => {
-    if (!roomId || !token) return;
+    if (!roomId || !token) {
+      isProtocolConnected.current = false;
+      hasConnectedOnce.current = false;
+      connectionTarget.current = {};
+      return;
+    }
+
+    if (
+      connectionTarget.current.roomId !== roomId
+      || connectionTarget.current.token !== token
+    ) {
+      connectionTarget.current = { roomId, token };
+      hasConnectedOnce.current = false;
+    }
 
     let cancelled = false;
+    let connectionInFlight = false;
     reconnectAttempt.current = 0;
-
-    const clearHeartbeat = () => {
-      if (heartbeatTimer.current !== null) {
-        clearInterval(heartbeatTimer.current);
-        heartbeatTimer.current = null;
-      }
-    };
+    isProtocolConnected.current = false;
 
     const clearReconnectTimer = () => {
       if (reconnectTimer.current !== null) {
@@ -79,10 +91,29 @@ export const useRoomSocket = (
       }
     };
 
+    const clearHandshakeTimer = () => {
+      if (handshakeTimer.current !== null) {
+        clearTimeout(handshakeTimer.current);
+        handshakeTimer.current = null;
+      }
+    };
+
     const connect = async () => {
+      if (
+        cancelled
+        || connectionInFlight
+        || socket.current?.readyState === WebSocket.OPEN
+        || socket.current?.readyState === WebSocket.CONNECTING
+      ) return;
+
+      connectionInFlight = true;
       try {
-        if (cancelled) return;
-        setConnectionStatus(reconnectAttempt.current > 0 ? 'reconnecting' : 'connecting');
+        clearReconnectTimer();
+        setConnectionStatus(
+          hasConnectedOnce.current || reconnectAttempt.current > 0
+            ? 'reconnecting'
+            : 'connecting',
+        );
         const { ticket } = await roomService.getWsTicket();
         if (cancelled) return;
 
@@ -92,44 +123,50 @@ export const useRoomSocket = (
 
         const ws = new WebSocket(url.toString());
         socket.current = ws;
+        clearHandshakeTimer();
+        handshakeTimer.current = setTimeout(() => {
+          if (
+            !cancelled
+            && socket.current === ws
+            && !isProtocolConnected.current
+          ) ws.close();
+        }, CONNECT_HANDSHAKE_TIMEOUT_MS);
 
         ws.onopen = () => {
-          if (cancelled) {
+          if (cancelled || socket.current !== ws) {
             ws.close();
             return;
           }
           if (ws.readyState !== WebSocket.OPEN) return;
 
-          reconnectAttempt.current = 0;
-          setConnectionStatus('connected');
-
           ws.send(JSON.stringify({ id: 1, connect: {} }));
-          ws.send(JSON.stringify({
-            send: {
-              data: {
-                type: "join_room",
-                payload: { roomId }
-              }
-            }
-          }));
-
-          clearHeartbeat();
-          heartbeatTimer.current = setInterval(() => {
-            if (ws.readyState === WebSocket.OPEN) {
-              ws.send(JSON.stringify({ ping: {} }));
-            }
-          }, HEARTBEAT_INTERVAL_MS);
         };
 
         ws.onmessage = (event) => {
-          if (cancelled) return;
+          if (cancelled || socket.current !== ws) return;
           const lines = event.data.split('\n').filter((line: string) => line.trim() !== '');
 
           for (const line of lines) {
             try {
               const envelope: CentrifugeEnvelope = JSON.parse(line);
 
-              if (envelope.push?.pub?.data) {
+              if (envelope.id === 1 && envelope.connect) {
+                clearHandshakeTimer();
+                isProtocolConnected.current = true;
+                hasConnectedOnce.current = true;
+                reconnectAttempt.current = 0;
+                setConnectionStatus('connected');
+                ws.send(JSON.stringify({
+                  send: {
+                    data: {
+                      type: 'join_room',
+                      payload: { roomId },
+                    },
+                  },
+                }));
+              } else if (envelope.id === 1 && envelope.error) {
+                ws.close();
+              } else if (envelope.push?.pub?.data) {
                 const data = envelope.push.pub.data;
 
                 if (data.type === 'participant_kicked' && onKickedRef.current) {
@@ -151,21 +188,21 @@ export const useRoomSocket = (
         ws.onerror = (e) => console.error("WS Error Object:", e);
 
         ws.onclose = () => {
-          clearHeartbeat();
+          if (cancelled || socket.current !== ws) return;
 
-          if (cancelled) return;
+          clearHandshakeTimer();
+          isProtocolConnected.current = false;
+          socket.current = null;
 
           onDisconnectedRef.current?.();
-
-          if (reconnectAttempt.current >= RECONNECT_MAX_ATTEMPTS) {
-            setConnectionStatus('disconnected');
-            return;
-          }
 
           setConnectionStatus('reconnecting');
 
           const delay = Math.min(
-            RECONNECT_BASE_DELAY_MS * 2 ** reconnectAttempt.current,
+            RECONNECT_BASE_DELAY_MS * 2 ** Math.min(
+              reconnectAttempt.current,
+              RECONNECT_BACKOFF_STEPS,
+            ),
             RECONNECT_MAX_DELAY_MS
           );
           reconnectAttempt.current += 1;
@@ -174,13 +211,10 @@ export const useRoomSocket = (
         };
 
       } catch (err) {
+        if (cancelled) return;
         console.error('WebSocket connection error:', err);
 
-        if (err instanceof UnauthorizedError) return;
-
-        if (cancelled) return;
-
-        if (reconnectAttempt.current >= RECONNECT_MAX_ATTEMPTS) {
+        if (err instanceof UnauthorizedError) {
           setConnectionStatus('disconnected');
           return;
         }
@@ -188,23 +222,51 @@ export const useRoomSocket = (
         setConnectionStatus('reconnecting');
 
         const delay = Math.min(
-          RECONNECT_BASE_DELAY_MS * 2 ** reconnectAttempt.current,
+          RECONNECT_BASE_DELAY_MS * 2 ** Math.min(
+            reconnectAttempt.current,
+            RECONNECT_BACKOFF_STEPS,
+          ),
           RECONNECT_MAX_DELAY_MS
         );
         reconnectAttempt.current += 1;
         reconnectTimer.current = setTimeout(connect, delay);
+      } finally {
+        connectionInFlight = false;
       }
     };
 
-    connect();
+    const reconnectWhenOnline = () => {
+      if (
+        cancelled
+        || socket.current?.readyState === WebSocket.OPEN
+        || socket.current?.readyState === WebSocket.CONNECTING
+      ) return;
+      clearReconnectTimer();
+      void connect();
+    };
+
+    const markOffline = () => {
+      if (cancelled) return;
+      isProtocolConnected.current = false;
+      setConnectionStatus('reconnecting');
+      socket.current?.close();
+    };
+
+    window.addEventListener('online', reconnectWhenOnline);
+    window.addEventListener('offline', markOffline);
+    void connect();
 
     return () => {
       cancelled = true;
-      clearHeartbeat();
+      isProtocolConnected.current = false;
+      window.removeEventListener('online', reconnectWhenOnline);
+      window.removeEventListener('offline', markOffline);
+      clearHandshakeTimer();
       clearReconnectTimer();
-      if (socket.current) {
-        socket.current.close();
-        socket.current = null;
+      const activeSocket = socket.current;
+      socket.current = null;
+      if (activeSocket) {
+        activeSocket.close();
       }
     };
   }, [roomId, token, connectionGeneration]);
@@ -213,9 +275,12 @@ export const useRoomSocket = (
     setConnectionGeneration((generation) => generation + 1);
   }, []);
 
-  const sendMessage = (type: string, payload: Record<string, unknown>) => {
+  const sendMessage = useCallback((type: string, payload: Record<string, unknown>) => {
     const activeSocket = socket.current;
-    if (activeSocket?.readyState !== WebSocket.OPEN) return false;
+    if (
+      activeSocket?.readyState !== WebSocket.OPEN
+      || !isProtocolConnected.current
+    ) return false;
 
     try {
       activeSocket.send(JSON.stringify({
@@ -231,7 +296,7 @@ export const useRoomSocket = (
       console.error('WebSocket send error:', err);
       return false;
     }
-  };
+  }, []);
 
   return {
     sendMessage,
