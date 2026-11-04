@@ -8,11 +8,11 @@ import roadStraightImg from '@/assets/tiles/road_straight.webp';
 import monasteryImg from '@/assets/tiles/monastery.webp';
 import startTileImg from '@/assets/tiles/start_tile.webp';
 
-import roadRulesImg from '@/assets/road-rules.png';
-import cityRulesImg from '@/assets/city-rules.png';
-import monasteryRulesImg from '@/assets/monastery-rules.png';
-import fieldsRulesImg from '@/assets/fields-rules.png';
-import multipleRulesImg from '@/assets/multiple-rules.png';
+import roadRulesImg from '@/assets/road-rules.webp';
+import cityRulesImg from '@/assets/city-rules.webp';
+import monasteryRulesImg from '@/assets/monastery-rules.webp';
+import fieldsRulesImg from '@/assets/fields-rules.webp';
+import multipleRulesImg from '@/assets/multiple-rules.webp';
 import { PLAYER_PALETTE } from '@/utils/playerColor';
 
 const CarcassonneRules = () => (

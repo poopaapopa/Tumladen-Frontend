@@ -1,6 +1,6 @@
-import tavern from '@/assets/achievements/tavern.png';
-import castle from '@/assets/achievements/castle.png';
-import crown from '@/assets/achievements/crown.png';
+import tavern from '@/assets/achievements/tavern.webp';
+import castle from '@/assets/achievements/castle.webp';
+import crown from '@/assets/achievements/crown.webp';
 
 export const ACHIEVEMENT_IMAGES: Record<string, string> = {
   first_game_any: tavern,

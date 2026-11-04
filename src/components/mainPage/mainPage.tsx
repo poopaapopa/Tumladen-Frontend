@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { roomService, UnauthorizedError } from "@/api/room.ts";
 import type { RoomResponse } from '@/types/room.ts';
 import { useUserStore } from "@/store/useUserStore.ts";
-import sadElfImg from '@/assets/sad-elf.png';
+import sadElfImg from '@/assets/sad-elf.webp';
 import { AlertTriangle, X, Gamepad2, DoorOpen, SlidersHorizontal, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';

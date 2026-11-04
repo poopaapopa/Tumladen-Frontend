@@ -14,7 +14,7 @@ import type { UserProfile, OwnUserProfile, Achievement } from '@/types/user.ts';
 import { isOwnProfile, GAME_TYPE_LABELS } from '@/types/user.ts';
 import { avatarSrc } from '@/utils/avatar.ts';
 import elfAvatar from '@/assets/elf-avatar.svg';
-import elfMountains from '@/assets/elf-mountains.png';
+import elfMountains from '@/assets/elf-mountains.webp';
 import editModalStyles from './editProfileModal/editProfileModal.module.scss';
 import { StatsCards } from './statsCards/statsCards.tsx';
 import { MatchCard } from './matchCard/matchCard.tsx';

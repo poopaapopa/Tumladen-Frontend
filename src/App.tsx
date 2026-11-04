@@ -12,7 +12,7 @@ import { useUserStore } from './store/useUserStore';
 import { roomService } from './api/room.ts';
 import { authService } from './api/auth.ts';
 import { ConfirmModal } from './components/confirmModal/confirmModal.tsx';
-import elfCampfireImg from './assets/elf-campfire.png';
+import elfCampfireImg from './assets/elf-campfire.webp';
 import { GameLoadingScreen } from './components/gameRoom/gameLoadingScreen/gameLoadingScreen.tsx';
 
 const GameRoom = lazy(() => import('./components/gameRoom/gameRoom.tsx'));

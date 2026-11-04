@@ -1,7 +1,7 @@
 import styles from './gameCard.module.scss';
 import { Users, Loader2, Clock3 } from 'lucide-react';
 import clsx from 'clsx';
-import image from '@/assets/castle.png';
+import image from '@/assets/castle.webp';
 
 interface GameCardProps {
   title: string;

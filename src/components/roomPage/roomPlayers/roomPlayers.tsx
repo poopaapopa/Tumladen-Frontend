@@ -9,8 +9,8 @@ import { useUserStore } from '@/store/useUserStore';
 import { PlayerSlot } from "./playerSlot/playerSlot.tsx";
 import Modal from "@/components/modal/modal.tsx";
 import { ConfirmModal } from "@/components/confirmModal/confirmModal.tsx";
-import elfExileImg from "@/assets/elf-exile.png";
-import ElfClosingDoorImg from '@/assets/elf-closing-door.png';
+import elfExileImg from "@/assets/elf-exile.webp";
+import ElfClosingDoorImg from '@/assets/elf-closing-door.webp';
 
 interface RoomPlayersProps {
   room: RoomResponse;

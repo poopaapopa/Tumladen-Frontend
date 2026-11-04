@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
-import elfGameImage from '@/assets/elf-game.png';
+import elfGameImage from '@/assets/elf-game.webp';
 import type { RoomSocketStatus } from '@/api/ws';
 import styles from './gameLoadingScreen.module.scss';
 

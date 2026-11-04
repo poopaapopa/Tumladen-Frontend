@@ -2,7 +2,7 @@ import { useState } from 'react';
 import styles from './header.module.scss';
 import logo from '@/assets/logo_168x92.png';
 import defaultAvatar from '@/assets/elf-avatar.svg';
-import elfLeavesImg from '@/assets/elf-leaves.png';
+import elfLeavesImg from '@/assets/elf-leaves.webp';
 import { avatarSrc } from '@/utils/avatar.ts';
 import Modal from '../modal/modal';
 import { AuthModal } from '../authModal/authModal';

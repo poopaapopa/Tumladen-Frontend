@@ -10,6 +10,7 @@
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -b --pretty false",
     "check": "npm run typecheck && npm run lint",
+    "assets:optimize": "node scripts/optimize-assets.mjs",
     "assets:tiles:optimize": "node scripts/optimize-tile-images.mjs",
     "preview": "vite preview"
   },

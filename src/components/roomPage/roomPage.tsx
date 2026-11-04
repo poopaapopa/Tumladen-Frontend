@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Users, Settings, BookOpen } from 'lucide-react';
 
 import styles from './roomPage.module.scss';
-import castleImg from '@/assets/zamok.png';
+import castleImg from '@/assets/zamok.webp';
 import { roomService } from '@/api/room.ts'
 import { useUserStore } from '@/store/useUserStore';
 import { useRoomSocket, type WebSocketMessage } from '@/api/ws.ts';

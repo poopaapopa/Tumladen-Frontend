@@ -25,7 +25,7 @@ import { roomService } from '@/api/room';
 import { useUserStore } from '@/store/useUserStore';
 import { getPlayerColorBySeat } from '@/utils/playerColor.ts';
 import Modal from '../modal/modal';
-import gameExitImage from '@/assets/gameExit.png';
+import gameExitImage from '@/assets/gameExit.webp';
 import GameBoard, { type GameBoardHandle } from './gameBoard.tsx';
 import { ConfirmModal } from '../confirmModal/confirmModal.tsx';
 import { MatchResultModal } from './matchResult/matchResult.tsx';

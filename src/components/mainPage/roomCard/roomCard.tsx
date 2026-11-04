@@ -1,5 +1,5 @@
 import styles from './roomCard.module.scss';
-import castleImage from '@/assets/castle.png';
+import castleImage from '@/assets/castle.webp';
 import { UsersRound } from "lucide-react";
 import type { RoomResponse } from '@/types/room.ts';
 import { GAME_TYPE_LABELS } from '@/types/user.ts';

@@ -8,7 +8,7 @@ import { EditableSelector } from '@/components/editableSelector/editableSelector
 import Modal from '@/components/modal/modal.tsx';
 import styles from './roomSidebar.module.scss';
 
-import deleteRoomImg from '@/assets/elves-delete-room.png';
+import deleteRoomImg from '@/assets/elves-delete-room.webp';
 import { ConfirmModal } from '@/components/confirmModal/confirmModal.tsx';
 
 interface RoomSidebarProps {
