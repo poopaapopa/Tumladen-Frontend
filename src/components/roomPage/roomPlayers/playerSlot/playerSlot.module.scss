@@ -8,6 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
   transition: all 0.3s ease;
   min-height: 56px;
   position: relative;
@@ -30,14 +31,20 @@
 
   &__playerInfo {
     display: flex;
+    min-width: 0;
     align-items: center;
     gap: 15px;
+  }
+
+  &_occupied &__playerInfo {
+    flex: 1;
   }
 
   &__slotNum {
     font-weight: 800;
     color: $forest-soft;
     width: 20px;
+    flex-shrink: 0;
   }
 
   &__playerName {
@@ -45,29 +52,29 @@
     font-weight: 600;
     color: $forest-dark;
     display: flex;
+    flex: 1;
+    min-width: 0;
     align-items: center;
     gap: 8px;
-    // min-width: 0;                // Разрешает сжатие во flex-контейнере
-    // max-width: 240px;            // Ограничивает имя, предотвращая сдвиг иконки удаления
+  }
 
-    // @media (max-width: $mobile-breakpoint) {
-    //   max-width: 130px;
-    // }
+  &__nameWrapper {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &_bot &__nameWrapper {
+    flex: 0 1 auto;
   }
 
   &__nameText {
     display: inline-block;
     vertical-align: middle;
-    max-width: 290px;
-    width: 100%;   /* Добавлено */
-    min-width: 0;  /* Добавлено */
-
-    @media (max-width: $mobile-breakpoint) {
-      max-width: 80px;
-    }
   }
 
   &__difficultyBadge {
+    flex-shrink: 0;
+    white-space: nowrap;
     font-size: 10px;
     font-weight: 600;
     color: #fff;
@@ -94,24 +101,28 @@
     }
   }
 
-  &__blayerBadge {
-    position: relative;
+  &__playerBadge {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
+
+    &:has(.playerSlot__btnKick) {
+      width: 32px;
+      height: 32px;
+    }
   }
 
   .icon_crown { color: $gold; filter: drop-shadow(0 0 5px rgba($gold, 0.5)); }
   .icon_star, .kick_icon { color: $metal-gray; }
   .icon_star { transition: opacity 0.3s ease }
-  .icon_bot { color: #7c6fb0; }
+  .icon_bot { color: #7c6fb0; flex-shrink: 0; }
 
   &__btnKick {
     position: absolute;
     top: 50%;
     right: -2px;
     transform: translate(-50%, -50%);
-
     background: none;
     border: none;
     cursor: pointer;
@@ -121,6 +132,15 @@
 
     &:hover {
       background-color: color.adjust($sage-gray, $lightness: 10%);
+    }
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    gap: 8px;
+    padding-inline: 12px;
+
+    &__playerInfo {
+      gap: 10px;
     }
   }
 }

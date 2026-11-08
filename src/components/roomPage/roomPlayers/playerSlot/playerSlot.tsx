@@ -43,10 +43,9 @@ export const PlayerSlot = ({ idx, participant, room, isOwner, onKick, onAddBot, 
       <div className={styles.playerSlot__playerInfo}>
         <span className={styles.playerSlot__slotNum}>{idx + 1}</span>
         {participant ? (
-          <span className={styles.playerSlot__playerName}>
+          <div className={styles.playerSlot__playerName}>
             {isBot && <Bot size={18} className={styles.icon_bot} />}
-            {/* <span className={styles.playerSlot__nameText}>{participant.displayName}</span> */}
-            <div className={styles.header__userNameWrapper}>
+            <div className={styles.playerSlot__nameWrapper}>
               <MarqueeText text={participant.displayName} className={styles.playerSlot__nameText} />
             </div>
             {isBot && participant.botDifficulty && (
@@ -75,7 +74,7 @@ export const PlayerSlot = ({ idx, participant, room, isOwner, onKick, onAddBot, 
                 </span>
               )
             )}
-          </span>
+          </div>
         ) : (
           isOwner ? (
             <BotDifficultyPopover onSelect={onAddBot} />

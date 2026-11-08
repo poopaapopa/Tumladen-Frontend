@@ -288,7 +288,6 @@
   }
 
   .finalScoringSkipButton {
-    min-height: 44px;
     bottom: calc(
       var(--mobile-final-scoring-action-offset, 109px)
       + env(safe-area-inset-bottom, 0px)

@@ -41,14 +41,22 @@ export const BotDifficultyPopover = ({ onSelect, renderTrigger }: BotDifficultyP
     if (!triggerRef.current) return;
 
     const rect = triggerRef.current.getBoundingClientRect();
+    const width = Math.min(
+      Math.max(rect.width, 180),
+      window.innerWidth - VIEWPORT_MARGIN * 2,
+    );
+    const left = Math.max(
+      VIEWPORT_MARGIN,
+      Math.min(rect.left, window.innerWidth - width - VIEWPORT_MARGIN),
+    );
     const estimatedHeight = DIFFICULTY_OPTIONS.length * 48 + 8;
     const spaceBelow = window.innerHeight - rect.bottom - VIEWPORT_MARGIN;
     const spaceAbove = rect.top - VIEWPORT_MARGIN;
     const dropUp = spaceBelow < estimatedHeight && spaceAbove > spaceBelow;
 
     setPosition({
-      left: rect.left,
-      width: Math.max(rect.width, 180),
+      left,
+      width,
       dropUp,
       ...(dropUp
         ? { bottom: window.innerHeight - rect.top + TRIGGER_GAP }

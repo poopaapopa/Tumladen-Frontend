@@ -405,7 +405,8 @@
       flex: 0 0 14px;
 
       &_big {
-        flex-basis: 20px;
+        // Scale center spacing for the 37px average size and 3px center offset.
+        flex-basis: calc(14px * 37 / 34 + 3px);
       }
 
       &_regular {
@@ -422,8 +423,12 @@
       flex-basis: 40px;
     }
 
-    &__figurines_full &__meepleWrapper {
-      flex: 1 1 0;
+    &__figurines_full &__meepleWrapper_regular {
+      flex: 34 1 0;
+    }
+
+    &__figurines_full &__meepleWrapper_big {
+      flex: 37 1 3px;
     }
 
     &__figurines_full &__meepleWrapper:last-child {
@@ -442,6 +447,8 @@
     &__meepleWrapper_big &__figurinesIcon {
       width: 40px;
       height: 40px;
+      // Compensate for the SVG's bottom padding at the larger size.
+      bottom: -0.75px;
     }
 
     &__meepleWrapper_regular &__figurinesIcon {
@@ -454,6 +461,7 @@
     }
 
     &__count {
+      gap: 2px;
       font-size: 14px;
       padding: 2px 6px;
     }
