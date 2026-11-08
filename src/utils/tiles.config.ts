@@ -92,6 +92,13 @@ const EXPANSION_INNS_AND_CATHEDRALS = 'inns_and_cathedrals';
 const DEFAULT_PRELOAD_CONCURRENCY = 4;
 const IMAGE_LOAD_TIMEOUT_MS = 15_000;
 
+type ImageFetchPriority = 'high' | 'low' | 'auto';
+
+interface TileImageRequest {
+  image: HTMLImageElement;
+  promise: Promise<HTMLImageElement | null>;
+}
+
 const BASE_TILE_IDS = [...new Set(baseTiles.map((tile) => tile.tileId))];
 const EXPANSION_TILE_IDS: Record<string, string[]> = {
   [EXPANSION_INNS_AND_CATHEDRALS]: [
@@ -100,7 +107,7 @@ const EXPANSION_TILE_IDS: Record<string, string[]> = {
 };
 
 const loadedTileImages = new Map<string, HTMLImageElement>();
-const imageRequests = new Map<string, Promise<HTMLImageElement | null>>();
+const imageRequests = new Map<string, TileImageRequest>();
 
 interface NetworkInformationLike {
   effectiveType?: string;
@@ -126,6 +133,7 @@ interface TileImagePreloadOptions {
   concurrency?: number;
   onProgress?: (progress: TileImagePreloadProgress) => void;
   signal?: AbortSignal;
+  fetchPriority?: ImageFetchPriority;
 }
 
 const getConnection = (): NetworkInformationLike | undefined =>
@@ -159,15 +167,37 @@ const getTileImageSources = (tileIds: Iterable<string>): string[] => [
   ),
 ];
 
-const loadAndDecodeImage = (src: string): Promise<HTMLImageElement | null> => {
+const fetchPriorityRank: Record<ImageFetchPriority, number> = {
+  low: 0,
+  auto: 1,
+  high: 2,
+};
+
+const promoteImageRequest = (
+  image: HTMLImageElement,
+  fetchPriority: ImageFetchPriority,
+) => {
+  const currentPriority = (image.fetchPriority || 'auto') as ImageFetchPriority;
+  if (fetchPriorityRank[fetchPriority] > fetchPriorityRank[currentPriority]) {
+    image.fetchPriority = fetchPriority;
+  }
+};
+
+const loadAndDecodeImage = (
+  src: string,
+  fetchPriority: ImageFetchPriority = 'auto',
+): Promise<HTMLImageElement | null> => {
   const cachedImage = loadedTileImages.get(src);
   if (cachedImage) return Promise.resolve(cachedImage);
 
   const existingRequest = imageRequests.get(src);
-  if (existingRequest) return existingRequest;
+  if (existingRequest) {
+    promoteImageRequest(existingRequest.image, fetchPriority);
+    return existingRequest.promise;
+  }
 
+  const image = new Image();
   const request = new Promise<HTMLImageElement | null>((resolve) => {
-    const image = new Image();
     let settled = false;
 
     const finish = (loaded: boolean) => {
@@ -198,6 +228,7 @@ const loadAndDecodeImage = (src: string): Promise<HTMLImageElement | null> => {
     }, IMAGE_LOAD_TIMEOUT_MS);
 
     image.decoding = 'async';
+    image.fetchPriority = fetchPriority;
     image.onload = () => void finishAfterDecode();
     image.onerror = () => finish(false);
     image.src = src;
@@ -205,7 +236,7 @@ const loadAndDecodeImage = (src: string): Promise<HTMLImageElement | null> => {
     if (image.complete) void finishAfterDecode();
   });
 
-  imageRequests.set(src, request);
+  imageRequests.set(src, { image, promise: request });
   return request;
 };
 
@@ -219,7 +250,7 @@ export const getCachedTileImage = (tileId: string | undefined): HTMLImageElement
 /** Loads one tile into the shared decoded-image cache. */
 export const loadTileImage = (tileId: string): Promise<HTMLImageElement | null> => {
   const src = TILE_IMAGES[tileId];
-  return src ? loadAndDecodeImage(src) : Promise.resolve(null);
+  return src ? loadAndDecodeImage(src, 'high') : Promise.resolve(null);
 };
 
 /**
@@ -255,7 +286,7 @@ export const preloadTileImages = async (
       const src = pendingSources[sourceIndex];
       if (!src) return;
 
-      const image = await loadAndDecodeImage(src);
+      const image = await loadAndDecodeImage(src, options.fetchPriority);
       if (options.signal?.aborted) return;
 
       if (image) completed += 1;
@@ -284,6 +315,7 @@ export const scheduleGameTilePreload = (expansions: string[] = []): (() => void)
     void preloadTileImages(getGameTileIds(expansions), {
       concurrency: 3,
       signal: controller.signal,
+      fetchPriority: 'low',
     });
   };
 

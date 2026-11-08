@@ -531,6 +531,7 @@ const GameRoom = () => {
     void preloadTileImages(initialTileIds, {
       concurrency: 4,
       signal: controller.signal,
+      fetchPriority: 'high',
     }).then(() => {
       if (controller.signal.aborted) return;
       window.clearTimeout(waitTimeout);
