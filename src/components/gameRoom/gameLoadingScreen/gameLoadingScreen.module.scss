@@ -127,7 +127,14 @@
 
 @media (max-width: $mobile-breakpoint) {
   .loadingScreen {
+    place-items: start center;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 24px 20px calc(28px + env(safe-area-inset-bottom, 0px));
+
+    &__content {
+      margin-block: auto;
+    }
 
     &__illustration {
       width: min(210px, 64vw);

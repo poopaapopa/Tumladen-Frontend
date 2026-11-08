@@ -2,7 +2,11 @@
 
 .roomPage {
   display: flex;
-  height: calc(100vh - 70px);
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 0;
   background-color: $beige-light;
   font-family: $font-main;
 
@@ -86,7 +90,11 @@
 .roomPage_mobile {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 50px);
+  flex: 1;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 0;
   background-color: $beige-light;
   font-family: $font-main;
   overflow: hidden;
@@ -170,10 +178,11 @@
 
 .error {
   display: flex;
+  flex: 1;
+  min-height: 0;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: calc(100vh - 70px);
   background-color: $beige-light;
   color: $forest-mid;
   font-family: $font-main;

@@ -3,6 +3,7 @@
 .header {
   background-color: $forest-mid;
   height: 70px;
+  flex: 0 0 70px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -141,8 +142,13 @@
 
   // ─── Mobile ─────────────────────────────────────────────────────
   @media (max-width: $mobile-breakpoint) {
-    height: 50px;
-    padding: 0 12px;
+    height: calc(50px + env(safe-area-inset-top, 0px));
+    flex-basis: calc(50px + env(safe-area-inset-top, 0px));
+    padding:
+      env(safe-area-inset-top, 0px)
+      max(12px, env(safe-area-inset-right, 0px))
+      0
+      max(12px, env(safe-area-inset-left, 0px));
 
     &__logo {
       width: 60px;
