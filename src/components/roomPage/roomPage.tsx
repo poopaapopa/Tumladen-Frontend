@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Users, Settings, BookOpen } from 'lucide-react';
 
@@ -11,7 +11,12 @@ import { useRoomSocket, type WebSocketMessage } from '@/api/ws.ts';
 import { RoomSidebar } from "./roomSidebar/roomSidebar.tsx";
 import { RoomPageSkeleton } from "./roomPageSkeleton.tsx";
 import { RoomPlayers } from './roomPlayers/roomPlayers.tsx';
-import { GameRulesPanel } from '../gameRules/gameRulesPanel.tsx';
+import {
+  BASE_RULES_ID,
+  GameRulesPanel,
+} from '../gameRules/gameRulesPanel.tsx';
+import { GameRulesBookmarks } from '../gameRules/gameRulesBookmarks.tsx';
+import { preloadGameRules } from '../gameRules/gameRulesRegistry.ts';
 import { GAME_TYPE_LABELS } from '@/types/user';
 import type { RoomResponse, SettingValue, UpdateRoomSettingsPayload } from '@/types/room';
 import { useIsMobile } from '@/hooks/useIsMobile';
@@ -39,6 +44,8 @@ const RoomPage = () => {
 
   const isMobile = useIsMobile();
   const [activeTab, setActiveTab] = useState<RoomTab>('players');
+  const [selectedRulesId, setSelectedRulesId] = useState(BASE_RULES_ID);
+  const rulesScrollRef = useRef<HTMLDivElement>(null);
 
   const [room, setRoom] = useState<RoomResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -65,6 +72,11 @@ const RoomPage = () => {
         return;
       }
 
+      if (!window.matchMedia('(max-width: 768px)').matches) {
+        void preloadGameRules(data.room.gameType, BASE_RULES_ID);
+      }
+
+      setSelectedRulesId(BASE_RULES_ID);
       setRoom(data.room);
       setError(null);
     } catch (e) {
@@ -82,6 +94,18 @@ const RoomPage = () => {
         navigate('/');
         return;
       }
+
+      const updatedExpansions = Array.isArray(updatedRoom.settings?.expansions)
+        ? updatedRoom.settings.expansions.filter((expansion): expansion is string => (
+          typeof expansion === 'string'
+        ))
+        : [];
+
+      setSelectedRulesId((currentRulesId) => (
+        currentRulesId === BASE_RULES_ID || updatedExpansions.includes(currentRulesId)
+          ? currentRulesId
+          : BASE_RULES_ID
+      ));
       setRoom(updatedRoom);
     }
 
@@ -144,38 +168,82 @@ const RoomPage = () => {
     }
   }, [room?.status, navigate, id]);
 
-  const expansionPreloadKey = Array.isArray(room?.settings?.expansions)
-    ? [...room.settings.expansions].sort().join(',')
-    : '';
+  const roomExpansions = Array.isArray(room?.settings?.expansions)
+    ? room.settings.expansions.filter((expansion): expansion is string => (
+      typeof expansion === 'string'
+    ))
+    : [];
+  const expansionPreloadKey = [...roomExpansions].sort().join(',');
+  const activeRulesId = selectedRulesId === BASE_RULES_ID
+    || roomExpansions.includes(selectedRulesId)
+    ? selectedRulesId
+    : BASE_RULES_ID;
+
+  const handleRulesSelect = useCallback((rulesId: string) => {
+    if (room?.gameType) {
+      void preloadGameRules(room.gameType, rulesId);
+    }
+    setSelectedRulesId(rulesId);
+
+    requestAnimationFrame(() => {
+      rulesScrollRef.current?.scrollTo({
+        top: 0,
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+          ? 'auto'
+          : 'smooth',
+      });
+    });
+  }, [room?.gameType]);
+
+  const handleTabIntent = useCallback((tab: RoomTab) => {
+    if (tab === 'rules' && room?.gameType) {
+      void preloadGameRules(room.gameType, activeRulesId);
+    }
+  }, [room?.gameType, activeRulesId]);
 
   useEffect(() => {
     if (room?.gameType !== 'carcassonne' || shouldLimitBackgroundPreload()) return;
 
-    const expansions = expansionPreloadKey ? expansionPreloadKey.split(',') : [];
-    const cancelTilePreload = scheduleGameTilePreload(expansions);
-    const warmGameClient = () => void import('../gameRoom/gameRoom.tsx');
-
+    let isCancelled = false;
+    let cancelTilePreload: () => void = () => undefined;
     let cancelClientWarmup: () => void = () => undefined;
-    const requestIdleCallback = Reflect.get(window, 'requestIdleCallback') as
-      | Window['requestIdleCallback']
-      | undefined;
-    const cancelIdleCallback = Reflect.get(window, 'cancelIdleCallback') as
-      | Window['cancelIdleCallback']
-      | undefined;
 
-    if (requestIdleCallback && cancelIdleCallback) {
-      const idleCallbackId = requestIdleCallback(warmGameClient, { timeout: 1_500 });
-      cancelClientWarmup = () => cancelIdleCallback(idleCallbackId);
+    const startBackgroundWarmup = () => {
+      if (isCancelled) return;
+
+      const expansions = expansionPreloadKey ? expansionPreloadKey.split(',') : [];
+      cancelTilePreload = scheduleGameTilePreload(expansions);
+
+      const warmGameClient = () => void import('../gameRoom/gameRoom.tsx');
+      const requestIdleCallback = Reflect.get(window, 'requestIdleCallback') as
+        | Window['requestIdleCallback']
+        | undefined;
+      const cancelIdleCallback = Reflect.get(window, 'cancelIdleCallback') as
+        | Window['cancelIdleCallback']
+        | undefined;
+
+      if (requestIdleCallback && cancelIdleCallback) {
+        const idleCallbackId = requestIdleCallback(warmGameClient, { timeout: 1_500 });
+        cancelClientWarmup = () => cancelIdleCallback(idleCallbackId);
+      } else {
+        const timeoutId = setTimeout(warmGameClient, 300);
+        cancelClientWarmup = () => clearTimeout(timeoutId);
+      }
+    };
+
+    if (isMobile) {
+      startBackgroundWarmup();
     } else {
-      const timeoutId = setTimeout(warmGameClient, 300);
-      cancelClientWarmup = () => clearTimeout(timeoutId);
+      void preloadGameRules(room.gameType, BASE_RULES_ID)
+        .then(startBackgroundWarmup);
     }
 
     return () => {
+      isCancelled = true;
       cancelTilePreload();
       cancelClientWarmup();
     };
-  }, [room?.gameType, expansionPreloadKey]);
+  }, [room?.gameType, expansionPreloadKey, isMobile]);
 
   useEffect(() => {
     if (!isStarting) return;
@@ -202,6 +270,16 @@ const RoomPage = () => {
           <div className={styles.roomPage__visual}>
             <img src={castleImg} alt="Game Art" className={styles.roomPage__image} />
             <div className={styles.roomPage__overlay} />
+            {activeTab === 'rules' && (
+              <GameRulesBookmarks
+                className={styles.roomPage__rulesBookmarks}
+                gameType={room.gameType}
+                expansions={roomExpansions}
+                selectedRulesId={activeRulesId}
+                onSelect={handleRulesSelect}
+                variant="compact"
+              />
+            )}
           </div>
           <h1 className={styles.roomPage__gameTitle}>
             {GAME_TYPE_LABELS[room.gameType] ?? room.gameType}
@@ -213,6 +291,7 @@ const RoomPage = () => {
             tabs={ROOM_TABS}
             activeKey={activeTab}
             onChange={setActiveTab}
+            onTabIntent={handleTabIntent}
             ariaLabel="Разделы комнаты"
           />
         </div>
@@ -242,8 +321,12 @@ const RoomPage = () => {
             />
           )}
           {activeTab === 'rules' && (
-            <div className={styles.roomPage__mobileRules}>
-              <GameRulesPanel gameType={room.gameType} />
+            <div className={styles.roomPage__mobileRules} ref={rulesScrollRef}>
+              <GameRulesPanel
+                gameType={room.gameType}
+                expansions={roomExpansions}
+                selectedRulesId={activeRulesId}
+              />
             </div>
           )}
         </div>
@@ -268,10 +351,21 @@ const RoomPage = () => {
         <div className={styles.roomPage__visual}>
           <img src={castleImg} alt="Game Art" className={styles.roomPage__image} />
           <div className={styles.roomPage__overlay} />
+          <GameRulesBookmarks
+            className={styles.roomPage__rulesBookmarks}
+            gameType={room.gameType}
+            expansions={roomExpansions}
+            selectedRulesId={activeRulesId}
+            onSelect={handleRulesSelect}
+          />
         </div>
         <h1 className={styles.roomPage__gameTitle}>{GAME_TYPE_LABELS[room.gameType] ?? room.gameType}</h1>
-        <div className={styles.roomPage__rules}>
-          <GameRulesPanel gameType={room.gameType} />
+        <div className={styles.roomPage__rules} ref={rulesScrollRef}>
+          <GameRulesPanel
+            gameType={room.gameType}
+            expansions={roomExpansions}
+            selectedRulesId={activeRulesId}
+          />
         </div>
       </main>
 

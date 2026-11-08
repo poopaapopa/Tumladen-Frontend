@@ -1,0 +1,103 @@
+@use "sass:color";
+
+.trigger {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: $forest-soft;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+
+  &:hover,
+  &[aria-expanded='true'] {
+    color: $forest-soft;
+    background-color: color.adjust($sage-gray, $lightness: 10%);
+  }
+
+  &:focus-visible {
+    outline: 3px solid rgba($forest-mid, 0.25);
+    outline-offset: 1px;
+  }
+
+  @media (max-width: $mobile-breakpoint) {
+    width: 28px;
+    height: 28px;
+  }
+}
+
+.popover {
+  position: fixed;
+  z-index: 9999;
+  color: $forest-dark;
+  font-family: $font-main;
+
+  &__surface {
+    width: 100%;
+    padding: 13px 14px 14px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid $border-soft;
+    border-radius: 14px;
+    background: linear-gradient(145deg, $cream 0%, $cream-deep 100%);
+    box-shadow:
+      0 12px 30px rgba($forest-dark, 0.14),
+      0 2px 7px rgba($forest-dark, 0.08);
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+
+    &:focus-visible {
+      outline: 3px solid rgba($forest-mid, 0.25);
+      outline-offset: 2px;
+    }
+  }
+
+  &__arrow {
+    position: absolute;
+    z-index: 1;
+    width: 11px;
+    height: 11px;
+    pointer-events: none;
+    transform: translateX(-50%) rotate(45deg);
+  }
+
+  &[data-placement='bottom'] &__arrow {
+    top: -6px;
+    border-top: 1px solid $border-soft;
+    border-left: 1px solid $border-soft;
+    background: $cream;
+  }
+
+  &[data-placement='top'] &__arrow {
+    bottom: -6px;
+    border-right: 1px solid $border-soft;
+    border-bottom: 1px solid $border-soft;
+    background: $cream-deep;
+  }
+
+  &__title {
+    display: block;
+    font-size: 14px;
+    line-height: 1.25;
+  }
+
+  &__text {
+    margin: 8px 0 0;
+    color: $forest-mid;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trigger {
+    transition: none;
+  }
+}

@@ -1,0 +1,165 @@
+.bookmarks {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: calc(100% - 12px);
+
+  &__button {
+    min-width: 44px;
+    max-width: 100%;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-shrink: 0;
+    padding: 0 12px;
+    overflow: hidden;
+    border: 1px solid rgba($forest-dark, 0.16);
+    border-right: 0;
+    border-radius: 13px 0 0 13px;
+    background: rgba($beige-light, 0.94);
+    box-shadow: 0 3px 10px rgba($forest-dark, 0.14);
+    color: $forest-dark;
+    font-family: $font-main;
+    cursor: pointer;
+    backdrop-filter: blur(7px);
+    transition:
+      background-color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      color 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+
+    svg {
+      flex: 0 0 auto;
+    }
+
+    &:focus-visible {
+      outline: 3px solid rgba($forest-mid, 0.34);
+      outline-offset: -3px;
+
+      .bookmarks__label {
+        max-width: 190px;
+        margin-left: 8px;
+        opacity: 1;
+        transform: translateX(0);
+        transition:
+          max-width 0.65s cubic-bezier(0.4, 0, 0.2, 1) 0.08s,
+          margin-left 0.58s cubic-bezier(0.4, 0, 0.2, 1) 0.08s,
+          opacity 0.35s ease 0.16s,
+          transform 0.58s cubic-bezier(0.4, 0, 0.2, 1) 0.08s;
+      }
+    }
+
+    &_active {
+      color: $beige-light;
+      background: rgba($forest-mid, 0.96);
+      box-shadow: 0 4px 13px rgba($forest-dark, 0.25);
+
+      .bookmarks__label {
+        max-width: 190px;
+        margin-left: 8px;
+        opacity: 1;
+        transform: translateX(0);
+        transition:
+          max-width 0.65s cubic-bezier(0.4, 0, 0.2, 1) 0.08s,
+          margin-left 0.58s cubic-bezier(0.4, 0, 0.2, 1) 0.08s,
+          opacity 0.35s ease 0.16s,
+          transform 0.58s cubic-bezier(0.4, 0, 0.2, 1) 0.08s;
+      }
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      &:hover:not(.bookmarks__button_active) {
+        background: rgba($beige-light, 1);
+        box-shadow: 0 4px 13px rgba($forest-dark, 0.2);
+      }
+
+      &:hover {
+        .bookmarks__label {
+          max-width: 190px;
+          margin-left: 8px;
+          opacity: 1;
+          transform: translateX(0);
+          transition:
+            max-width 0.65s cubic-bezier(0.4, 0, 0.2, 1) 0.08s,
+            margin-left 0.58s cubic-bezier(0.4, 0, 0.2, 1) 0.08s,
+            opacity 0.35s ease 0.16s,
+            transform 0.58s cubic-bezier(0.4, 0, 0.2, 1) 0.08s;
+        }
+      }
+    }
+  }
+
+  &__label {
+    max-width: 0;
+    overflow: hidden;
+    color: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+    opacity: 0;
+    transform: translateX(-4px);
+    transition:
+      max-width 0.44s cubic-bezier(0.22, 1, 0.36, 1) 0.08s,
+      margin-left 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.08s,
+      opacity 0.26s ease-in 0.04s,
+      transform 0.4s cubic-bezier(0.22, 1, 0.36, 1) 0.08s;
+  }
+
+  &_compact {
+    gap: 4px;
+
+    .bookmarks__button {
+      min-width: 38px;
+      height: 38px;
+      padding: 0 10px;
+      border-radius: 11px 0 0 11px;
+      box-shadow: 0 2px 8px rgba($forest-dark, 0.13);
+
+      svg {
+        width: 17px;
+        height: 17px;
+      }
+
+      &:focus-visible,
+      &_active {
+        .bookmarks__label {
+          max-width: 150px;
+          margin-left: 6px;
+        }
+      }
+
+      @media (hover: hover) and (pointer: fine) {
+        &:hover {
+          .bookmarks__label {
+            max-width: 150px;
+            margin-left: 6px;
+          }
+        }
+      }
+    }
+
+    .bookmarks__label {
+      font-size: 12px;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bookmarks__button {
+    transition: none;
+
+    &:hover,
+    &:focus-visible,
+    &.bookmarks__button_active {
+      .bookmarks__label {
+        transition: none;
+      }
+    }
+  }
+
+  .bookmarks__label {
+    transition: none;
+  }
+}

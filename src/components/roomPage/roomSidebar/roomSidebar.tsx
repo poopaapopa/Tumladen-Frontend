@@ -1,11 +1,22 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, Clock, Pencil, Check, X, Trash2, Lock, LockOpen } from 'lucide-react';
+import {
+  Users,
+  Clock,
+  Pencil,
+  Check,
+  X,
+  Trash2,
+  Lock,
+  LockOpen,
+} from 'lucide-react';
 import type { RoomResponse, SettingValue } from '@/types/room.ts';
 import { useUserStore } from '@/store/useUserStore';
 import clsx from 'clsx';
 import { EditableSelector } from '@/components/editableSelector/editableSelector.tsx';
 import Modal from '@/components/modal/modal.tsx';
+import { getGameExpansionRules } from '@/components/gameRules/gameRulesRegistry.ts';
+import { ExpansionInfoPopover } from './expansionInfoPopover.tsx';
 import styles from './roomSidebar.module.scss';
 
 import deleteRoomImg from '@/assets/elves-delete-room.webp';
@@ -40,8 +51,11 @@ export const RoomSidebar = ({
 
   const currentSettings = room?.settings || {};
   const expansions = Array.isArray(currentSettings['expansions'])
-    ? (currentSettings['expansions'] as string[])
+    ? currentSettings['expansions'].filter((expansion): expansion is string => (
+      typeof expansion === 'string'
+    ))
     : [];
+  const availableExpansions = getGameExpansionRules(room.gameType);
 
   const handleDeleteRoom = () => {
     if (room?.id) {
@@ -161,44 +175,68 @@ export const RoomSidebar = ({
 
       <div className={styles.roomSidebar__expansionsSection}>
         <span className={styles.roomSidebar__expansionsTitle}>Дополнения</span>
-        <label className={styles.roomSidebar__expansionRow}>
-          <span
-            className={clsx(
-              styles.roomSidebar__expansionLabel,
-              expansions.includes('inns_and_cathedrals') && styles.roomSidebar__expansionLabel_active
-            )}
-          >
-            Таверны и Соборы
-          </span>
-          <input
-            type="checkbox"
-            className={styles.roomSidebar__expansionCheckbox}
-            checked={expansions.includes('inns_and_cathedrals')}
-            disabled={!isOwner}
-            onChange={() => {
-              const has = expansions.includes('inns_and_cathedrals');
-              const next = has
-                ? expansions.filter((e: string) => e !== 'inns_and_cathedrals')
-                : [...expansions, 'inns_and_cathedrals'];
-              onSaveSetting('expansions', next);
-            }}
-          />
-          <span className={styles.roomSidebar__switch} />
-        </label>
+        {availableExpansions.map((expansion) => {
+          const isEnabled = expansions.includes(expansion.id);
+          const inputId = `expansion-${room.id}-${expansion.id}`;
 
-        <label className={clsx(styles.roomSidebar__expansionRow, styles.roomSidebar__expansionRow_disabled)}>
+          return (
+            <div
+              className={clsx(
+                styles.roomSidebar__expansionRow,
+                !isOwner && styles.roomSidebar__expansionRow_readOnly,
+              )}
+              key={expansion.id}
+            >
+              <div className={styles.roomSidebar__expansionDetails}>
+                <label
+                  htmlFor={inputId}
+                  className={clsx(
+                    styles.roomSidebar__expansionLabel,
+                    isEnabled && styles.roomSidebar__expansionLabel_active,
+                  )}
+                >
+                  {expansion.title}
+                </label>
+                <ExpansionInfoPopover
+                  title={expansion.title}
+                  summary={expansion.summary}
+                />
+              </div>
+              <input
+                id={inputId}
+                type="checkbox"
+                className={styles.roomSidebar__expansionCheckbox}
+                checked={isEnabled}
+                disabled={!isOwner}
+                onChange={() => {
+                  const next = isEnabled
+                    ? expansions.filter((enabledExpansion) => enabledExpansion !== expansion.id)
+                    : [...expansions, expansion.id];
+                  onSaveSetting('expansions', next);
+                }}
+              />
+              <label
+                htmlFor={inputId}
+                className={styles.roomSidebar__switch}
+                aria-label={`${isEnabled ? 'Выключить' : 'Включить'} дополнение «${expansion.title}»`}
+              />
+            </div>
+          );
+        })}
+
+        <div className={clsx(styles.roomSidebar__expansionRow, styles.roomSidebar__expansionRow_disabled)}>
           <span className={styles.roomSidebar__expansionLabel}>
             Торговцы и Строители
           </span>
           <span className={styles.roomSidebar__comingSoonBadge}>Скоро</span>
-        </label>
+        </div>
 
-        <label className={clsx(styles.roomSidebar__expansionRow, styles.roomSidebar__expansionRow_disabled)}>
+        <div className={clsx(styles.roomSidebar__expansionRow, styles.roomSidebar__expansionRow_disabled)}>
           <span className={styles.roomSidebar__expansionLabel}>
             Принцесса и Дракон
           </span>
           <span className={styles.roomSidebar__comingSoonBadge}>Скоро</span>
-        </label>
+        </div>
       </div>
 
       {showStartAction && (

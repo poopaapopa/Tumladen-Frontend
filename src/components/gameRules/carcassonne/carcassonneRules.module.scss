@@ -1,6 +1,8 @@
-@use "sass:color";
-
 .rules {
+  container-type: inline-size;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
   font-family: $font-main;
   color: #1e1e1e;
   line-height: 1.6;
@@ -49,6 +51,7 @@
 
   &__highlight {
     display: inline-block;
+    max-width: 100%;
     background: rgba($forest-mid, 0.08);
     border-radius: 4px;
     padding: 1px 6px;
@@ -96,7 +99,16 @@
   &__inlineMeeple {
     display: inline-block;
     vertical-align: middle;
-    margin-left: 2px;
+    margin-left: -4px;
+  }
+
+  &__meeplePalette {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    max-width: 100%;
+    line-height: 0;
+    vertical-align: middle;
   }
 
   // ─── Tile Showcase (game entities) ───
@@ -261,35 +273,29 @@
   &__scoreMockValue {
     display: flex;
     align-items: center;
-    gap: 4px;
-    font-weight: 600;
-    font-size: 20px;
-    padding: 5px 12px;
+    gap: 5px;
+    padding: 4px 10px;
+    border: 1px solid rgba($forest-dark, 0.1);
     border-radius: 999px;
-    color: $score-color;
-    background-color: color.adjust(#ffffff, $alpha: -0.18);
+    color: $forest-dark;
+    background: linear-gradient(
+      145deg,
+      rgba(#ffffff, 0.78),
+      rgba($beige-light, 0.46)
+    );
     box-shadow:
-      0 0 0 1px color.adjust(#ffffff, $alpha: -0.35),
-      0 0 14px color.adjust(#ffffff, $alpha: -0.2),
-      0 0 22px $score-color;
-    animation: scoreGlow 2s ease-in-out infinite alternate;
+      inset 0 1px 0 rgba(#ffffff, 0.75),
+      0 1px 3px rgba($forest-dark, 0.08);
+    font-size: 18px;
+    font-weight: 750;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+    text-shadow: 0 1px 0 rgba(#ffffff, 0.8);
   }
 
-  @keyframes scoreGlow {
-    0% {
-      box-shadow:
-        0 0 0 1px color.adjust(#ffffff, $alpha: -0.35),
-        0 0 10px color.adjust(#ffffff, $alpha: -0.3),
-        0 0 16px color.adjust($score-color, $alpha: -0.4);
-      transform: scale(1);
-    }
-    100% {
-      box-shadow:
-        0 0 0 1px color.adjust(#ffffff, $alpha: -0.35),
-        0 0 14px color.adjust(#ffffff, $alpha: -0.2),
-        0 0 26px $score-color;
-      transform: scale(1.06);
-    }
+  &__scoreMockStar {
+    color: $score-color;
+    filter: drop-shadow(0 1px 0 rgba($forest-dark, 0.24));
   }
 
   // ─── Illustrated Section (text + image side by side) ───
@@ -345,7 +351,10 @@
   }
 
   &__illustration {
-    max-width: 27dvw;
+    display: block;
+    width: auto;
+    height: auto;
+    max-width: min(100%, 27dvw);
     border-radius: 10px;
     border: 2px solid rgba($forest-mid, 0.15);
     object-fit: cover;
@@ -368,6 +377,171 @@
 
   &__illustrationCaptionMini {
     max-width: 250px;
+  }
+
+  // ─── Expansion scoring examples ───
+
+  &__expansionIllustrated {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    gap: 16px;
+    align-items: start;
+    margin: 10px 0 14px;
+  }
+
+  &__expansionIllustratedRoad {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 325px);
+  }
+
+  &__expansionIllustratedCity {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
+  }
+
+  &__expansionIllustratedMeeple {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 325px);
+  }
+
+  &__expansionIllustrationFigure {
+    width: 100%;
+    min-width: 0;
+  }
+
+  &__expansionIllustration {
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    object-fit: contain;
+  }
+
+  &__expansionIllustrationCaption {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  // ─── Expansion tile clarifications ───
+
+  &__newTilesGrid {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin: 14px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  &__newTileCard {
+    display: grid;
+    grid-template-columns: minmax(0, 96px) minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid rgba($forest-mid, 0.14);
+    border-radius: 10px;
+    background: rgba($forest-mid, 0.035);
+
+    &:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+    }
+
+    &_pair {
+      grid-template-columns: minmax(0, 210px) minmax(0, 1fr);
+    }
+  }
+
+  &__newTileVisual {
+    width: 96px;
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+    line-height: 0;
+
+    &_pair {
+      width: 210px;
+    }
+  }
+
+  &__newTileImage {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid rgba($forest-mid, 0.18);
+    border-radius: 8px;
+    box-shadow: 0 2px 7px rgba($forest-dark, 0.1);
+  }
+
+  &__newTileContent {
+    min-width: 0;
+  }
+
+  &__newTileText {
+    margin: 0;
+    color: #333;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  // ─── Big meeple selection hint ───
+
+  &__meepleSelectionHint {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, 300px);
+    gap: 10px 12px;
+    align-items: center;
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-left: 3px solid $forest-mid;
+    border-radius: 0 8px 8px 0;
+    color: $forest-mid;
+    background: rgba($forest-mid, 0.06);
+  }
+
+  &__meepleSelectionHintIcon {
+    align-self: start;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  &__meepleSelectionHintContent {
+    min-width: 0;
+  }
+
+  &__meepleSelectionHintTitle {
+    margin: 0 0 3px;
+    color: $forest-dark;
+    font-family: $font-main;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.35;
+  }
+
+  &__meepleSelectionHintText {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  &__meepleSelectionHintFigure {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    margin: 0;
+    line-height: 0;
+  }
+
+  &__meepleSelectionHintImage {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    height: auto;
+    border: 1px solid rgba($forest-mid, 0.12);
+    border-radius: 8px;
+    box-shadow: 0 2px 7px rgba($forest-dark, 0.08);
   }
 
   // ─── Scoring Table ───
@@ -479,6 +653,92 @@
 
       th, td {
         padding: 6px 8px;
+      }
+    }
+  }
+}
+
+@container (max-width: 599px) {
+  .rules {
+    &__expansionIllustratedRoad {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    &__expansionIllustrationFigureRoad {
+      width: min(100%, 325px);
+      justify-self: center;
+    }
+
+    &__expansionIllustratedMeeple {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    &__expansionIllustrationFigureMeeple {
+      width: min(100%, 400px);
+      justify-self: center;
+    }
+  }
+}
+
+@container (max-width: 656px) {
+  .rules {
+    &__expansionIllustratedCity {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    &__expansionIllustrationFigureCity {
+      width: min(100%, 400px);
+      justify-self: center;
+    }
+  }
+}
+
+@container (max-width: 480px) {
+  .rules {
+    &__newTilesGrid {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    &__newTileCard_pair {
+      grid-template-columns: minmax(0, 160px) minmax(0, 1fr);
+    }
+
+    &__newTileVisual_pair {
+      width: 160px;
+    }
+  }
+}
+
+@container (max-width: 560px) {
+  .rules {
+    &__meepleSelectionHint {
+      grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    &__meepleSelectionHintFigure {
+      grid-column: 1 / -1;
+      width: min(100%, 340px);
+      justify-self: center;
+    }
+  }
+}
+
+@container (max-width: 420px) {
+  .rules {
+    &__newTileCard {
+      grid-template-columns: minmax(0, 72px) minmax(0, 1fr);
+
+      &_pair {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    &__newTileVisual {
+      width: 72px;
+
+      &_pair {
+        width: min(100%, 260px);
+        justify-self: center;
       }
     }
   }

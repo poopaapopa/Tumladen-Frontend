@@ -12,6 +12,7 @@ interface SegmentedTabsProps<T extends string> {
   tabs: ReadonlyArray<SegmentedTab<T>>;
   activeKey: T;
   onChange: (key: T) => void;
+  onTabIntent?: (key: T) => void;
   ariaLabel?: string;
   className?: string;
 }
@@ -20,6 +21,7 @@ export function SegmentedTabs<T extends string>({
   tabs,
   activeKey,
   onChange,
+  onTabIntent,
   ariaLabel,
   className,
 }: SegmentedTabsProps<T>) {
@@ -43,6 +45,9 @@ export function SegmentedTabs<T extends string>({
               isActive && styles.segmentedTabs__tab_active,
             )}
             onClick={() => onChange(tab.key)}
+            onPointerEnter={() => onTabIntent?.(tab.key)}
+            onPointerDown={() => onTabIntent?.(tab.key)}
+            onFocus={() => onTabIntent?.(tab.key)}
           >
             {Icon && <Icon size={16} strokeWidth={2.5} />}
             <span>{tab.label}</span>

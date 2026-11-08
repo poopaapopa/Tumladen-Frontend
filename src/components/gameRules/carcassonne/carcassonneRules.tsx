@@ -1,19 +1,32 @@
 import { Lightbulb, Star } from 'lucide-react';
 import clsx from 'clsx';
 import styles from './carcassonneRules.module.scss';
-import { Meeple3D } from '@/components/gameRoom/matchPlayerCard/meeple';
+import { Meeple3D } from '@/components/gameRoom/matchPlayerCard/meeple3D';
+import { RuleImage } from '@/components/gameRules/ruleImage';
 
-import cityGateImg from '@/assets/tiles/city_gate.webp';
-import roadStraightImg from '@/assets/tiles/road_straight.webp';
-import monasteryImg from '@/assets/tiles/monastery.webp';
-import startTileImg from '@/assets/tiles/start_tile.webp';
+import cityGateImg from '@/assets/rules/tiles/city-gate-96.webp?no-inline';
+import cityGateImg2x from '@/assets/rules/tiles/city-gate-192.webp';
+import roadStraightImg from '@/assets/rules/tiles/road-straight-96.webp?no-inline';
+import roadStraightImg2x from '@/assets/rules/tiles/road-straight-192.webp';
+import monasteryImg from '@/assets/rules/tiles/monastery-96.webp?no-inline';
+import monasteryImg2x from '@/assets/rules/tiles/monastery-192.webp';
+import startTileImg from '@/assets/rules/tiles/start-tile-96.webp?no-inline';
+import startTileImg2x from '@/assets/rules/tiles/start-tile-192.webp';
 
-import roadRulesImg from '@/assets/road-rules.webp';
-import cityRulesImg from '@/assets/city-rules.webp';
-import monasteryRulesImg from '@/assets/monastery-rules.webp';
-import fieldsRulesImg from '@/assets/fields-rules.webp';
-import multipleRulesImg from '@/assets/multiple-rules.webp';
+import roadRulesImg from '@/assets/rules/illustrations/road-rules.webp';
+import roadRulesImg360 from '@/assets/rules/illustrations/road-rules-360.webp';
+import cityRulesImg from '@/assets/rules/illustrations/city-rules.webp';
+import cityRulesImg360 from '@/assets/rules/illustrations/city-rules-360.webp';
+import monasteryRulesImg from '@/assets/rules/illustrations/monastery-rules.webp';
+import monasteryRulesImg360 from '@/assets/rules/illustrations/monastery-rules-360.webp';
+import fieldsRulesImg from '@/assets/rules/illustrations/fields-rules.webp';
+import fieldsRulesImg360 from '@/assets/rules/illustrations/fields-rules-360.webp';
+import multipleRulesImg from '@/assets/rules/illustrations/multiple-rules.webp';
+import multipleRulesImg360 from '@/assets/rules/illustrations/multiple-rules-360.webp';
 import { PLAYER_PALETTE } from '@/utils/playerColor';
+
+const TILE_IMAGE_SIZES = '(max-width: 768px) 72px, 90px';
+const ILLUSTRATION_IMAGE_SIZES = '(max-width: 768px) calc(100vw - 32px), 27vw';
 
 const CarcassonneRules = () => (
   <div className={styles.rules}>
@@ -39,30 +52,74 @@ const CarcassonneRules = () => (
 
         <div className={styles.rules__tileShowcase}>
           <div className={styles.rules__tileCard}>
-            <img src={cityGateImg} alt="Город" className={styles.rules__tileImg} />
+            <RuleImage
+              src={cityGateImg}
+              srcSet={`${cityGateImg} 96w, ${cityGateImg2x} 192w`}
+              sizes={TILE_IMAGE_SIZES}
+              width={96}
+              height={96}
+              loading="eager"
+              alt="Город"
+              className={styles.rules__tileImg}
+            />
             <span className={styles.rules__tileLabel}>Город</span>
           </div>
           <div className={styles.rules__tileCard}>
-            <img src={roadStraightImg} alt="Дорога" className={styles.rules__tileImg} />
+            <RuleImage
+              src={roadStraightImg}
+              srcSet={`${roadStraightImg} 96w, ${roadStraightImg2x} 192w`}
+              sizes={TILE_IMAGE_SIZES}
+              width={96}
+              height={96}
+              loading="eager"
+              alt="Дорога"
+              className={styles.rules__tileImg}
+            />
             <span className={styles.rules__tileLabel}>Дорога</span>
           </div>
           <div className={styles.rules__tileCard}>
-            <img src={monasteryImg} alt="Монастырь" className={styles.rules__tileImg} />
+            <RuleImage
+              src={monasteryImg}
+              srcSet={`${monasteryImg} 96w, ${monasteryImg2x} 192w`}
+              sizes={TILE_IMAGE_SIZES}
+              width={96}
+              height={96}
+              loading="eager"
+              alt="Монастырь"
+              className={styles.rules__tileImg}
+            />
             <span className={styles.rules__tileLabel}>Монастырь</span>
           </div>
         </div>
 
         <li>
           <span className={styles.rules__highlight}>7 подданных</span> на каждого игрока (в цвете игрока){' '}
-          {PLAYER_PALETTE.map((color) => (
-            <Meeple3D key={color} color={color} size={18} className={styles.rules__inlineMeeple} variant="standing" />
-          ))}
+          <span className={styles.rules__meeplePalette}>
+            {PLAYER_PALETTE.map((color) => (
+              <Meeple3D
+                key={color}
+                color={color}
+                size={34}
+                className={styles.rules__inlineMeeple}
+                variant="standing"
+              />
+            ))}
+          </span>
         </li>
       </ul>
 
       <p className={styles.rules__text}>
         В начале игры стартовый квадрат{' '}
-        <img src={startTileImg} alt="Стартовый квадрат" className={styles.rules__inlineTile} />
+        <RuleImage
+          src={startTileImg}
+          srcSet={`${startTileImg} 96w, ${startTileImg2x} 192w`}
+          sizes="36px"
+          width={96}
+          height={96}
+          loading="eager"
+          alt="Стартовый квадрат"
+          className={styles.rules__inlineTile}
+        />
         {' '}размещается в центре игрового поля. Остальные квадраты перемешиваются в закрытую колоду. Каждый игрок получает набор из 7 подданных
         своего цвета.
       </p>
@@ -92,7 +149,16 @@ const CarcassonneRules = () => (
               </p>
             </div>
             <div className={styles.rules__phaseImage}>
-              <img src={cityGateImg} alt="Размещение квадрата" className={styles.rules__phaseImgInner} />
+              <RuleImage
+                src={cityGateImg}
+                srcSet={`${cityGateImg} 96w, ${cityGateImg2x} 192w`}
+                sizes="(max-width: 768px) 70px, 90px"
+                width={96}
+                height={96}
+                loading="eager"
+                alt="Размещение квадрата"
+                className={styles.rules__phaseImgInner}
+              />
             </div>
           </div>
         </div>
@@ -137,7 +203,12 @@ const CarcassonneRules = () => (
               <div className={styles.rules__scoreMock}>
                 <span className={styles.rules__scoreMockValue}>
                   +4
-                  <Star size={18} strokeWidth={2.5} />
+                  <Star
+                    className={styles.rules__scoreMockStar}
+                    size={20}
+                    strokeWidth={2.5}
+                    aria-hidden="true"
+                  />
                 </span>
               </div>
             </div>
@@ -152,8 +223,13 @@ const CarcassonneRules = () => (
 
       <div className={clsx(styles.rules__illustrated, styles.rules__illustratedRoad, styles.rules__illustratedAfter)}>
         <figure className={clsx(styles.rules__illustrationFigure, styles.rules__illustrationFigureRoad)}>
-          <img
-            src={roadRulesImg}
+          <RuleImage
+            src={roadRulesImg360}
+            srcSet={`${roadRulesImg360} 360w, ${roadRulesImg} 800w`}
+            sizes="(max-width: 768px) calc(100vw - 32px), 325px"
+            width={800}
+            height={359}
+            fetchPriority="low"
             alt="Завершённая дорога из нескольких квадратов с разбойником на одном из них"
             className={styles.rules__illustration}
           />
@@ -181,9 +257,14 @@ const CarcassonneRules = () => (
 
       <div className={styles.rules__illustrated}>
         <figure className={styles.rules__illustrationFigure}>
-          <img
-            src={cityRulesImg}
-            alt="Завершённый город из нескольких квадратов с рыцарем и щитом на одном из них"
+          <RuleImage
+            src={cityRulesImg360}
+            srcSet={`${cityRulesImg360} 360w, ${cityRulesImg} 561w`}
+            sizes={ILLUSTRATION_IMAGE_SIZES}
+            width={561}
+            height={800}
+            fetchPriority="low"
+            alt="Завершённый город из нескольких квадратов с рыцарем и символом щита на одном из них"
             className={clsx(styles.rules__illustration, styles.rules__illustrationMini)}
           />
           <figcaption className={clsx(styles.rules__illustrationCaption, styles.rules__illustrationCaptionMini)}>
@@ -199,8 +280,8 @@ const CarcassonneRules = () => (
           <p className={styles.rules__text}>
             Город считается <strong>завершённым</strong>, когда он полностью окружён стенами
             (все края города замкнуты). Завершённый город приносит по <strong>2 очка за каждый квадрат</strong>.
-            Некоторые квадраты города содержат <strong>щит</strong> —
-            каждый щит приносит дополнительные 2 очка. После завершения рыцарь <strong>возвращается</strong>.
+            Некоторые квадраты города содержат <strong>символ щита</strong> —
+            каждый символ щита приносит дополнительные 2 очка. После завершения рыцарь <strong>возвращается</strong>.
           </p>
         </div>
       </div>
@@ -212,8 +293,13 @@ const CarcassonneRules = () => (
 
       <div className={styles.rules__illustrated}>
         <figure className={styles.rules__illustrationFigure}>
-          <img
-            src={monasteryRulesImg}
+          <RuleImage
+            src={monasteryRulesImg360}
+            srcSet={`${monasteryRulesImg360} 360w, ${monasteryRulesImg} 800w`}
+            sizes={ILLUSTRATION_IMAGE_SIZES}
+            width={800}
+            height={798}
+            fetchPriority="low"
             alt="Монастырь в центре сетки 3×3 из квадратов с монахом"
             className={clsx(styles.rules__illustration, styles.rules__illustrationMini)}
           />
@@ -254,8 +340,13 @@ const CarcassonneRules = () => (
           </p>
         </div>
         <figure className={styles.rules__illustrationFigure}>
-          <img
-            src={fieldsRulesImg}
+          <RuleImage
+            src={fieldsRulesImg360}
+            srcSet={`${fieldsRulesImg360} 360w, ${fieldsRulesImg} 759w`}
+            sizes={ILLUSTRATION_IMAGE_SIZES}
+            width={759}
+            height={800}
+            fetchPriority="low"
             alt="Поле с лежащим крестьянином, граничащее с несколькими завершёнными городами"
             className={styles.rules__illustration}
           />
@@ -283,8 +374,13 @@ const CarcassonneRules = () => (
 
       <div className={clsx(styles.rules__illustrated, styles.rules__illustratedAfter)}>
         <figure className={styles.rules__illustrationFigure}>
-          <img
-            src={multipleRulesImg}
+          <RuleImage
+            src={multipleRulesImg360}
+            srcSet={`${multipleRulesImg360} 360w, ${multipleRulesImg} 800w`}
+            sizes={ILLUSTRATION_IMAGE_SIZES}
+            width={800}
+            height={466}
+            fetchPriority="low"
             alt="Спор за объект"
             className={clsx(styles.rules__illustration, styles.rules__illustrationMini)}
           />
@@ -341,8 +437,8 @@ const CarcassonneRules = () => (
           </tr>
           <tr>
             <td>Город</td>
-            <td>2 за квадрат + 2 за герб</td>
-            <td>1 за квадрат + 1 за герб</td>
+            <td>2 за квадрат + 2 за щит</td>
+            <td>1 за квадрат + 1 за щит</td>
           </tr>
           <tr>
             <td>Монастырь</td>
