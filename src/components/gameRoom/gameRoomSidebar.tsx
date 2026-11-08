@@ -112,7 +112,6 @@ export const GameRoomSidebar = ({
                 botDifficulty={player.botDifficulty}
                 mode={mode}
                 rank={ranksByActor.get(player.actorId)}
-                isCurrentUser={player.actorId === currentUserId}
                 canSelectMeeple={
                   !isRanking &&
                   isMeeplePlacementPhase &&

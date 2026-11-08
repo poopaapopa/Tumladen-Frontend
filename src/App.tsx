@@ -27,6 +27,8 @@ function App() {
   const location = useLocation();
   const navigate = useNavigate();
   const { isAuthenticated, actor, token, setCurrentRoom } = useUserStore();
+  const isRoomPage = location.pathname.startsWith('/room/')
+    && !location.pathname.startsWith('/room/game/');
 
   // Fetch currentRoom from /me on mount / auth change (registered users only)
   useEffect(() => {
@@ -35,11 +37,9 @@ function App() {
     authService.getMe(token)
       .then((data) => setCurrentRoom(data.currentRoom ?? null))
       .catch(() => { /* silently ignore — session may be stale or network error */ });
-  }, [isAuthenticated, token, actor?.type]);
+  }, [isAuthenticated, token, actor?.type, setCurrentRoom]);
 
   useEffect(() => {
-    const isRoomPage = location.pathname.startsWith('/room/') && !location.pathname.startsWith('/room/game/');
-
     if (!isRoomPage || isAuthenticated) {
       setActiveModal(false);
       setIsRoomFullModal(false);
@@ -72,7 +72,7 @@ function App() {
     return () => {
       cancelled = true;
     };
-  }, [location.pathname, isAuthenticated]);
+  }, [location.pathname, isAuthenticated, isRoomPage]);
 
   const handleCancelAuth = () => {
     closeModal();

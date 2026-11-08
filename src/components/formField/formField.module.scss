@@ -9,9 +9,13 @@
     display: flex;
     align-items: center;
     width: 100%;
+    transition: filter 0.2s ease;
 
-    // Error state: red border + red glow — persists even on focus
+    // Apply the error glow to the composed control rather than the input itself.
+    // This keeps the glow continuous around the floating label's background.
     &_error {
+      filter: drop-shadow(0 0 3px rgba($decline, 0.28));
+
       .formField__input {
         border-color: $decline !important;
         background: linear-gradient(
@@ -23,7 +27,7 @@
         ) !important;
 
         &:focus {
-          box-shadow: 0 0 0 3px rgba($decline, 0.2) !important;
+          box-shadow: none !important;
           border-color: $decline !important;
         }
       }

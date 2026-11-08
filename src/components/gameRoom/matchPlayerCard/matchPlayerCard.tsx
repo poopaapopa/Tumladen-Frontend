@@ -47,7 +47,6 @@ interface MatchPlayerCardProps {
   onSelectMeepleType?: (type: MeepleType) => void;
   mode?: 'playing' | 'ranking';
   rank?: number;
-  isCurrentUser?: boolean;
 }
 
 export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(({
@@ -66,7 +65,6 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
   onSelectMeepleType,
   mode = 'playing',
   rank,
-  isCurrentUser = false,
 }, ref) => {
   const playerColor = getPlayerColorBySeat(seat);
   const isRanking = mode === 'ranking';
@@ -207,9 +205,6 @@ export const MatchPlayerCard = forwardRef<HTMLDivElement, MatchPlayerCardProps>(
             <div className={styles.playerCard__nicknameWrapper}>
               <MarqueeText text={displayName} />
             </div>
-            {isRanking && isCurrentUser && (
-              <span className={styles.playerCard__youBadge}>Вы</span>
-            )}
             {isBot && botDifficulty && (() => {
               const DiffIcon = DIFFICULTY_ICONS[botDifficulty];
               return (
